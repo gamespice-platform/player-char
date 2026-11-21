@@ -14,7 +14,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	_line("dot-player-char people self-test")
+	_line("gs-player-char people self-test")
 	_test_look()
 	_test_site()
 	_test_clips()
@@ -590,13 +590,13 @@ static func _first_key(library: AnimationLibrary, clip: StringName) -> Quaternio
 ## person wears: brown forearms, white fingers. Dark neutrals (shadows, cuffs) may stay.
 func _test_arm_swatches() -> void:
 	_section("no unmapped arm or hand swatch")
-	var image := (load("res://addons/dot_player_char/people/atlas_people.png") as Texture2D).get_image()
+	var image := (load("res://addons/gs_player_char/people/atlas_people.png") as Texture2D).get_image()
 	var neutral := ["2a2927", "2a2929", "141414"]
 	for id: StringName in [&"matt", &"lis", &"sam", &"shaun"]:
 		var mapped := []
 		for hexes: Array in GSHumanoidAssets.WEARS[id].values():
 			mapped.append_array(hexes)
-		var model := (load("res://addons/dot_player_char/people/people_%s.glb" % id) as PackedScene).instantiate()
+		var model := (load("res://addons/gs_player_char/people/people_%s.glb" % id) as PackedScene).instantiate()
 		var mesh: MeshInstance3D = model.find_children("*", "MeshInstance3D", true, false).front()
 		var skeleton: Skeleton3D = model.find_children("*", "Skeleton3D", true, false).front()
 		var arrays := mesh.mesh.surface_get_arrays(0)

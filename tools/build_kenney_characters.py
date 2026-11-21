@@ -1,6 +1,6 @@
-"""Builds addons/dot_player_char/people/kenney/kenney_character.glb from Kenney's Animated Characters packs (CC0 1.0).
+"""Builds addons/gs_player_char/people/kenney/kenney_character.glb from Kenney's Animated Characters packs (CC0 1.0).
 
-    blender -b --factory-startup --python tools/build_kenney_characters.py -- <extracted pack dir> addons/dot_player_char/people/kenney
+    blender -b --factory-startup --python tools/build_kenney_characters.py -- <extracted pack dir> addons/gs_player_char/people/kenney
 
 The pack dir is either of kenney.nl/assets/animated-characters-protagonists and -retro (one zip each:
 `Model/characterMedium.fbx`, `Animations/{idle,run,jump}.fbx`, `Skins/*.png`). The two packs' model and

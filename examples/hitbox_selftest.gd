@@ -17,7 +17,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("dot-player-char hitbox self-test")
+	print("gs-player-char hitbox self-test")
 	_test_stock()
 	_test_config()
 	_test_node()
@@ -130,9 +130,9 @@ func _test_off_by_default() -> void:
 	_check(hb.hitbox_set() == null and hb.get_child_count() == 0, "adding it builds nothing")
 	if GSPlayerHitboxes.class_script("GSHitbox") == null:
 		var r := hb.build()
-		_check(not r.ok and r.code() == GSError.CODE_INVALID, "without dot-combat build fails cleanly")
+		_check(not r.ok and r.code() == GSError.CODE_INVALID, "without gs-combat build fails cleanly")
 	else:
-		_check(true, "dot-combat present, fallback exercised by the game")
+		_check(true, "gs-combat present, fallback exercised by the game")
 	_check(GSPlayerHitboxes.class_script("NoSuchClassAnywhere") == null, "unknown class is null")
 	hb.queue_free()
 

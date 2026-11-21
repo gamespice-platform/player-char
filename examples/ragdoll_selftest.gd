@@ -19,7 +19,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	_line("dot-player-char ragdoll self-test")
+	_line("gs-player-char ragdoll self-test")
 	_line("")
 
 	_test_reactions()

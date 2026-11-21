@@ -11,9 +11,9 @@ const ROLES := [["Head", "head"], ["Neck", "head"], ["Eyelid", "head"], ["Mouth"
 
 
 func _initialize() -> void:
-	var image := (load("res://addons/dot_player_char/people/atlas_people.png") as Texture2D).get_image()
+	var image := (load("res://addons/gs_player_char/people/atlas_people.png") as Texture2D).get_image()
 	for id in ["matt", "lis", "sam", "shaun"]:
-		var model := (load("res://addons/dot_player_char/people/people_%s.glb" % id) as PackedScene).instantiate()
+		var model := (load("res://addons/gs_player_char/people/people_%s.glb" % id) as PackedScene).instantiate()
 		var mesh: MeshInstance3D = model.find_children("*", "MeshInstance3D", true, false).front()
 		var skeleton: Skeleton3D = model.find_children("*", "Skeleton3D", true, false).front()
 		var arrays := mesh.mesh.surface_get_arrays(0)

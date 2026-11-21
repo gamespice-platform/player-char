@@ -4,7 +4,7 @@ Who a player looks like: the metrics, the customisation document, a 3D rig and a
 
 Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is specific to characters.
 
-**The distributable is `addons/dot_player_char/`.** It requires dot-core and dot-player (`GSPlayerChar` and `GSPlayerAnimDriver` extend `GSPlayerComponent`), both symlinked and in `.gitignore`, and dot-animation (`GSPlayerAnimState` extends `GSAnimationLocomotion`; link `addons/dot_animation`).
+**The distributable is `addons/gs_player_char/`.** It requires gs-core and gs-player (`GSPlayerChar` and `GSPlayerAnimDriver` extend `GSPlayerComponent`), both symlinked and in `.gitignore`, and gs-animation (`GSPlayerAnimState` extends `GSAnimationLocomotion`; link `addons/gs_animation`).
 
 ## Read before
 
@@ -20,48 +20,48 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is sp
 
 | Path | What |
 | --- | --- |
-| `core/dot_player_char_def.gd` | the metrics, the ids, the slots; `capsule_3d()`, `allows()` |
-| `core/dot_player_char_look.gd` | what a player chose, as a bounded document; `validate`, `conform` |
-| `core/dot_player_char_catalogue.gd` | the set, and its presets |
-| `core/dot_player_model_def.gd`, `dot_player_model_catalogue.gd` | a 3D rig (mounts, parts, tints), and the set with the humanoid mount names |
-| `core/dot_player_model_builder.gd` | `plan` (pure) and `apply` (the only node work) |
-| `core/dot_player_sprite_def.gd`, `dot_player_sprite_catalogue.gd` | a 2D sheet (grid, layers, anchor), and the set with its presets |
-| `core/dot_player_sprite_facing.gd` | angle to row offset and flip, static |
-| `core/dot_player_anim_state.gd`, `dot_player_anim_clip.gd`, `dot_player_anim_set.gd` | the locomotion state machine (pure), one clip for a rig and a sheet, the clip table |
-| `core/dot_player_break_rules.gd` | how a body comes apart on death: none, limbs, explode |
-| `core/dot_skin_surfaces.gd` | a skinned mesh's arrays read once per mesh and grouped by bone for the death path; `warm(figure)` under a loading cover |
-| `nodes/dot_player_char.gd` | the component: metrics, stance, body, visuals |
-| `nodes/dot_player_char_visual.gd` | the abstract seam; `seat()` |
-| `nodes/dot_player_model_rig.gd`, `dot_player_model_visual.gd` | a built rig (mount lookup, measured eye height), and the 3D visual |
-| `nodes/dot_player_sprite_visual.gd` | the 2D visual |
-| `nodes/dot_player_anim_sink.gd`, `dot_player_anim_player_sink.gd`, `dot_player_anim_sprite_sink.gd` | where an animation decision goes: abstract, an `AnimationPlayer`, a duck-typed sprite |
-| `nodes/dot_player_anim_driver.gd` | the component that ties animation together |
-| `nodes/dot_player_body_break.gd` | a body's meshes, copied into tumbling pieces that fade; a skinned body's limbs baked out of the skin |
-| `core/dot_player_death_reaction.gd`, `dot_player_death_reactions.gd` | one way a body goes down (pose, pushes, sounds, when it qualifies), and the set with the pure `pick()` |
-| `core/dot_player_death.gd` | the server's decision for one kill (reaction, seed, direction, damage); `write_to` / `read_from` (a dot-net writer, duck-typed) or `to_dict` / `from_dict` for a kill message |
-| `core/dot_player_ragdoll_rules.gd` | style, lifetime, cap, force, weights; `bind_cvars` / `follow_cvars` for the `sv_ragdoll*` set |
-| `core/dot_player_death_sounds.gd`, `death/sounds/` | the stock sound ids' files (Kenney CC0, credited in `death/sounds/CREDITS.md`) as data a game makes audio defs from |
-| `nodes/dot_player_ragdoll.gd` | one dead body: parts by name, joints, the push, settle and freeze, the fade |
-| `nodes/dot_player_ragdolls.gd` | where bodies lie: `spawn`, the cap, sounds out |
-| `core/dot_player_hitbox_plan.gd`, `nodes/dot_player_hitboxes.gd` | optional hit zones (head, neck, torso, arms, hands, legs, feet) as pure data scaled from the height, and the node (off by default) that builds them as GameSpice Combat hitboxes whose `group` is the hit_group the resolver and `GSStatsHitzones` read; `config` (`disabled`, `groups`, `zones`), `hitbox_factory` / `set_factory`, override `zones()` |
-| `nodes/dot_player_first_person_body.gd` | your own body in first person: head shadow-only, body back |
-| `core/dot_view_grip.gd` | where the hands go on a first-person weapon: anchor, grip, support |
-| `nodes/dot_player_view_arms.gd` | your own crawling arms in first person while downed, under the yaw pivot; `arms_factory` swaps them and `set_held` poses them on a weapon (`GSViewGrip`); no game mounts it yet |
-| `nodes/dot_view_arms_material.gd` | `GSViewArmsMaterial`: the first-person arms' palette swap plus skin and cloth detail, one per look |
-| `core/dot_humanoid_look.gd` | a person as data: body and four colours; `stock(seed)`, `from_site(avatar)`, `with_side` |
-| `core/dot_humanoid_clips.gd` | the family clip names, `retarget`, the made crouch and grounded air clips, `adopt` (real clips over made ones) |
-| `core/dot_humanoid_actions.gd` | the 13 starter emotes, poses and gestures as clips (made, CC0 wave/nod/sit), and `rename_humanoid` for an uploaded clip |
-| `core/dot_foot_plant.gd` | feet held still on the ground over a gait phase, swung in an arc to the next step; bend the leg to it with `GSHumanoidIk.two_bone_to` |
-| `nodes/dot_humanoid_figure.gd` | a person drawn: palette material per look, clip from motion, overlays, the hand, LOD stepping |
-| `nodes/dot_humanoid_legs.gd`, `dot_humanoid_own_view.gd` | the legs turned toward the way it moves, walked backward, feet on a wall and out of the floor, the body stood on the floor under its origin (`floor_lift`); what is shrunk away when its own player looks down at it (`first_person`), and the shadow-only copy |
-| `core/dot_own_body_setting.gd` | `GSOwnBodySetting`: the client-only `cl_legs` option (default on, never server-enforced): `def()` for a GameSpice Settings schema (null without GameSpice Settings), `follow(figure, settings)`; off draws nothing of your own body in first person, only its shadow |
-| `core/dot_kenney_characters.gd` | Kenney's Animated Characters Protagonists and Retro (CC0) as people: eight "GS - <name>" skins in two packs on one rig, the family clips baked on; `build(pack, skin)`; [docs/kenney-characters.md](docs/kenney-characters.md) |
+| `core/gs_player_char_def.gd` | the metrics, the ids, the slots; `capsule_3d()`, `allows()` |
+| `core/gs_player_char_look.gd` | what a player chose, as a bounded document; `validate`, `conform` |
+| `core/gs_player_char_catalogue.gd` | the set, and its presets |
+| `core/gs_player_model_def.gd`, `gs_player_model_catalogue.gd` | a 3D rig (mounts, parts, tints), and the set with the humanoid mount names |
+| `core/gs_player_model_builder.gd` | `plan` (pure) and `apply` (the only node work) |
+| `core/gs_player_sprite_def.gd`, `gs_player_sprite_catalogue.gd` | a 2D sheet (grid, layers, anchor), and the set with its presets |
+| `core/gs_player_sprite_facing.gd` | angle to row offset and flip, static |
+| `core/gs_player_anim_state.gd`, `gs_player_anim_clip.gd`, `gs_player_anim_set.gd` | the locomotion state machine (pure), one clip for a rig and a sheet, the clip table |
+| `core/gs_player_break_rules.gd` | how a body comes apart on death: none, limbs, explode |
+| `core/gs_skin_surfaces.gd` | a skinned mesh's arrays read once per mesh and grouped by bone for the death path; `warm(figure)` under a loading cover |
+| `nodes/gs_player_char.gd` | the component: metrics, stance, body, visuals |
+| `nodes/gs_player_char_visual.gd` | the abstract seam; `seat()` |
+| `nodes/gs_player_model_rig.gd`, `gs_player_model_visual.gd` | a built rig (mount lookup, measured eye height), and the 3D visual |
+| `nodes/gs_player_sprite_visual.gd` | the 2D visual |
+| `nodes/gs_player_anim_sink.gd`, `gs_player_anim_player_sink.gd`, `gs_player_anim_sprite_sink.gd` | where an animation decision goes: abstract, an `AnimationPlayer`, a duck-typed sprite |
+| `nodes/gs_player_anim_driver.gd` | the component that ties animation together |
+| `nodes/gs_player_body_break.gd` | a body's meshes, copied into tumbling pieces that fade; a skinned body's limbs baked out of the skin |
+| `core/gs_player_death_reaction.gd`, `gs_player_death_reactions.gd` | one way a body goes down (pose, pushes, sounds, when it qualifies), and the set with the pure `pick()` |
+| `core/gs_player_death.gd` | the server's decision for one kill (reaction, seed, direction, damage); `write_to` / `read_from` (a gs-net writer, duck-typed) or `to_dict` / `from_dict` for a kill message |
+| `core/gs_player_ragdoll_rules.gd` | style, lifetime, cap, force, weights; `bind_cvars` / `follow_cvars` for the `sv_ragdoll*` set |
+| `core/gs_player_death_sounds.gd`, `death/sounds/` | the stock sound ids' files (Kenney CC0, credited in `death/sounds/CREDITS.md`) as data a game makes audio defs from |
+| `nodes/gs_player_ragdoll.gd` | one dead body: parts by name, joints, the push, settle and freeze, the fade |
+| `nodes/gs_player_ragdolls.gd` | where bodies lie: `spawn`, the cap, sounds out |
+| `core/gs_player_hitbox_plan.gd`, `nodes/gs_player_hitboxes.gd` | optional hit zones (head, neck, torso, arms, hands, legs, feet) as pure data scaled from the height, and the node (off by default) that builds them as GameSpice Combat hitboxes whose `group` is the hit_group the resolver and `GSStatsHitzones` read; `config` (`disabled`, `groups`, `zones`), `hitbox_factory` / `set_factory`, override `zones()` |
+| `nodes/gs_player_first_person_body.gd` | your own body in first person: head shadow-only, body back |
+| `core/gs_view_grip.gd` | where the hands go on a first-person weapon: anchor, grip, support |
+| `nodes/gs_player_view_arms.gd` | your own crawling arms in first person while downed, under the yaw pivot; `arms_factory` swaps them and `set_held` poses them on a weapon (`GSViewGrip`); no game mounts it yet |
+| `nodes/gs_view_arms_material.gd` | `GSViewArmsMaterial`: the first-person arms' palette swap plus skin and cloth detail, one per look |
+| `core/gs_humanoid_look.gd` | a person as data: body and four colours; `stock(seed)`, `from_site(avatar)`, `with_side` |
+| `core/gs_humanoid_clips.gd` | the family clip names, `retarget`, the made crouch and grounded air clips, `adopt` (real clips over made ones) |
+| `core/gs_humanoid_actions.gd` | the 13 starter emotes, poses and gestures as clips (made, CC0 wave/nod/sit), and `rename_humanoid` for an uploaded clip |
+| `core/gs_foot_plant.gd` | feet held still on the ground over a gait phase, swung in an arc to the next step; bend the leg to it with `GSHumanoidIk.two_bone_to` |
+| `nodes/gs_humanoid_figure.gd` | a person drawn: palette material per look, clip from motion, overlays, the hand, LOD stepping |
+| `nodes/gs_humanoid_legs.gd`, `gs_humanoid_own_view.gd` | the legs turned toward the way it moves, walked backward, feet on a wall and out of the floor, the body stood on the floor under its origin (`floor_lift`); what is shrunk away when its own player looks down at it (`first_person`), and the shadow-only copy |
+| `core/gs_own_body_setting.gd` | `GSOwnBodySetting`: the client-only `cl_legs` option (default on, never server-enforced): `def()` for a GameSpice Settings schema (null without GameSpice Settings), `follow(figure, settings)`; off draws nothing of your own body in first person, only its shadow |
+| `core/gs_kenney_characters.gd` | Kenney's Animated Characters Protagonists and Retro (CC0) as people: eight "GS - <name>" skins in two packs on one rig, the family clips baked on; `build(pack, skin)`; [docs/kenney-characters.md](docs/kenney-characters.md) |
 | `people/` | the four bodies (Quaternius, CC0; `CREDITS.md`) and their atlas, built by `tools/build_people.py`; `people_ual.res`, the real sit (Universal Animation Library, CC0) |
 | `tools/` | `build_people.py` (Blender), `ual_retarget.gd` (library clips onto the rig: `people_ual.res`), `build_kenney_characters.py` (Blender: Kenney's fbx to `people/kenney/kenney_character.glb`), `kenney_retarget.gd` (the family clips onto Kenney's rig: `kenney_clips.res`), `people_palette.gd`, `kenney_site_colours.py`, `people_sheet.gd` (contact sheets; `--aim`, `--swim`, `--compare`, `--register` for a game's own body), `avatar_prep/` (Blender: a game's character to LODs, an atlas and the kit rig, `kit_rig.py`; [docs/avatar-prep.md](docs/avatar-prep.md)), `survivor_compare.gd` (made vs real clip strips), `crowd_bench.tscn` (a browser crowd measurement), `view_arms_web.tscn` (the arms materials side by side in a browser) |
-| `dot_player_char_api.gd` | the API level (`GSAddonApi`): 31 since `GSHumanoidFigure.foot_hold_reach` (planted stride feet pinned by the leg IK) (30: `GSPlayerViewArms.hand_min_depth`) (28: `GSViewHand` and `GSViewHandPoses` (real first-person hands, a grip per weapon kind)) (27: `GSHumanoidFigure.shadow_range` / `draw_range` / `lod_bias` / `lift_range`) (26: `register_body`, `lod_distances`) (25: `GSKenneyCharacters`) (24: `set_throw_charge` / `throw_release` and `GSPlayerViewArms.run`) (23: `GSSkinSurfaces`) (22: `GSHumanoidCarry`) (21: `GSHumanoidFigure.floor_mask` and `floor_lift`) (20: `GSHumanoidAssets.prepare_libraries` and `poll_libraries`) (19: `GSViewArmsMaterial`, `set_look_override`, `keep_arms_clear`) (14 to 18: [docs/history.md](docs/history.md#api-levels)) (13: `GSHumanoidLegs` and `first_person`) (12: `pose_record` / `pose_apply`) (11: `frame_delta`) (10: `GSFootPlant`) (9: `sprint_speed`) (8: `GSViewGrip`) (7: `GSPlayerViewArms`) (5: `play_action`) (4: the `driving` motion; 3: the people and the skinned ragdoll) |
+| `gs_player_char_api.gd` | the API level (`GSAddonApi`): 31 since `GSHumanoidFigure.foot_hold_reach` (planted stride feet pinned by the leg IK) (30: `GSPlayerViewArms.hand_min_depth`) (28: `GSViewHand` and `GSViewHandPoses` (real first-person hands, a grip per weapon kind)) (27: `GSHumanoidFigure.shadow_range` / `draw_range` / `lod_bias` / `lift_range`) (26: `register_body`, `lod_distances`) (25: `GSKenneyCharacters`) (24: `set_throw_charge` / `throw_release` and `GSPlayerViewArms.run`) (23: `GSSkinSurfaces`) (22: `GSHumanoidCarry`) (21: `GSHumanoidFigure.floor_mask` and `floor_lift`) (20: `GSHumanoidAssets.prepare_libraries` and `poll_libraries`) (19: `GSViewArmsMaterial`, `set_look_override`, `keep_arms_clear`) (14 to 18: [docs/history.md](docs/history.md#api-levels)) (13: `GSHumanoidLegs` and `first_person`) (12: `pose_record` / `pose_apply`) (11: `frame_delta`) (10: `GSFootPlant`) (9: `sprint_speed`) (8: `GSViewGrip`) (7: `GSPlayerViewArms`) (5: `play_action`) (4: the `driving` motion; 3: the people and the skinned ragdoll) |
 | `examples/` | eight suites: `kenney_selftest`, `hitbox_selftest`, `char_selftest` (the main scene), `model_selftest`, `sprite_selftest`, `anim_selftest`, `ragdoll_selftest`, `people_selftest` |
 
-Paths under `core/`, `nodes/` and `people/` are in `addons/dot_player_char/`; `tools/` is at the repository root and does not ship.
+Paths under `core/`, `nodes/` and `people/` are in `addons/gs_player_char/`; `tools/` is at the repository root and does not ship.
 
 ## Running and testing
 
@@ -87,7 +87,7 @@ The family's two steps ([family CLAUDE.md](../../CLAUDE.md#validating-anything))
 - The air clips are grounded and the crouch is made (`synthesise`); a rebuilt kit needs both again. [people](docs/people.md#the-made-clips)
 - The sit is the Universal Animation Library's, baked onto matt's skeleton by `tools/ual_retarget.gd` and adopted after the mirror (it is right-handed already); a rebuilt kit re-bakes it. Compare a candidate with `people_sheet.gd --compare=FILE` before adding it. [people](docs/people.md#real-clips-from-the-universal-animation-library)
 - A person's material is one per look, shared by everybody wearing it, with no per-instance uniforms (game-zombie-zone's palette shader made the same choice for the compatibility renderer). [people](docs/people.md#variety-is-colour-not-texture)
-- A game newly linking `dot_player_char`: run `--import` again before trusting a render. mg-look-at-me's first import after linking left `people/` unimported, the figure drew its capsule, and every suite still passed. [people](docs/people.md#looking-at-them)
+- A game newly linking `gs_player_char`: run `--import` again before trusting a render. mg-look-at-me's first import after linking left `people/` unimported, the figure drew its capsule, and every suite still passed. [people](docs/people.md#looking-at-them)
 - The kit is left-handed; `GSHumanoidClips.mirror` makes every clip right-handed at load, before the made clips and the retarget. A rebuilt kit is mirrored the same way, never in the glb. [people](docs/people.md#legs-from-the-clip-arms-from-an-overlay)
 - The swim clip is drawn upright and the figure lays it flat (`SWIM_LEAN`); no held-gun arms while swimming. Look at it with `people_sheet.gd --swim`. [people](docs/people.md#the-made-clips)
 - `GSDownedRules` (`sv_downed_*` cvars, pure functions of the rules) picks the downed weapon kind, who may crawl, the pose and the holster; the figure lies propped on its back (`set_motion` key `propped`, `PROP_LEAN`) or crawls, clips behind `downed_clips`.

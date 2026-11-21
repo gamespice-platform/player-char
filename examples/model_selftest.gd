@@ -1,6 +1,6 @@
 extends Node
 
-## Exercises dot-player-char's model half with rigs built in code and no art on disk.
+## Exercises gs-player-char's model half with rigs built in code and no art on disk.
 ## godot --headless --path . res://examples/model_selftest.tscn
 
 const SECTIONS := 8
@@ -17,7 +17,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	_line("dot-player-char model self-test")
+	_line("gs-player-char model self-test")
 	_line("")
 
 	_test_def()
@@ -272,7 +272,7 @@ func _test_catalogue() -> void:
 	_check(
 		paths.size() == 2,
 		"and it lists every scene it could need, which is what a preloader or a "
-		+ "dot-cloud manifest asks for — a game listing them by hand ships a model with "
+		+ "gs-cloud manifest asks for — a game listing them by hand ships a model with "
 		+ "a part missing"
 	)
 
@@ -424,19 +424,19 @@ func _test_build() -> void:
 	# Tinting, which must be per-instance.
 	var mesh := MeshInstance3D.new()
 	rig.add_child(mesh)
-	GSPlayerModelBuilder.tint(mesh, [Color.RED, Color.BLUE], "dot_tint_")
+	GSPlayerModelBuilder.tint(mesh, [Color.RED, Color.BLUE], "gs_tint_")
 	_check(
-		mesh.get_instance_shader_parameter("dot_tint_0") is Color,
+		mesh.get_instance_shader_parameter("gs_tint_0") is Color,
 		"a tint is written as a per-instance shader parameter, so two players wearing "
 		+ "the same part cannot recolour each other"
 	)
 	_check(
-		(mesh.get_instance_shader_parameter("dot_tint_1") as Color).is_equal_approx(Color.BLUE),
+		(mesh.get_instance_shader_parameter("gs_tint_1") as Color).is_equal_approx(Color.BLUE),
 		"one per channel"
 	)
-	GSPlayerModelBuilder.tint(mesh, [], "dot_tint_")
+	GSPlayerModelBuilder.tint(mesh, [], "gs_tint_")
 	_check(
-		mesh.get_instance_shader_parameter("dot_tint_0") is Color,
+		mesh.get_instance_shader_parameter("gs_tint_0") is Color,
 		"and an empty colour list leaves what was there alone rather than clearing it"
 	)
 

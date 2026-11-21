@@ -1,6 +1,6 @@
 extends Node
 
-## Exercises dot-player-char with no art: a server must judge a character and look without loading a mesh.
+## Exercises gs-player-char with no art: a server must judge a character and look without loading a mesh.
 ## godot --headless --path . res://examples/char_selftest.tscn
 
 const SECTIONS := 6
@@ -17,7 +17,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	_line("dot-player-char self-test")
+	_line("gs-player-char self-test")
 	_line("")
 
 	_test_metrics()

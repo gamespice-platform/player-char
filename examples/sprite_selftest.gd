@@ -1,6 +1,6 @@
 extends Node
 
-## Exercises dot-player-char's sprite half with no art: frame arithmetic and facing, both pure, so every case.
+## Exercises gs-player-char's sprite half with no art: frame arithmetic and facing, both pure, so every case.
 ## godot --headless --path . res://examples/sprite_selftest.tscn
 
 const SECTIONS := 6
@@ -17,7 +17,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	_line("dot-player-char sprite self-test")
+	_line("gs-player-char sprite self-test")
 	_line("")
 
 	_test_def()

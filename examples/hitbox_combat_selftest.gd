@@ -1,6 +1,6 @@
 extends Node
 
-## The real GSHitbox / GSHitboxSet path. Needs dot-combat linked (ln -s ../../dot-combat/addons/dot_combat addons/dot_combat).
+## The real GSHitbox / GSHitboxSet path. Needs gs-combat linked (ln -s ../../gs-combat/addons/gs_combat addons/gs_combat).
 ## Run: godot --headless --path . res://examples/hitbox_combat_selftest.tscn
 
 const CHECKS := 11
@@ -11,9 +11,9 @@ var _failed := 0
 
 func _ready() -> void:
 	GSLog.set_level(GSLog.Level.ERROR)
-	print("dot-player-char hitbox + dot-combat self-test")
+	print("gs-player-char hitbox + gs-combat self-test")
 	if GSPlayerHitboxes.class_script("GSHitboxSet") == null:
-		print("SKIP: dot-combat is not linked")
+		print("SKIP: gs-combat is not linked")
 		get_tree().quit(0)
 		return
 	var host := Node3D.new()

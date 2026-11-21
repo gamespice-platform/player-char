@@ -14,7 +14,7 @@ var _failed := 0
 
 func _ready() -> void:
 	GSLog.set_level(GSLog.Level.ERROR)
-	print("dot-player-char kenney self-test")
+	print("gs-player-char kenney self-test")
 	_data()
 	await _packs()
 	print("\n%d passed, %d failed" % [_passed, _failed])
@@ -41,7 +41,7 @@ func _data() -> void:
 	_check(total == SKIN_COUNT, "eight skins in two packs (%d)" % total)
 	_check(GSKenneyCharacters.packs().size() == 2, "two packs")
 	_check(GSKenneyCharacters.build(&"nope", &"x") == null, "an unknown pack builds nothing")
-	var credits := FileAccess.get_file_as_string("res://addons/dot_player_char/people/CREDITS.md")
+	var credits := FileAccess.get_file_as_string("res://addons/gs_player_char/people/CREDITS.md")
 	_check(credits.contains("Animated Characters Protagonists") and credits.contains("Animated Characters Retro") and credits.contains("CC0"), "CREDITS.md lists both packs as CC0")
 	for path in GSKenneyCharacters.content_paths():
 		_check(ResourceLoader.exists(path), "%s loads" % path.get_file())

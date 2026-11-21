@@ -1,6 +1,6 @@
 # Kenney's animated characters
 
-`GSKenneyCharacters` draws Kenney's **Animated Characters Protagonists** and **Animated Characters Retro** (both CC0, kenney.nl) beside the Quaternius people ([people.md](people.md)). Licence and file manifest: `addons/dot_player_char/people/CREDITS.md`.
+`GSKenneyCharacters` draws Kenney's **Animated Characters Protagonists** and **Animated Characters Retro** (both CC0, kenney.nl) beside the Quaternius people ([people.md](people.md)). Licence and file manifest: `addons/gs_player_char/people/CREDITS.md`.
 
 ## What the packs are
 

@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="dot-player-char"
+config/name="gs-player-char"
 config/description="Who a player looks like, as ids and numbers: body metrics a controller and a hitbox both read, a bounded customisation document a server validates without loading art, and one seam every visual plugs into."
 run/main_scene="res://examples/char_selftest.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
@@ -23,7 +23,7 @@ window/size/viewport_height=900
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/dot_player_char/plugin.cfg")
+enabled=PackedStringArray("res://addons/gs_player_char/plugin.cfg")
 
 [importer_defaults]
 

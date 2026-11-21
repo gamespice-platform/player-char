@@ -6,8 +6,8 @@ extends "res://tools/ual_retarget.gd"
 ## this rig bone by bone by its turn from rest in skeleton space (the shared `ual_retarget.gd` method). Both rigs rest in a T-pose, legs and spine straight, so the turns line up.
 ## The kit's body travel moves the rig's `HipsCtrl` by the leg-length ratio; bone lengths stay Kenney's.
 
-const KENNEY := "res://addons/dot_player_char/people/kenney/kenney_character.glb"
-const KENNEY_OUT := "res://addons/dot_player_char/people/kenney/kenney_clips.res"
+const KENNEY := "res://addons/gs_player_char/people/kenney/kenney_character.glb"
+const KENNEY_OUT := "res://addons/gs_player_char/people/kenney/kenney_clips.res"
 
 ## Family clip name -> body treatment: `grounded` (lower foot on the floor each frame), `lifted` (moved once so the loop's lowest foot is on it; a run keeps its flight),
 ## `free` (the kit's hip travel, scaled), `floor` (moved once so the lowest bone of the clip rests just above the floor: a body lying down).

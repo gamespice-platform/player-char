@@ -6,7 +6,7 @@ What an avatar must supply so Fatal Contact (FC) can take its limbs off like it 
 
 Two implementations exist and neither is complete for imported avatars.
 
-| | Player body (`nodes/dot_player_body_break.gd`) | NPC limbs (GameSpice NPC `view/dot_npc_gibs.gd`, `runtime/dot_npc_limbs.gd`) |
+| | Player body (`nodes/gs_player_body_break.gd`) | NPC limbs (GameSpice NPC `view/gs_npc_gibs.gd`, `runtime/gs_npc_limbs.gd`) |
 | --- | --- | --- |
 | Who decides | the game's `GSPlayerBreakRules` (cvars `break_mode`, `break_limbs`, `break_criticals_only`), seeded from victim and tick | the server's `GSNpcLimbs` (per-limb health, `sever`, replicated mask); config yml names each limb's bones |
 | Limb = | every bone of one role (head, arm L/R, leg L/R) plus all bones below, role from bone **name** (`GSRagdollScan.role_of_name`) | the bones listed in the limb definition |

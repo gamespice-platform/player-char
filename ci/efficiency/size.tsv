@@ -1,6 +1,6 @@
 # size
 # Baselines only shrink: scripts/<gate> --update lowers or drops entries and refuses to add.
-addons/dot_player_char/nodes/dot_player_ragdoll.gd	1099
+addons/gs_player_char/nodes/gs_player_ragdoll.gd	1099
 examples/anim_selftest.gd::_test_driver	95
 examples/model_selftest.gd::_test_placement	115
 examples/sprite_selftest.gd::_test_visual	86

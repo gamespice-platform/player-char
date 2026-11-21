@@ -1,6 +1,6 @@
 extends Node
 
-## Exercises dot-player-char's animation half with no rig, no sheet and no renderer.
+## Exercises gs-player-char's animation half with no rig, no sheet and no renderer.
 ## godot --headless --path . res://examples/anim_selftest.tscn
 
 const SECTIONS := 7
@@ -17,7 +17,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	_line("dot-player-char animation self-test")
+	_line("gs-player-char animation self-test")
 	_line("")
 
 	_test_states()

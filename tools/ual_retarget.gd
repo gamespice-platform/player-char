@@ -4,8 +4,8 @@ extends SceneTree
 ## godot --headless --path . --script tools/ual_retarget.gd -- --ual=/path/UAL1_Standard.glb --ual2=/path/UAL2_Standard.glb [--out=res://...people_ual.res] [--clips=sit=Sitting_Idle_Loop]
 ## Each bone is carried by its turn from rest in skeleton space (`turn = ual_global * ual_rest_global^-1`); bone lengths stay the kit's, hips scaled by leg ratio, feet grounded. Authored right-handed: add after [method GSHumanoidClips.mirror].
 
-const MATT := "res://addons/dot_player_char/people/people_matt.glb"
-const OUT := "res://addons/dot_player_char/people/people_ual.res"
+const MATT := "res://addons/gs_player_char/people/people_matt.glb"
+const OUT := "res://addons/gs_player_char/people/people_ual.res"
 
 ## Family clip name, library clip name, and the body treatment: `grounded` (lower foot on the floor),
 ## `lifted` (moved once so the loop's lowest foot is on it; a run keeps its flight), `free`, or

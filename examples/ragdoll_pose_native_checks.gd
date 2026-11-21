@@ -18,9 +18,9 @@ func _init(host: Node) -> void:
 func run() -> void:
 	suite._section("the native bone pose is the script's, to the bit")
 	var native := GSPlayerRagdoll.native_pose_available()
-	var required := (OS.get_environment("GS_SIM_REQUIRE_NATIVE") if OS.has_environment("GS_SIM_REQUIRE_NATIVE") else OS.get_environment("DOT_SIM_REQUIRE_NATIVE")) == "1"
+	var required := (OS.get_environment("GS_SIM_REQUIRE_NATIVE") if OS.has_environment("GS_SIM_REQUIRE_NATIVE") else OS.get_environment("GS_SIM_REQUIRE_NATIVE")) == "1"
 	if not native:
-		suite._line("  dot-sim's ragdoll module is not loaded: the native half is skipped")
+		suite._line("  gs-sim's ragdoll module is not loaded: the native half is skipped")
 	var yard := GSPlayerRagdolls.new()
 	yard.rules.lifetime = 60.0
 	yard.rules.max_count = 8

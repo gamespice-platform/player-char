@@ -13,7 +13,7 @@ It also includes ragdolls and death reactions, and a ready-made set of animated 
 
 ## Install
 
-1. Copy `addons/dot_player_char/`, `addons/dot_player/`, `addons/dot_animation/` and `addons/dot_core/` into your project.
+1. Copy `addons/gs_player_char/`, `addons/gs_player/`, `addons/gs_animation/` and `addons/gs_core/` into your project.
 2. Enable all three in *Project > Project Settings > Plugins*.
 
 Needs Godot 4.7 or newer.
@@ -109,12 +109,12 @@ Four animated people on one rig, coloured by a look (body, skin, hair, top, bott
 
 | Asset | Author / source | License |
 | --- | --- | --- |
-| The four survivors (Matt, Lis, Sam, Shaun) and their clips, plus the zombie crawl, in `addons/dot_player_char/people/` (rebuilt by `tools/build_people.py`) | [Zombie Apocalypse Kit](https://quaternius.com/packs/zombieapocalypsekit.html) by [Quaternius](https://quaternius.com) | CC0 1.0 |
+| The four survivors (Matt, Lis, Sam, Shaun) and their clips, plus the zombie crawl, in `addons/gs_player_char/people/` (rebuilt by `tools/build_people.py`) | [Zombie Apocalypse Kit](https://quaternius.com/packs/zombieapocalypsekit.html) by [Quaternius](https://quaternius.com) | CC0 1.0 |
 | Seated idle (`Sitting_Idle_Loop`), sprint and slide clips in `people/people_ual.res` | [Universal Animation Library](https://quaternius.com/packs/universalanimationlibrary.html) by Quaternius ([itch.io](https://quaternius.itch.io/universal-animation-library)) | CC0 1.0 |
 | `wave` and `yes` gestures | Zombie Apocalypse Kit by Quaternius | CC0 1.0 |
-| Death sounds in `addons/dot_player_char/death/sounds/` | [Kenney](https://www.kenney.nl) (Impact Sounds, Foley Sounds) | CC0 1.0 |
+| Death sounds in `addons/gs_player_char/death/sounds/` | [Kenney](https://www.kenney.nl) (Impact Sounds, Foley Sounds) | CC0 1.0 |
 
-The other gestures are generated in code. Per-file details: `addons/dot_player_char/people/CREDITS.md` and `addons/dot_player_char/death/sounds/CREDITS.md`.
+The other gestures are generated in code. Per-file details: `addons/gs_player_char/people/CREDITS.md` and `addons/gs_player_char/death/sounds/CREDITS.md`.
 
 More: [docs/design.md](docs/design.md), [docs/history.md](docs/history.md).
 

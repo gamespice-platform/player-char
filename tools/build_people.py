@@ -1,6 +1,6 @@
-"""Builds addons/dot_player_char/people/ from Quaternius' Zombie Apocalypse Kit (CC0 1.0).
+"""Builds addons/gs_player_char/people/ from Quaternius' Zombie Apocalypse Kit (CC0 1.0).
 
-    blender -b --factory-startup --python tools/build_people.py -- <kit glTF dir> addons/dot_player_char/people
+    blender -b --factory-startup --python tools/build_people.py -- <kit glTF dir> addons/gs_player_char/people
 
 The kit is not vendored: download its `Characters/glTF` folder from
 https://quaternius.com/packs/zombieapocalypsekit.html (CC0 1.0, by Quaternius) and point the first

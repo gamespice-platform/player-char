@@ -17,7 +17,7 @@ Before this, every game here drew a death one of two ways, and both looked wrong
 
 ## The server picks, every client falls
 
-`GSPlayerDeath.decide(reactions, headshot, damage, direction, seed, weapon_def)` runs on the server and gives the reaction id and a seed; the game sends it with its kill message (`write_to(writer)` / `read_from(reader)` over a dot-net writer and reader, duck-typed, about seven bytes, last and optional so an older client reads the rest; or `to_dict()` / `from_dict()`) and every client calls `GSPlayerRagdolls.spawn(figure, death)`. A client never picks.
+`GSPlayerDeath.decide(reactions, headshot, damage, direction, seed, weapon_def)` runs on the server and gives the reaction id and a seed; the game sends it with its kill message (`write_to(writer)` / `read_from(reader)` over a gs-net writer and reader, duck-typed, about seven bytes, last and optional so an older client reads the rest; or `to_dict()` / `from_dict()`) and every client calls `GSPlayerRagdolls.spawn(figure, death)`. A client never picks.
 
 - **Picking on each client would show different deaths on different screens**: one viewer sees a launch and the next a face plant. The pick is cheap and pure, so the server makes it once.
 - **Nothing in a body calls `randf()`.** Its tumble and which way a crumple tips come from the death's seed, so two clients build the same fall. Physics is not bit-exact across machines, and does not need to be: the reaction, the direction and the strength agree, and where a hand ends up differs by centimetres nobody can see.
@@ -78,7 +78,7 @@ A one-piece body has "landed" only when it is lying down (its up axis well off v
 
 ## Sounds
 
-A reaction names a `start_sound` (the launches' whoosh) and a `land_sound` (a thud, the face plant's smack, a crumple's slump), played once, where and when the head or torso first hits something at `land_speed` or more. The bodies emit them; `GSPlayerRagdolls.sound_fn` (GameSpice Audio's `play_at` fits) or its `sound` signal hand them to the game. The files are Kenney's CC0 impact and foley sounds in `addons/dot_player_char/death/sounds/` (credited in its `CREDITS.md`), described by `GSPlayerDeathSounds.rows()` as plain data, because this addon does not depend on GameSpice Audio. The start sound is emitted deferred, since whoever built the body connects after `build` returns.
+A reaction names a `start_sound` (the launches' whoosh) and a `land_sound` (a thud, the face plant's smack, a crumple's slump), played once, where and when the head or torso first hits something at `land_speed` or more. The bodies emit them; `GSPlayerRagdolls.sound_fn` (GameSpice Audio's `play_at` fits) or its `sound` signal hand them to the game. The files are Kenney's CC0 impact and foley sounds in `addons/gs_player_char/death/sounds/` (credited in its `CREDITS.md`), described by `GSPlayerDeathSounds.rows()` as plain data, because this addon does not depend on GameSpice Audio. The start sound is emitted deferred, since whoever built the body connects after `build` returns.
 
 ## The fade
 
@@ -101,6 +101,6 @@ No assertion says whether a fall looks right. A frame sequence does (`tools/peop
 ## What it does not do
 
 No knees or elbows: a part is one body, so a block figure with one mesh per limb bends at the hip and shoulder only, and a skinned limb keeps the bend it died with. A rig with separate upper and lower segments has them welded together. No get-up, no blending from the ragdoll back into animation; a body is dead until it fades.
-A face plant's spin is topped up (to 1.6 rad/s, for at most a second) until the plank is past its tipping angle: at 20 m/s2 gravity a box flush on the floor loses the single shove to contact and stood back up; `_keep_tipping` in `dot_player_ragdoll.gd`, covered by the ragdoll selftest's gravity-20 sweep.
+A face plant's spin is topped up (to 1.6 rad/s, for at most a second) until the plank is past its tipping angle: at 20 m/s2 gravity a box flush on the floor loses the single shove to contact and stood back up; `_keep_tipping` in `gs_player_ragdoll.gd`, covered by the ragdoll selftest's gravity-20 sweep.
 
 A plank that stops on its feet before it lies down (still for `PLANK_STALL_SECONDS`, upright past the landing test) is leaning on something, a table edge at hip height or a wall, and lets go there: it becomes the jointed body as it would on landing and slumps off the edge. Pushing harder cannot fix that case (its weight is already past the toes), and freezing it left a dead body standing at 30 degrees against furniture at table height on game-murder-mystery's CI. The same sweep drops eight people onto a table edge.

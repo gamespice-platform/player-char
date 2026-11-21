@@ -5,11 +5,11 @@
 # Sibling repositories, linked for local development:
 #   ln -s ../../<repo>/addons/<addon> addons/<addon>
 # Consumers copy every one of them into their own project.
-/addons/dot_core
-/addons/dot_player
-/addons/dot_animation
-# dot-sim, for the ragdoll's native pose (examples/ragdoll_pose_native_checks.gd).
-/addons/dot_sim
+/addons/gs_core
+/addons/gs_player
+/addons/gs_animation
+# gs-sim, for the ragdoll's native pose (examples/ragdoll_pose_native_checks.gd).
+/addons/gs_sim
 
 # Exports
 build/
@@ -24,8 +24,8 @@ Thumbs.db
 
 # Contact sheets (tools/people_sheet.gd)
 screenshots/
-/addons/dot_combat
+/addons/gs_combat
 
 # Render output of tools/ scripts, for looking at.
 /out/
-/addons/dot_weapon
+/addons/gs_weapon

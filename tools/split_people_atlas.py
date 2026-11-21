@@ -1,6 +1,6 @@
 """Gives parts that share an atlas swatch with another role their own swatch pixel.
 
-    python3 -I tools/split_people_atlas.py addons/dot_player_char/people
+    python3 -I tools/split_people_atlas.py addons/gs_player_char/people
 
 `GSHumanoidAssets.WEARS` tints by colour, but a few swatches are painted on two parts (sam's
 b2b2b2 is his top and his shoes). Run after `build_people.py`: for each SPLITS entry the vertices
