@@ -12,9 +12,13 @@ func build(p_look: DotHumanoidLook, p_height: float = 1.8) -> void:
 	height = p_height
 	_forget_body()
 
-	var scene := DotHumanoidAssets.scene(body_path(look.body))
-	if scene != null:
-		_model = scene.instantiate() as Node3D
+	# A body whose file is absent or unreadable (a pack without the people, a native build that never imported them) is drawn as the next stock person, never as nothing.
+	var body := DotHumanoidAssets.available_body(look.body)
+	if body != &"" and body != look.body:
+		DotLog.warn(CHANNEL, "body unavailable; drawing a stock person instead", {"body": String(look.body), "instead": String(body)})
+		look = DotHumanoidLook.make(body, look.skin, look.hair, look.top, look.bottom)
+	if body != &"":
+		_model = DotHumanoidAssets.scene(body_path(body)).instantiate() as Node3D
 
 	if _model == null:
 		# A capsule rather than nothing: an invisible player is worse than a grey one.
