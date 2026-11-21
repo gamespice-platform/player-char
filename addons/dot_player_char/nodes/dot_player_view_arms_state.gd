@@ -160,6 +160,10 @@ var _right: Array[int] = []
 var _left: Array[int] = []
 var _override: DotHumanoidLook = null
 var _detail_on := false
+## [method _grip_hands] read once per tick ([member _hands_tick] while one runs).
+var _hands_tick := false
+var _hands_for: DotViewGrip = null
+var _hands_memo: Array = []
 ## Bone indices of the arm scale pass, looked up once per skeleton (find_bone by name is a string search per call).
 var _arm_skeleton: Skeleton3D = null
 var _arm_left: Array[int] = []

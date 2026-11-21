@@ -76,7 +76,22 @@ static func two_bone_to(skeleton: Skeleton3D, upper: int, lower: int, end_local:
 ## Bone [param bone]'s transform in skeleton space from the local poses as they are now (the skeleton's own
 ## global poses are last frame's).
 static func global_pose(skeleton: Skeleton3D, bone: int) -> Transform3D:
-	return chain_pose(skeleton, chain_to(skeleton, bone))
+	# Same product, same order as [method chain_pose] over [method chain_to], over a reused scratch (no array made per call).
+	var n := 0
+	while bone >= 0:
+		if n == _scratch.size():
+			_scratch.resize(n + 8)
+		_scratch[n] = bone
+		n += 1
+		bone = skeleton.get_bone_parent(bone)
+	var out := Transform3D.IDENTITY
+	while n > 0:
+		n -= 1
+		out = out * skeleton.get_bone_pose(_scratch[n])
+	return out
+
+
+static var _scratch := PackedInt32Array()
 
 
 ## The bones from the root down to [param bone], for [method chain_pose] (a caller posing every frame keeps it).

@@ -125,6 +125,8 @@ func tick(speed: float, delta: float) -> void:
 		_arms.call("animate", 0.0 if _holding() else speed, delta)
 
 	_ticks += 1
+	_hands_tick = true
+	_hands_for = null
 	_advance_sway(speed, delta)
 
 	if not _fitted and _ticks >= 3 and is_inside_tree():
@@ -149,6 +151,8 @@ func tick(speed: float, delta: float) -> void:
 		_delta = delta
 		_reach(skeleton)
 	_place_hands(skeleton)
+	_hands_tick = false
+	_hands_for = null
 	_apply_draw_depth()
 
 
@@ -290,7 +294,8 @@ func _reach(skeleton: Skeleton3D) -> void:
 		pole = _slew_pole(_last_pole_right, (to_skeleton * right_target) - DotHumanoidIk.global_pose(skeleton, _right[0]).origin, pole)
 		_last_pole_right = pole
 		DotHumanoidIk.two_bone(skeleton, _right, to_skeleton * right_target, pole, 1.0)
-		drawn.append([_grip.grip_world(), right_target, "Middle1.R"])
+		if debug_pose:
+			drawn.append([_grip.grip_world(), right_target, "Middle1.R"])
 		hand_gap_right = _gap(skeleton, _right, right_target)
 
 	if not _left.is_empty() and not _left_hidden():
@@ -319,7 +324,8 @@ func _reach(skeleton: Skeleton3D) -> void:
 		left_pole = _slew_pole(_last_pole_left, (to_skeleton * target) - DotHumanoidIk.global_pose(skeleton, _left[0]).origin, left_pole)
 		_last_pole_left = left_pole
 		DotHumanoidIk.two_bone(skeleton, _left, to_skeleton * target, left_pole, 1.0)
-		drawn.append([_grip.support_world() if _grip.is_two_hand() else rest, target, "Middle1.L"])
+		if debug_pose:
+			drawn.append([_grip.support_world() if _grip.is_two_hand() else rest, target, "Middle1.L"])
 		hand_gap_left = _gap(skeleton, _left, target)
 
 	if debug_pose:
@@ -523,6 +529,17 @@ func _extend(skeleton: Skeleton3D, bones: Array[int], target: Vector3) -> float:
 ## The firing and support hand poses for [param grip] from [member hand_poses] (the support one empty for one hand):
 ## its kind's, a rifle's for an unknown kind, a knife's blended toward the throw's pinch by [member throw_grip].
 func _grip_hands(grip: DotViewGrip) -> Array:
+	# One tick reads it twice (the wrist targets, then the hands' seating) with nothing between that could change it.
+	if _hands_tick and _hands_for == grip:
+		return _hands_memo
+	var out := _grip_hands_now(grip)
+	if _hands_tick:
+		_hands_for = grip
+		_hands_memo = out
+	return out
+
+
+func _grip_hands_now(grip: DotViewGrip) -> Array:
 	var rifle: Dictionary = hand_poses.get(DotViewHandPoses.RIFLE, {})
 	var entry: Dictionary = hand_poses.get(grip.kind, rifle)
 	var firing: Dictionary = entry.get(&"firing", rifle.get(&"firing", {}))
