@@ -159,13 +159,17 @@ func _apply_draw_depth() -> void:
 	var camera := get_viewport().get_camera_3d()
 	var depth := draw_depth if camera != null and _holding() else 1.0
 	var eye := camera.global_position if camera != null else Vector3.ZERO
-	var meshes: Array[GeometryInstance3D] = []
+	var sent := Vector4(depth, eye.x, eye.y, eye.z)
+	if sent == _depth_sent:
+		return
+	_depth_sent = sent
+	_depth_meshes.clear()
 	if _arms is DotHumanoidFigure and (_arms as DotHumanoidFigure).mesh() != null:
-		meshes.append((_arms as DotHumanoidFigure).mesh())
+		_depth_meshes.append((_arms as DotHumanoidFigure).mesh())
 	for hand in _hands:
 		if is_instance_valid(hand) and hand.mesh_instance() != null:
-			meshes.append(hand.mesh_instance())
-	for m in meshes:
+			_depth_meshes.append(hand.mesh_instance())
+	for m in _depth_meshes:
 		m.set_instance_shader_parameter(&"draw_depth", depth)
 		m.set_instance_shader_parameter(&"draw_eye", eye)
 
@@ -195,24 +199,27 @@ func _scale_left(skeleton: Skeleton3D, fore: float) -> void:
 	# The upper arm carries the scale (its child, the forearm, inherits it) so the sleeve shrinks about the shoulder joint.
 	# With the arm's mesh dropped the bones still fold to the shoulder (the collar stays, it has no arm on it), so a
 	# hidden arm is never left straight out in its rest T-pose for anything that reads the bones.
-	for bone in ["Shoulder.L", "UpperArm.L", "LowerArm.L"]:
-		var i := skeleton.find_bone(bone)
+	if _arm_skeleton != skeleton:
+		_arm_skeleton = skeleton
+		_arm_left = [skeleton.find_bone("Shoulder.L"), skeleton.find_bone("UpperArm.L"), skeleton.find_bone("LowerArm.L")]
+		_arm_upper_r = skeleton.find_bone("UpperArm.R")
+		_arm_lower_r = skeleton.find_bone("LowerArm.R")
+	var holding_two := _holding() and _grip.is_two_hand()
+	for n in 3:
+		var i := _arm_left[n]
 		if i >= 0:
-			var folded: bool = hide and not (swap and bone == "Shoulder.L")
-			var size := Vector3.ONE * (0.001 if folded else (fore if bone == "UpperArm.L" else 1.0))
+			var folded: bool = hide and not (swap and n == 0)
+			var size := Vector3.ONE * (0.001 if folded else (fore if n == 1 else 1.0))
 			# The bone runs along its Y: the girth thins X and Z only, so the hand still lands on its grip.
-			if bone == "LowerArm.L" and not folded and _holding() and _grip.is_two_hand():
+			if n == 2 and not folded and holding_two:
 				var girth := clampf(support_forearm_girth, 0.2, 1.0) if is_finite(support_forearm_girth) else 1.0
 				size = Vector3(girth, 1.0, girth)
 			skeleton.set_bone_pose_scale(i, size)
 
-	var upper := skeleton.find_bone("UpperArm.R")
-	if upper >= 0:
-		skeleton.set_bone_pose_scale(upper, Vector3.ONE * fore)
-
-	var right := skeleton.find_bone("LowerArm.R")
-	if right >= 0:
-		skeleton.set_bone_pose_scale(right, Vector3.ONE)
+	if _arm_upper_r >= 0:
+		skeleton.set_bone_pose_scale(_arm_upper_r, Vector3.ONE * fore)
+	if _arm_lower_r >= 0:
+		skeleton.set_bone_pose_scale(_arm_lower_r, Vector3.ONE)
 
 
 ## Seats the posed head bone at this node's origin; the clip already lies the person head toward -Z.
@@ -686,3 +693,6 @@ func _clear() -> void:
 	_bones.clear()
 	_fingers.clear()
 	_detail_on = false
+	_arm_skeleton = null
+	_depth_sent = Vector4(NAN, 0.0, 0.0, 0.0)
+	_depth_meshes.clear()

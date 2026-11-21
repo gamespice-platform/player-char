@@ -160,6 +160,14 @@ var _right: Array[int] = []
 var _left: Array[int] = []
 var _override: DotHumanoidLook = null
 var _detail_on := false
+## Bone indices of the arm scale pass, looked up once per skeleton (find_bone by name is a string search per call).
+var _arm_skeleton: Skeleton3D = null
+var _arm_left: Array[int] = []
+var _arm_upper_r := -1
+var _arm_lower_r := -1
+## Last values written to the draw-depth instance uniforms, so an unchanged set is not re-sent.
+var _depth_sent := Vector4(NAN, 0.0, 0.0, 0.0)
+var _depth_meshes: Array[GeometryInstance3D] = []
 var _turn_right := 0.0
 var _turn_left := 0.0
 ## GameSpice Sim's DotSimViewArms, made on the first scan when [member native_clear] and the class exists; reached by name
