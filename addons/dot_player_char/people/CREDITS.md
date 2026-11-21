@@ -27,4 +27,4 @@ Every model and animation here is from the **Zombie Apocalypse Kit** by **Quater
 | `kenney/protagonists_{criminalMaleA,cyborgFemaleA,skaterFemaleA,skaterMaleA}.png` | Protagonists `Skins/` | unchanged |
 | `kenney/retro_{humanFemaleA,humanMaleA,zombieFemaleA,zombieMaleA}.png` | Retro `Skins/` | unchanged |
 
-Display names are "GS - <name>" (`DotKenneyCharacters`). The mapping is in `docs/kenney-characters.md`.
+Display names are "GS - <name>" (`GSKenneyCharacters`). The mapping is in `docs/kenney-characters.md`.

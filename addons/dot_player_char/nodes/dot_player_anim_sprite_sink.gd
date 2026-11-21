@@ -1,5 +1,5 @@
-class_name DotPlayerAnimSpriteSink
-extends DotPlayerAnimSink
+class_name GSPlayerAnimSpriteSink
+extends GSPlayerAnimSink
 
 ## Drives a sprite sheet. The 2D sink.
 ## Duck-typed on purpose: it calls [code]set_row[/code] and [code]set_frame[/code] on whatever it points at, so a
@@ -8,7 +8,7 @@ extends DotPlayerAnimSink
 const SINK_CHANNEL := "player.anim"
 
 ## What to drive. Empty uses the first sibling or descendant that has [code]set_row[/code].
-@export var target_ref: DotNodeRef = null
+@export var target_ref: GSNodeRef = null
 
 var _target: Node = null
 var _row: int = -1
@@ -30,11 +30,11 @@ func is_ready_to_play() -> bool:
 	return target() != null
 
 
-func play(clip: DotPlayerAnimClip, elapsed: float) -> void:
+func play(clip: GSPlayerAnimClip, elapsed: float) -> void:
 	advance_to(clip, elapsed)
 
 
-func advance_to(clip: DotPlayerAnimClip, elapsed: float) -> void:
+func advance_to(clip: GSPlayerAnimClip, elapsed: float) -> void:
 	var t := target()
 
 	if t == null or clip == null:

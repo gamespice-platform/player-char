@@ -56,11 +56,11 @@ func _run() -> void:
 	cam.position = Vector3(8.5, 1.0, 0)
 	cam.look_at(Vector3(0, 0.95, 0))
 	# Camera on +X looking -X: screen right is -Z, so the made figure at +Z is on the left.
-	var look := DotHumanoidLook.stock(7)
-	look.body = DotHumanoidFigure.CLIP_BODY
-	var figs: Array[DotHumanoidFigure] = []
+	var look := GSHumanoidLook.stock(7)
+	look.body = GSHumanoidFigure.CLIP_BODY
+	var figs: Array[GSHumanoidFigure] = []
 	for z in [1.0, -1.0]:
-		var f := DotHumanoidFigure.new()
+		var f := GSHumanoidFigure.new()
 		world.add_child(f)
 		f.build(look, 1.8)
 		f.position = Vector3(0, 0, z)
@@ -98,7 +98,7 @@ func _run() -> void:
 
 ## Planted foot (the lower one) in the figure's frame over the cycle: ground speed it implies,
 ## its spread (the slide a constant-speed walker would show), and the foot height range.
-func _metrics(f: DotHumanoidFigure, anim: AnimationPlayer, clip: StringName) -> String:
+func _metrics(f: GSHumanoidFigure, anim: AnimationPlayer, clip: StringName) -> String:
 	var sk := f.skeleton()
 	var feet: Array[int] = [sk.find_bone("Foot.L"), sk.find_bone("Foot.R")]
 	var length: float = anim.get_animation(clip).length

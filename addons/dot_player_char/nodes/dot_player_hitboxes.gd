@@ -1,4 +1,4 @@
-class_name DotPlayerHitboxes
+class_name GSPlayerHitboxes
 extends Node3D
 
 ## Optional hit zones (head to feet) for a player, built as GameSpice Combat hitboxes. Off by default.
@@ -10,19 +10,19 @@ const CHANNEL := "player.hitboxes"
 ## Whether [method build] runs by itself when this enters the tree.
 @export var enabled: bool = false
 
-## Used when no [DotPlayerChar] is a sibling.
+## Used when no [GSPlayerChar] is a sibling.
 @export_range(0.5, 10.0, 0.01, "or_greater") var height: float = 1.8
 
 ## Keep every zone inside the character's collision capsule radius, so no hit zone reaches through a wall the body stands against.
 @export var clamp_to_capsule: bool = true
 
-## Config layered over the stock zones, see [method DotPlayerHitboxPlan.from_config].
+## Config layered over the stock zones, see [method GSPlayerHitboxPlan.from_config].
 @export var config: Dictionary = {}
 
-## Replaces how one zone becomes a node: `func(zone: Dictionary) -> Node3D`. Null falls back to DotHitbox.
+## Replaces how one zone becomes a node: `func(zone: Dictionary) -> Node3D`. Null falls back to GSHitbox.
 var hitbox_factory: Callable = Callable()
 
-## Replaces how the container is made; null falls back to DotHitboxSet.
+## Replaces how the container is made; null falls back to GSHitboxSet.
 var set_factory: Callable = Callable()
 
 var _set: Node3D = null
@@ -33,11 +33,11 @@ func _ready() -> void:
 	if enabled:
 		var res := build()
 		if not res.ok:
-			DotLog.warn(CHANNEL, "hitboxes not built", {"code": res.code(), "why": res.error.message})
+			GSLog.warn(CHANNEL, "hitboxes not built", {"code": res.code(), "why": res.error.message})
 
 
 ## The zones this would build; override to compute them differently.
-func zones() -> DotResult:
+func zones() -> GSResult:
 	var h := height
 	var s := 1.0
 	var w := 0.0
@@ -47,11 +47,11 @@ func zones() -> DotResult:
 		s = pc.hitbox_scale()
 		if clamp_to_capsule:
 			w = pc.radius()
-	return DotPlayerHitboxPlan.from_config(DotPlayerHitboxPlan.stock(h, s, w), config)
+	return GSPlayerHitboxPlan.from_config(GSPlayerHitboxPlan.stock(h, s, w), config)
 
 
 ## Builds (or rebuilds) the hitboxes under this node; the container is returned.
-func build() -> DotResult:
+func build() -> GSResult:
 	var planned := zones()
 	if not planned.ok:
 		return planned
@@ -67,14 +67,14 @@ func build() -> DotResult:
 		if node == null:
 			_set.free()
 			_set = null
-			return DotResult.fail(DotError.CODE_INVALID, "no hitbox could be made for zone %s" % z["id"])
+			return GSResult.fail(GSError.CODE_INVALID, "no hitbox could be made for zone %s" % z["id"])
 		_set.add_child(node)
 	_zones = zs
 	add_child(_set)
 	if _set.has_method("refresh"):
 		_set.call("refresh")
-	DotLog.debug(CHANNEL, "built hitboxes", {"zones": zs.size()})
-	return DotResult.success(_set)
+	GSLog.debug(CHANNEL, "built hitboxes", {"zones": zs.size()})
+	return GSResult.success(_set)
 
 
 ## Removes what [method build] made.
@@ -98,17 +98,17 @@ func describe() -> Dictionary:
 	return {"enabled": enabled, "built": _set != null, "zones": groups}
 
 
-func _char() -> DotPlayerChar:
+func _char() -> GSPlayerChar:
 	var p := get_parent()
 	if p == null:
 		return null
 	for c in p.get_children():
-		if c is DotPlayerChar:
+		if c is GSPlayerChar:
 			return c
 	return null
 
 
-func _make_set(zs: Array[Dictionary]) -> DotResult:
+func _make_set(zs: Array[Dictionary]) -> GSResult:
 	var top := 0.0
 	for z in zs:
 		top = maxf(top, (z["position"] as Vector3).y + float(z["radius"]) + float(z["height"]) * 0.5)
@@ -116,21 +116,21 @@ func _make_set(zs: Array[Dictionary]) -> DotResult:
 	if set_factory.is_valid():
 		node = set_factory.call()
 	else:
-		var script := class_script("DotHitboxSet")
+		var script := class_script("GSHitboxSet")
 		if script == null:
-			return DotResult.fail(DotError.CODE_INVALID, "DotHitboxSet is not available (dot-combat missing); set set_factory")
+			return GSResult.fail(GSError.CODE_INVALID, "GSHitboxSet is not available (dot-combat missing); set set_factory")
 		node = script.new()
 		node.set("bounds_offset", Vector3(0, top * 0.5, 0))
 		node.set("bounds_radius", maxf(top, 0.5) * 0.9 + 0.2)
 	if node == null:
-		return DotResult.fail(DotError.CODE_INVALID, "set_factory returned null")
-	return DotResult.success(node)
+		return GSResult.fail(GSError.CODE_INVALID, "set_factory returned null")
+	return GSResult.success(node)
 
 
 func _make_box(z: Dictionary) -> Node3D:
 	if hitbox_factory.is_valid():
 		return hitbox_factory.call(z)
-	var script := class_script("DotHitbox")
+	var script := class_script("GSHitbox")
 	if script == null:
 		return null
 	var shapes: Dictionary = script.get_script_constant_map().get("Shape", {})

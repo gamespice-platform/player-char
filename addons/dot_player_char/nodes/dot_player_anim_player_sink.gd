@@ -1,12 +1,12 @@
-class_name DotPlayerAnimPlayerSink
-extends DotPlayerAnimSink
+class_name GSPlayerAnimPlayerSink
+extends GSPlayerAnimSink
 
 ## Drives an [AnimationPlayer]. The 3D sink.
 
 const SINK_CHANNEL := "player.anim"
 
 ## Where the [AnimationPlayer] is. Empty searches this node's descendants and siblings.
-@export var player_ref: DotNodeRef = null
+@export var player_ref: GSNodeRef = null
 
 ## Whether a clip the [AnimationPlayer] does not have is reported.
 ## On: a missing clip leaves the character playing whatever it was, which looks like a broken animation system.
@@ -33,7 +33,7 @@ func is_ready_to_play() -> bool:
 	return player() != null
 
 
-func play(clip: DotPlayerAnimClip, elapsed: float) -> void:
+func play(clip: GSPlayerAnimClip, elapsed: float) -> void:
 	var p := player()
 
 	if p == null or clip == null:
@@ -44,7 +44,7 @@ func play(clip: DotPlayerAnimClip, elapsed: float) -> void:
 	if not p.has_animation(String(wanted)):
 		if warn_on_missing and not _warned.has(wanted):
 			_warned[wanted] = true
-			DotLog.warn(SINK_CHANNEL, "no such animation", {"clip": String(wanted)})
+			GSLog.warn(SINK_CHANNEL, "no such animation", {"clip": String(wanted)})
 		return
 
 	if _playing == wanted and p.is_playing():
@@ -61,7 +61,7 @@ func play(clip: DotPlayerAnimClip, elapsed: float) -> void:
 		p.seek(elapsed, true)
 
 
-func advance_to(_clip: DotPlayerAnimClip, _elapsed: float) -> void:
+func advance_to(_clip: GSPlayerAnimClip, _elapsed: float) -> void:
 	# An AnimationPlayer advances itself. The driver still calls this every frame,
 	# because a sprite sink needs it — and a sink that only some callers drove would be
 	# a contract nobody could rely on.

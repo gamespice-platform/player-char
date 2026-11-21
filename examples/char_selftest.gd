@@ -12,7 +12,7 @@ var _section_count := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run()
 
 
@@ -47,7 +47,7 @@ func _run() -> void:
 
 
 ## A worked example of a visual: four overrides and nothing else.
-class StubVisual extends DotPlayerCharVisual:
+class StubVisual extends GSPlayerCharVisual:
 	var applied := 0
 	var last_char: StringName = &""
 	var crouched := false
@@ -55,7 +55,7 @@ class StubVisual extends DotPlayerCharVisual:
 	var head: Node = null
 	var offer_eye := -1.0
 
-	func apply_char(def: DotPlayerCharDef, _look: DotPlayerCharLook) -> void:
+	func apply_char(def: GSPlayerCharDef, _look: GSPlayerCharLook) -> void:
 		applied += 1
 		last_char = def.id if def != null else &""
 
@@ -78,7 +78,7 @@ class StubVisual extends DotPlayerCharVisual:
 func _test_metrics() -> void:
 	_section("body metrics")
 
-	var c := DotPlayerCharDef.make(&"medium", 1.8, 0.35)
+	var c := GSPlayerCharDef.make(&"medium", 1.8, 0.35)
 	_check(c.validate().ok, "the derived metrics validate")
 	_check(c.crouch_height < c.height, "crouching makes you shorter")
 	_check(c.eye_height < c.height, "and your eyes are below the top of your head")
@@ -89,7 +89,7 @@ func _test_metrics() -> void:
 	_check(is_equal_approx(c.eye_for(true), c.crouch_eye_height), "on both of them")
 	_check(is_equal_approx(c.height_for(true), c.crouch_height), "and so does the height")
 
-	var backwards := DotPlayerCharDef.make(&"bad", 1.8)
+	var backwards := GSPlayerCharDef.make(&"bad", 1.8)
 	backwards.crouch_height = 2.5
 	_check(
 		not backwards.validate().ok,
@@ -97,7 +97,7 @@ func _test_metrics() -> void:
 		+ "crouched into"
 	)
 
-	var floating := DotPlayerCharDef.make(&"floaty", 1.8)
+	var floating := GSPlayerCharDef.make(&"floaty", 1.8)
 	floating.eye_height = 3.0
 	_check(
 		not floating.validate().ok,
@@ -105,10 +105,10 @@ func _test_metrics() -> void:
 		+ "hull and the player would see over walls they are standing behind"
 	)
 
-	var crouch_floating := DotPlayerCharDef.make(&"c", 1.8)
+	var crouch_floating := GSPlayerCharDef.make(&"c", 1.8)
 	crouch_floating.crouch_eye_height = 1.7
 	_check(not crouch_floating.validate().ok, "the crouched pair is checked too")
-	_check(not DotPlayerCharDef.new().validate().ok, "and a character with no id")
+	_check(not GSPlayerCharDef.new().validate().ok, "and a character with no id")
 
 	c.teams = [&"blue"]
 	c.classes = [&"scout"]
@@ -121,14 +121,14 @@ func _test_metrics() -> void:
 	_check(not c.allows(&"blue", &"scout"), "an unselectable character admits nobody")
 	c.selectable = true
 
-	var wire := DotPlayerCharDef.from_dict(c.to_dict())
+	var wire := GSPlayerCharDef.from_dict(c.to_dict())
 	_check(is_equal_approx(wire.height, c.height), "a definition survives the wire")
 	_check(is_equal_approx(wire.eye_height, c.eye_height), "with its eye height")
 
 	c.voice_set = &"scout_voice"
 	c.footstep_set = &"light_steps"
 	c.requires_entitlement = &"scout_unlock"
-	var ids := DotPlayerCharDef.from_dict(c.to_dict())
+	var ids := GSPlayerCharDef.from_dict(c.to_dict())
 	_check(
 		ids.voice_set == &"scout_voice" and ids.footstep_set == &"light_steps"
 		and ids.requires_entitlement == &"scout_unlock",
@@ -141,7 +141,7 @@ func _test_metrics() -> void:
 func _test_shapes() -> void:
 	_section("collision shapes")
 
-	var c := DotPlayerCharDef.make(&"medium", 1.8, 0.35)
+	var c := GSPlayerCharDef.make(&"medium", 1.8, 0.35)
 
 	var standing := c.capsule_3d(false)
 	_check(is_equal_approx(standing.radius, 0.35), "a capsule takes the radius")
@@ -156,7 +156,7 @@ func _test_shapes() -> void:
 		+ "so resizing one character would resize everybody using the resource"
 	)
 
-	var squat := DotPlayerCharDef.make(&"squat", 0.5, 0.4)
+	var squat := GSPlayerCharDef.make(&"squat", 0.5, 0.4)
 	squat.crouch_height = 0.4
 	squat.eye_height = 0.45
 	squat.crouch_eye_height = 0.35
@@ -174,7 +174,7 @@ func _test_shapes() -> void:
 func _test_catalogue() -> void:
 	_section("a catalogue")
 
-	var std := DotPlayerCharCatalogue.standard()
+	var std := GSPlayerCharCatalogue.standard()
 	_check(std.build().ok, "the standard catalogue builds")
 	_check(
 		is_equal_approx(std.get_char(&"standard").height, 1.8),
@@ -182,7 +182,7 @@ func _test_catalogue() -> void:
 	)
 	_check(std.fallback_for() != null, "and a fallback")
 
-	var three := DotPlayerCharCatalogue.three_builds()
+	var three := GSPlayerCharCatalogue.three_builds()
 	_check(three.build().ok, "the three-build catalogue builds")
 	_check(three.ids().size() == 3, "with three characters")
 	_check(
@@ -196,11 +196,11 @@ func _test_catalogue() -> void:
 	)
 	_check(three.fallback_for().id == &"medium", "with the baseline as the default")
 
-	var flat := DotPlayerCharCatalogue.sprite_2d(48.0)
+	var flat := GSPlayerCharCatalogue.sprite_2d(48.0)
 	_check(flat.build().ok, "the 2D catalogue builds")
 	_check(is_equal_approx(flat.get_char(&"sprite").height, 48.0), "in pixels")
 
-	var restricted := DotPlayerCharCatalogue.three_builds()
+	var restricted := GSPlayerCharCatalogue.three_builds()
 	restricted.get_char(&"heavy").teams = [&"red"]
 	_check(restricted.ids_for(&"blue").size() == 2, "a side sees what it may use")
 	_check(restricted.ids_for(&"red").size() == 3, "and the other sees all of it")
@@ -209,25 +209,25 @@ func _test_catalogue() -> void:
 		"and a fallback is one that side can actually be"
 	)
 
-	var dup := DotPlayerCharCatalogue.new()
-	dup.characters = [DotPlayerCharDef.make(&"a"), DotPlayerCharDef.make(&"a")]
+	var dup := GSPlayerCharCatalogue.new()
+	dup.characters = [GSPlayerCharDef.make(&"a"), GSPlayerCharDef.make(&"a")]
 	_check(not dup.build().ok, "two characters with one name are refused")
 
-	var bad := DotPlayerCharCatalogue.new()
-	bad.characters = [DotPlayerCharDef.make(&"a")]
+	var bad := GSPlayerCharCatalogue.new()
+	bad.characters = [GSPlayerCharDef.make(&"a")]
 	bad.default_char = &"missing"
 	_check(not bad.build().ok, "a default that is not in it is refused")
-	_check(not DotPlayerCharCatalogue.new().build().ok, "and an empty catalogue")
+	_check(not GSPlayerCharCatalogue.new().build().ok, "and an empty catalogue")
 
-	_check(DotPlayerCharCatalogue.presets().size() == 3, "three presets")
-	_check(DotPlayerCharCatalogue.preset(&"three_builds") != null, "resolving by name")
+	_check(GSPlayerCharCatalogue.presets().size() == 3, "three presets")
+	_check(GSPlayerCharCatalogue.preset(&"three_builds") != null, "resolving by name")
 	_check(std.describe_lines().size() == 2, "and a catalogue describes itself")
 
 
 func _test_look() -> void:
 	_section("the customisation document")
 
-	var def := DotPlayerCharDef.make(&"medium", 1.8)
+	var def := GSPlayerCharDef.make(&"medium", 1.8)
 	def.slots = {"head": ["none", "cap", "helmet"], "back": ["none", "pack"]}
 	def.colour_channels = 2
 
@@ -236,7 +236,7 @@ func _test_look() -> void:
 	_check(def.slot_options(&"nope").is_empty(), "and nothing for a slot it has not")
 	_check(def.slot_names().size() == 2, "and they can be listed")
 
-	var look := DotPlayerCharLook.make(&"medium")
+	var look := GSPlayerCharLook.make(&"medium")
 	look.choose(&"head", &"cap")
 	_check(look.chosen(&"head") == &"cap", "a choice reads back")
 	_check(look.validate(def).ok, "and validates")
@@ -263,19 +263,19 @@ func _test_look() -> void:
 	look.colours = [Color.RED]
 	_check(look.validate(def).ok, "within the channel count it is fine")
 
-	var wrong := DotPlayerCharLook.make(&"other")
+	var wrong := GSPlayerCharLook.make(&"other")
 	_check(
 		not wrong.validate(def).ok,
 		"and a look for a different character is refused rather than half-applied"
 	)
-	_check(not DotPlayerCharLook.new().validate(null).ok, "with nothing to check against")
+	_check(not GSPlayerCharLook.new().validate(null).ok, "with nothing to check against")
 
 	_test_look_conform(def)
 
 
-func _test_look_conform(def: DotPlayerCharDef) -> void:
+func _test_look_conform(def: GSPlayerCharDef) -> void:
 	# Conform is the loading path rather than the trust boundary.
-	var stale := DotPlayerCharLook.make(&"medium")
+	var stale := GSPlayerCharLook.make(&"medium")
 	stale.choose(&"head", &"crown")
 	stale.choose(&"back", &"pack")
 	stale.colours = [Color.RED, Color.BLUE, Color.GREEN, Color.WHITE]
@@ -297,7 +297,7 @@ func _test_look_conform(def: DotPlayerCharDef) -> void:
 		+ "complete look rather than one a renderer has to have an opinion about"
 	)
 
-	var wire := DotPlayerCharLook.from_dict(stale.to_dict())
+	var wire := GSPlayerCharLook.from_dict(stale.to_dict())
 	_check(wire.chosen(&"back") == &"pack", "a look survives the wire")
 	_check(wire.colours.size() == 2, "with its colours")
 	_check(
@@ -314,13 +314,13 @@ func _test_look_conform(def: DotPlayerCharDef) -> void:
 func _test_node() -> void:
 	_section("the component")
 
-	var roster := DotPlayerRoster.new()
+	var roster := GSPlayerRoster.new()
 	roster.register_service = false
 	add_child(roster)
 	var _j := roster.join("ada", "Ada", 1, 0)
 
-	var player := DotPlayer.new()
-	player.roster_ref = DotNodeRef.of_path(roster.get_path())
+	var player := GSPlayer.new()
+	player.roster_ref = GSNodeRef.of_path(roster.get_path())
 	add_child(player)
 
 	var body := CharacterBody3D.new()
@@ -329,8 +329,8 @@ func _test_node() -> void:
 	body.add_child(shape)
 	player.add_child(body)
 
-	var ch := DotPlayerChar.new()
-	ch.catalogue = DotPlayerCharCatalogue.three_builds()
+	var ch := GSPlayerChar.new()
+	ch.catalogue = GSPlayerCharCatalogue.three_builds()
 	player.add_child(ch)
 	player.player_key = "ada"
 
@@ -371,7 +371,7 @@ func _test_node() -> void:
 		+ "get three slightly different answers"
 	)
 
-	var no_cat := DotPlayerChar.new()
+	var no_cat := GSPlayerChar.new()
 	player.add_child(no_cat)
 	await get_tree().process_frame
 	_check(not no_cat.set_char(&"anything").ok, "a component with no catalogue refuses")
@@ -383,7 +383,7 @@ func _test_node() -> void:
 	roster.queue_free()
 
 
-func _test_node_stance(ch: DotPlayerChar, shape: CollisionShape3D) -> void:
+func _test_node_stance(ch: GSPlayerChar, shape: CollisionShape3D) -> void:
 	ch.set_crouched(true)
 	_check(ch.is_crouched(), "crouching is recorded")
 	_check(is_equal_approx(ch.height(), ch.def().crouch_height), "the height follows")
@@ -407,11 +407,11 @@ func _test_node_stance(ch: DotPlayerChar, shape: CollisionShape3D) -> void:
 func _test_visuals() -> void:
 	_section("visuals")
 
-	var player := DotPlayer.new()
+	var player := GSPlayer.new()
 	add_child(player)
 
-	var ch := DotPlayerChar.new()
-	ch.catalogue = DotPlayerCharCatalogue.three_builds()
+	var ch := GSPlayerChar.new()
+	ch.catalogue = GSPlayerCharCatalogue.three_builds()
 	ch.size_body = false
 	ch.report_to_roster = false
 	player.add_child(ch)
@@ -429,7 +429,7 @@ func _test_visuals() -> void:
 	_check(b.applied > 0, "and so is every other one")
 
 	var before := a.applied
-	var _again := ch.set_look(DotPlayerCharLook.make(&"light"))
+	var _again := ch.set_look(GSPlayerCharLook.make(&"light"))
 	_check(
 		a.applied > before,
 		"and again when the look changes — which must be safe, because a player "
@@ -455,7 +455,7 @@ func _test_visuals() -> void:
 	player.queue_free()
 
 
-func _test_visuals_select(ch: DotPlayerChar, a: StubVisual, b: StubVisual) -> Node3D:
+func _test_visuals_select(ch: GSPlayerChar, a: StubVisual, b: StubVisual) -> Node3D:
 	ch.use_visual(a)
 	_check(
 		a.visual_enabled and not b.visual_enabled,

@@ -1,4 +1,4 @@
-class_name DotHumanoidPoseRecord
+class_name GSHumanoidPoseRecord
 extends RefCounted
 
 ## A figure's drawn pose as a flat float array, for replay: [bone count, the model's basis and

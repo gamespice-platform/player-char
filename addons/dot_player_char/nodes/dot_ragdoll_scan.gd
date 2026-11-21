@@ -1,11 +1,11 @@
-class_name DotRagdollScan
+class_name GSRagdollScan
 extends RefCounted
 
-## The ragdoll's base, for its [enum DotPlayerRagdoll.Role]: naming DotPlayerRagdoll here closed a parser cycle.
+## The ragdoll's base, for its [enum GSPlayerRagdoll.Role]: naming GSPlayerRagdoll here closed a parser cycle.
 const State := preload("dot_player_ragdoll_state.gd")
 
-## Reads a figure for [DotPlayerRagdoll]: which meshes it has and which body part each is.
-## The public entry points are the static methods on [DotPlayerRagdoll].
+## Reads a figure for [GSPlayerRagdoll]: which meshes it has and which body part each is.
+## The public entry points are the static methods on [GSPlayerRagdoll].
 
 
 ## The visible skinned meshes under [param figure] that are drawn by one skeleton (the first one

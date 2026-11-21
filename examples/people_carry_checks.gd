@@ -1,7 +1,7 @@
-class_name DotPeopleCarryChecks
+class_name GSPeopleCarryChecks
 extends RefCounted
 
-## The suite's gun-carry section ([DotHumanoidCarryPose]), split out to keep people_selftest under the file-size
+## The suite's gun-carry section ([GSHumanoidCarryPose]), split out to keep people_selftest under the file-size
 ## gate. Reports through the suite's `_section` and `_check`.
 
 const DT := 1.0 / 60.0
@@ -15,10 +15,10 @@ func _init(host: Node) -> void:
 
 func run() -> void:
 	suite._section("a gun carried as others see it")
-	var f := DotHumanoidFigure.new()
+	var f := GSHumanoidFigure.new()
 	suite.add_child(f)
-	f.build(DotHumanoidLook.stock(9), 1.8)
-	f.set_hold(DotHumanoidFigure.Hold.GUN)
+	f.build(GSHumanoidLook.stock(9), 1.8)
+	f.set_hold(GSHumanoidFigure.Hold.GUN)
 	_frames(f, 0.0, 20)
 	suite._check(f.carry.weight > 0.99 and f.carry.style != null and f.carry.style.id == &"rifle",
 		"a gun is carried as a rifle until the game says otherwise (%s)" % f.carry.describe())
@@ -69,19 +69,19 @@ func run() -> void:
 	f.carry.set_class(&"pistol")
 	_frames(f, 0.0, 20)
 	suite._check(f.carry.weight > 0.99 and f.carry.style.id == &"pistol", "a pistol by name")
-	suite._check(DotHumanoidCarry.for_class(&"knife") == null and DotHumanoidCarry.for_class(&"carbine").id == &"rifle",
+	suite._check(GSHumanoidCarry.for_class(&"knife") == null and GSHumanoidCarry.for_class(&"carbine").id == &"rifle",
 		"a class held without a stance has none; a carbine reads as a rifle")
 	f.queue_free()
 	await suite.get_tree().process_frame
 
 
-func _frames(f: DotHumanoidFigure, speed: float, n: int) -> void:
+func _frames(f: GSHumanoidFigure, speed: float, n: int) -> void:
 	for _i in n:
 		f.animate(speed, DT)
 
 
 ## The gun's frame (the hand's frame for a weapon model) in the figure's.
-func _gun(f: DotHumanoidFigure) -> Transform3D:
+func _gun(f: GSHumanoidFigure) -> Transform3D:
 	var sk := f.skeleton()
-	var hand := sk.get_bone_global_pose(sk.find_bone(DotHumanoidFigure.HAND_BONE))
+	var hand := sk.get_bone_global_pose(sk.find_bone(GSHumanoidFigure.HAND_BONE))
 	return f._to_figure() * hand * f.carry._hand_frame

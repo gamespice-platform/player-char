@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Prints the atlas colours each people body wears, by role, for `DotHumanoidFigure.WEARS`.
+## Prints the atlas colours each people body wears, by role, for `GSHumanoidFigure.WEARS`.
 ## godot --headless --path . --script tools/people_palette.gd
 ## Measured in Godot: each vertex takes the role of the bone moving it most; hair is the head's non-skin colours.
 

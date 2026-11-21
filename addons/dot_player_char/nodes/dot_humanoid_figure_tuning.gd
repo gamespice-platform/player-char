@@ -1,8 +1,8 @@
 extends Node3D
 
-## [DotHumanoidFigure]'s distance tuning and bone names, at the bottom of its chain: the frame and aim helpers read
-## them here (by path) instead of naming DotHumanoidFigure, which named them back, a parser cycle Godot 4.7 never
-## frees. Read them through DotHumanoidFigure as before.
+## [GSHumanoidFigure]'s distance tuning and bone names, at the bottom of its chain: the frame and aim helpers read
+## them here (by path) instead of naming GSHumanoidFigure, which named them back, a parser cycle Godot 4.7 never
+## frees. Read them through GSHumanoidFigure as before.
 
 ## Within this distance of the camera the clip is advanced every frame; then every second frame
 ## to [constant ANIM_FAR], and every fourth beyond.
@@ -66,17 +66,17 @@ static var lod_bias: float = LOD_BIAS:
 		if is_finite(value) and value > 0.0:
 			lod_bias = value
 		else:
-			push_error("DotHumanoidFigure.lod_bias must be a finite number above 0, got %s" % value)
+			push_error("GSHumanoidFigure.lod_bias must be a finite number above 0, got %s" % value)
 
 
 static func _range_ok(what: String, value: float) -> bool:
 	if is_finite(value) and value >= 0.0:
 		return true
-	push_error("DotHumanoidFigure.%s must be a finite number of metres, 0 or more (0: no limit), got %s" % [what, value])
+	push_error("GSHumanoidFigure.%s must be a finite number of metres, 0 or more (0: no limit), got %s" % [what, value])
 	return false
 
 ## The bone a weapon is held in. The kit's people are left-handed, so the clip set is mirrored once
-## on load ([method DotHumanoidClips.mirror]) and others see the gun in the hand first person holds it in.
+## on load ([method GSHumanoidClips.mirror]) and others see the gun in the hand first person holds it in.
 const HAND_BONE := "Middle1.R"
 
 ## The head bone, which the crown mounts hang from.

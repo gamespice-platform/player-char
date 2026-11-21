@@ -1,7 +1,7 @@
 extends Node3D
 
 ## The first-person arms' materials side by side in a browser (nightly web-view-arms-white): the main scene of a scratch web export, shot through `gpu.sh browser-shot`. Columns left to right:
-## 0 crowd material, plain mesh; 1 DotViewArmsMaterial, arms mesh (CUSTOM0); 2 DotViewArmsMaterial, plain mesh; 3 crowd material, arms mesh (CUSTOM0);
+## 0 crowd material, plain mesh; 1 GSViewArmsMaterial, arms mesh (CUSTOM0); 2 GSViewArmsMaterial, plain mesh; 3 crowd material, arms mesh (CUSTOM0);
 ## 4 StandardMaterial3D with the atlas, plain mesh
 
 const COLUMNS := ["crowd", "arms+custom0", "arms plain", "crowd+custom0", "standard"]
@@ -22,10 +22,10 @@ func _ready() -> void:
 	cam.position = Vector3(0, 1.0, 4.2)
 	cam.fov = 60.0
 	add_child(cam)
-	var look := DotHumanoidLook.stock(3)
-	var stripper := DotPlayerViewArms.new()
+	var look := GSHumanoidLook.stock(3)
+	var stripper := GSPlayerViewArms.new()
 	for i in COLUMNS.size():
-		var figure := DotHumanoidFigure.new()
+		var figure := GSHumanoidFigure.new()
 		add_child(figure)
 		figure.build(look, 1.8)
 		figure.position = Vector3((i - 2) * 0.9, 0, 0)
@@ -37,10 +37,10 @@ func _ready() -> void:
 			stripper._strip_gear(figure)
 		match i:
 			1, 2:
-				m.material_override = DotViewArmsMaterial.for_look(look)
+				m.material_override = GSViewArmsMaterial.for_look(look)
 			4:
 				var std := StandardMaterial3D.new()
-				std.albedo_texture = DotHumanoidAssets.material_for(look).get_shader_parameter(&"atlas")
+				std.albedo_texture = GSHumanoidAssets.material_for(look).get_shader_parameter(&"atlas")
 				std.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 				m.material_override = std
 		print("view_arms_web: column %d %s material %s" % [i, COLUMNS[i], m.get_active_material(0)])

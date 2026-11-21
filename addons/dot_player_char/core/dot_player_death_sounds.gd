@@ -1,4 +1,4 @@
-class_name DotPlayerDeathSounds
+class_name GSPlayerDeathSounds
 extends RefCounted
 
 ## The files behind the stock death reactions' sound ids, as plain data a game turns into its own audio definitions.
@@ -8,7 +8,7 @@ extends RefCounted
 ## The directory the files are in, found from this script so a delivered pack mounted under
 ## another root still finds them.
 static func directory() -> String:
-	var here: String = (DotPlayerDeathSounds as Script).resource_path
+	var here: String = (GSPlayerDeathSounds as Script).resource_path
 	return here.get_base_dir().get_base_dir().path_join("death/sounds")
 
 
@@ -19,10 +19,10 @@ static func rows() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for spec: Array in [
 		# id, file stem, how many, gain, pitch low, pitch high
-		[DotPlayerDeathReactions.SOUND_FACE_PLANT, "face_plant", 3, 2.0, 0.85, 1.0],
-		[DotPlayerDeathReactions.SOUND_THUD, "thud", 3, 0.0, 0.8, 1.0],
-		[DotPlayerDeathReactions.SOUND_SLUMP, "slump", 2, -2.0, 0.8, 0.95],
-		[DotPlayerDeathReactions.SOUND_WHOOSH, "whoosh", 3, -3.0, 0.9, 1.1],
+		[GSPlayerDeathReactions.SOUND_FACE_PLANT, "face_plant", 3, 2.0, 0.85, 1.0],
+		[GSPlayerDeathReactions.SOUND_THUD, "thud", 3, 0.0, 0.8, 1.0],
+		[GSPlayerDeathReactions.SOUND_SLUMP, "slump", 2, -2.0, 0.8, 0.95],
+		[GSPlayerDeathReactions.SOUND_WHOOSH, "whoosh", 3, -3.0, 0.9, 1.1],
 	]:
 		var variants := PackedStringArray()
 		for i in range(int(spec[2])):

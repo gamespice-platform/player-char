@@ -1,4 +1,4 @@
-class_name DotHumanoidActions
+class_name GSHumanoidActions
 extends RefCounted
 
 ## The starter emotes, poses and gestures of GameSpice User Avatar (the site's BUILTIN_AVATAR_ACTIONS ids)
@@ -36,11 +36,11 @@ const KIT_BONES := {
 static func clip_name(id: StringName) -> StringName:
 	match id:
 		&"wave":
-			return DotHumanoidClips.WAVE
+			return GSHumanoidClips.WAVE
 		&"nod":
-			return DotHumanoidClips.YES
+			return GSHumanoidClips.YES
 		&"sit":
-			return DotHumanoidClips.SIT
+			return GSHumanoidClips.SIT
 	# An uploaded id is a content id (action/12/3); a slash would name an animation library.
 	return StringName("act_" + String(id).replace("/", "_"))
 
@@ -64,7 +64,7 @@ static func add_to(library: AnimationLibrary, idle: Animation, skeleton: Skeleto
 
 
 ## [param animation] renamed from [param bone_map]'s bones to the kit's, rotation only, ready for
-## [method DotHumanoidClips.retarget]. Returns {"animation", "rests"}; the rigs must share a
+## [method GSHumanoidClips.retarget]. Returns {"animation", "rests"}; the rigs must share a
 ## stance, or a T-pose upload bends the arms.
 static func rename_humanoid(animation: Animation, bone_map: BoneMap, source_rests: Dictionary) -> Dictionary:
 	var out := Animation.new()
@@ -73,7 +73,7 @@ static func rename_humanoid(animation: Animation, bone_map: BoneMap, source_rest
 	var rests := {}
 	if bone_map == null:
 		return {"animation": out, "rests": rests}
-	var prefix := DotHumanoidClips._skeleton_prefix(animation)
+	var prefix := GSHumanoidClips._skeleton_prefix(animation)
 	for t in animation.get_track_count():
 		if animation.track_get_type(t) != Animation.TYPE_ROTATION_3D:
 			continue
@@ -145,21 +145,21 @@ static func humanoid_bone_map(skeleton: Skeleton3D) -> BoneMap:
 ## The clip [param clip] of an uploaded action's scene moved onto [param skeleton], tracks under
 ## [param prefix]. Fails with no skeleton, no such clip, a clip over [constant MAX_UPLOAD_LENGTH],
 ## or fewer than [constant MIN_UPLOAD_BONES] of [constant KIT_BONES]' bones.
-static func from_upload(scene: Node, clip: String, skeleton: Skeleton3D, prefix: String, loop: bool) -> DotResult:
+static func from_upload(scene: Node, clip: String, skeleton: Skeleton3D, prefix: String, loop: bool) -> GSResult:
 	if scene == null or skeleton == null:
-		return DotResult.fail(DotError.CODE_STATE, "no scene or no skeleton")
+		return GSResult.fail(GSError.CODE_STATE, "no scene or no skeleton")
 	var players := scene.find_children("*", "AnimationPlayer", true, false)
 	var bones := scene.find_children("*", "Skeleton3D", true, false)
 	if players.is_empty() or bones.is_empty():
-		return DotResult.fail(DotError.CODE_INVALID, "the upload has no skeleton or no animation")
+		return GSResult.fail(GSError.CODE_INVALID, "the upload has no skeleton or no animation")
 	var player := players.front() as AnimationPlayer
 	if not player.has_animation(clip):
-		return DotResult.fail(DotError.CODE_INVALID, "the upload has no clip of that name", clip)
+		return GSResult.fail(GSError.CODE_INVALID, "the upload has no clip of that name", clip)
 	var source := player.get_animation(clip)
 	if source.length <= 0.0 or source.length > MAX_UPLOAD_LENGTH:
-		return DotResult.fail(DotError.CODE_INVALID, "the clip's length is out of range", str(source.length))
+		return GSResult.fail(GSError.CODE_INVALID, "the clip's length is out of range", str(source.length))
 	var from := bones.front() as Skeleton3D
-	var renamed := rename_humanoid(source, humanoid_bone_map(from), DotHumanoidClips.rests_of(from))
+	var renamed := rename_humanoid(source, humanoid_bone_map(from), GSHumanoidClips.rests_of(from))
 	var anim: Animation = renamed["animation"]
 	var named := {}
 	for t in anim.get_track_count():
@@ -167,11 +167,11 @@ static func from_upload(scene: Node, clip: String, skeleton: Skeleton3D, prefix:
 		named[bone] = true
 		anim.track_set_path(t, NodePath("%s:%s" % [prefix, bone]))
 	if named.size() < MIN_UPLOAD_BONES:
-		return DotResult.fail(DotError.CODE_INVALID, "the clip moves too few humanoid bones", str(named.size()))
+		return GSResult.fail(GSError.CODE_INVALID, "the clip moves too few humanoid bones", str(named.size()))
 	anim.loop_mode = Animation.LOOP_LINEAR if loop else Animation.LOOP_NONE
 	var library := AnimationLibrary.new()
 	var _a := library.add_animation(&"clip", anim)
-	return DotResult.success(DotHumanoidClips.retarget(library, renamed["rests"], skeleton).get_animation(&"clip"))
+	return GSResult.success(GSHumanoidClips.retarget(library, renamed["rests"], skeleton).get_animation(&"clip"))
 
 
 static func _build(id: StringName, idle: Animation, skeleton: Skeleton3D) -> Animation:
@@ -179,7 +179,7 @@ static func _build(id: StringName, idle: Animation, skeleton: Skeleton3D) -> Ani
 	var made := Animation.new()
 	made.length = length
 	made.loop_mode = Animation.LOOP_LINEAR if id == &"dance" else Animation.LOOP_NONE
-	var prefix := DotHumanoidClips._skeleton_prefix(idle)
+	var prefix := GSHumanoidClips._skeleton_prefix(idle)
 	var tracks := {}
 	for i in skeleton.get_bone_count():
 		var path := NodePath("%s:%s" % [prefix, skeleton.get_bone_name(i)])
@@ -191,9 +191,9 @@ static func _build(id: StringName, idle: Animation, skeleton: Skeleton3D) -> Ani
 	var frames := int(ceil(length * FPS))
 	for frame in frames + 1:
 		var time := length * float(frame) / float(frames)
-		var g := DotHumanoidClips._globals(DotHumanoidClips._locals(idle, 0.0, skeleton), skeleton)
+		var g := GSHumanoidClips._globals(GSHumanoidClips._locals(idle, 0.0, skeleton), skeleton)
 		_pose(id, g, skeleton, time, length)
-		var locals := DotHumanoidClips._back_to_locals(g, skeleton)
+		var locals := GSHumanoidClips._back_to_locals(g, skeleton)
 		for i in locals.size():
 			var local: Transform3D = locals[i]
 			var _r := made.rotation_track_insert_key(tracks[i][0], time, local.basis.get_rotation_quaternion().normalized())
@@ -244,7 +244,7 @@ static func _pose(id: StringName, g: Array, sk: Skeleton3D, t: float, length: fl
 static func _dance(g: Array, sk: Skeleton3D, phase: float) -> void:
 	var torso := sk.find_bone("Torso")
 	if torso >= 0:
-		DotHumanoidClips._move_subtree(g, sk, torso, DotHumanoidClips._about(g[torso].origin, Basis(Vector3.UP, 0.25 * sin(phase))))
+		GSHumanoidClips._move_subtree(g, sk, torso, GSHumanoidClips._about(g[torso].origin, Basis(Vector3.UP, 0.25 * sin(phase))))
 	_bend(g, sk, "Neck", deg_to_rad(6.0) * sin(phase * 2.0))
 	for side: String in [".L", ".R"]:
 		var offset := 0.0 if side == ".L" else PI
@@ -252,7 +252,7 @@ static func _dance(g: Array, sk: Skeleton3D, phase: float) -> void:
 		_arm(g, sk, side, Vector3(0.6, -0.3 + 1.1 * lift, 0.1), Vector3(0.4, 0.2 + 0.7 * lift, 0.35))
 		var step := 0.5 + 0.5 * sin(phase * 2.0 + offset)
 		var angle := deg_to_rad(4.0 + 32.0 * step)
-		DotHumanoidClips._place_leg(g, sk, side, Vector3(0.0, -cos(angle), sin(angle)), Vector3(0.0, -1.0, 0.1))
+		GSHumanoidClips._place_leg(g, sk, side, Vector3(0.0, -cos(angle), sin(angle)), Vector3(0.0, -1.0, 0.1))
 
 
 ## Both [param upper] and [param fore] are written for the left arm (X outward): the right arm
@@ -266,10 +266,10 @@ static func _arm(g: Array, sk: Skeleton3D, side: String, upper: Vector3, fore: V
 	var o := 1.0 if side == ".L" else -1.0
 	var now: Vector3 = (g[l].origin - g[u].origin).normalized()
 	var want := Vector3(upper.x * o, upper.y, upper.z).normalized()
-	var _a := DotHumanoidClips._turn_subtree(g, sk, u, now, now.slerp(want, k))
+	var _a := GSHumanoidClips._turn_subtree(g, sk, u, now, now.slerp(want, k))
 	now = (g[h].origin - g[l].origin).normalized()
 	want = Vector3(fore.x * o, fore.y, fore.z).normalized()
-	var _b := DotHumanoidClips._turn_subtree(g, sk, l, now, now.slerp(want, k))
+	var _b := GSHumanoidClips._turn_subtree(g, sk, l, now, now.slerp(want, k))
 
 
 static func _lift_shoulder(g: Array, sk: Skeleton3D, side: String, amount: float) -> void:
@@ -278,11 +278,11 @@ static func _lift_shoulder(g: Array, sk: Skeleton3D, side: String, amount: float
 	if s < 0 or u < 0:
 		return
 	var now: Vector3 = g[u].origin - g[s].origin
-	var _t := DotHumanoidClips._turn_subtree(g, sk, s, now, now + Vector3(0.0, now.length() * amount, 0.0))
+	var _t := GSHumanoidClips._turn_subtree(g, sk, s, now, now + Vector3(0.0, now.length() * amount, 0.0))
 
 
 ## [param bone] and everything under it bent forward by [param angle] about the figure's left-right axis.
 static func _bend(g: Array, sk: Skeleton3D, bone: String, angle: float) -> void:
 	var i := sk.find_bone(bone)
 	if i >= 0:
-		DotHumanoidClips._move_subtree(g, sk, i, DotHumanoidClips._about(g[i].origin, Basis(Vector3.RIGHT, angle)))
+		GSHumanoidClips._move_subtree(g, sk, i, GSHumanoidClips._about(g[i].origin, Basis(Vector3.RIGHT, angle)))

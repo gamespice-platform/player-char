@@ -1,6 +1,6 @@
 # Dead bodies
 
-Why a dead player falls the way it does here, and why the obvious alternative is wrong in each case. The classes are `DotPlayerRagdolls` (where bodies lie), `DotPlayerRagdoll` (one body), `DotPlayerRagdollRules` (the server's settings), `DotPlayerDeathReactions` / `DotPlayerDeathReaction` (the ways to go down) and `DotPlayerDeath` (one kill's decision).
+Why a dead player falls the way it does here, and why the obvious alternative is wrong in each case. The classes are `GSPlayerRagdolls` (where bodies lie), `GSPlayerRagdoll` (one body), `GSPlayerRagdollRules` (the server's settings), `GSPlayerDeathReactions` / `GSPlayerDeathReaction` (the ways to go down) and `GSPlayerDeath` (one kill's decision).
 
 ## What it replaced
 
@@ -8,7 +8,7 @@ Before this, every game here drew a death one of two ways, and both looked wrong
 
 ## The styles
 
-`DotPlayerRagdollRules.style`, the cvar `sv_ragdoll_style`:
+`GSPlayerRagdollRules.style`, the cvar `sv_ragdoll_style`:
 
 - **ragdoll** (the default): one `RigidBody3D` per part, joined to the torso with `ConeTwistJoint3D`s at the hips, shoulders and neck. Parts are found by name: a mesh or any ancestor up to the figure saying `head`, `torso`/`chest`/`spine`/`hips`, or `arm`/`hand`/`leg`/`foot` with a side (`left`, `right`, `-l`, `-r`). The block characters and the humanoid mounts both match. A mesh that is none of those (a crest, the gun in the hand) rides on the nearest part.
 - **stiff**: the whole figure as one rigid body. It still falls over properly, and it is what a figure with no named torso gets (a capsule), because there is nothing to hang limbs off.
@@ -17,7 +17,7 @@ Before this, every game here drew a death one of two ways, and both looked wrong
 
 ## The server picks, every client falls
 
-`DotPlayerDeath.decide(reactions, headshot, damage, direction, seed, weapon_def)` runs on the server and gives the reaction id and a seed; the game sends it with its kill message (`write_to(writer)` / `read_from(reader)` over a dot-net writer and reader, duck-typed, about seven bytes, last and optional so an older client reads the rest; or `to_dict()` / `from_dict()`) and every client calls `DotPlayerRagdolls.spawn(figure, death)`. A client never picks.
+`GSPlayerDeath.decide(reactions, headshot, damage, direction, seed, weapon_def)` runs on the server and gives the reaction id and a seed; the game sends it with its kill message (`write_to(writer)` / `read_from(reader)` over a dot-net writer and reader, duck-typed, about seven bytes, last and optional so an older client reads the rest; or `to_dict()` / `from_dict()`) and every client calls `GSPlayerRagdolls.spawn(figure, death)`. A client never picks.
 
 - **Picking on each client would show different deaths on different screens**: one viewer sees a launch and the next a face plant. The pick is cheap and pure, so the server makes it once.
 - **Nothing in a body calls `randf()`.** Its tumble and which way a crumple tips come from the death's seed, so two clients build the same fall. Physics is not bit-exact across machines, and does not need to be: the reaction, the direction and the strength agree, and where a hand ends up differs by centimetres nobody can see.
@@ -25,7 +25,7 @@ Before this, every game here drew a death one of two ways, and both looked wrong
 
 ## The reaction rule
 
-`DotPlayerDeathReactions.pick(headshot, power, damage, weapon_named, seed)`:
+`GSPlayerDeathReactions.pick(headshot, power, damage, weapon_named, seed)`:
 
 1. A reaction the weapon names (its def's `params.death_reaction`) wins outright, if the server has not turned it off.
 2. Otherwise every reaction with weight above zero whose conditions the kill meets (`needs_headshot`, `needs_power` against `min_power`, `min_damage`) goes into a weighted draw from the seed.
@@ -37,7 +37,7 @@ The stock set: `limp` (4), `headshot_launch` (6, headshots only), `power_launch`
 
 ## The cvars
 
-`DotPlayerRagdollRules.bind_cvars(add_cvar, FLAG_REPLICATED)` on the server, `follow_cvars(link)` on each client, the same duck-typed shape as GameSpice Combat's: a client draws the bodies, so the client is the one that needs the server's lifetime, cap and style.
+`GSPlayerRagdollRules.bind_cvars(add_cvar, FLAG_REPLICATED)` on the server, `follow_cvars(link)` on each client, the same duck-typed shape as GameSpice Combat's: a client draws the bodies, so the client is the one that needs the server's lifetime, cap and style.
 
 | Cvar | Default | What |
 | --- | --- | --- |
@@ -48,8 +48,8 @@ The stock set: `limp` (4), `headshot_launch` (6, headshots only), `power_launch`
 | `sv_ragdoll_force` | 1 | multiplies every push and launch; 0 drops bodies where they stood |
 | `sv_ragdoll_torque` | 1 | multiplies the spin a fall gets |
 | `sv_ragdoll_exaggerate` | 0 | 1 allows the launch reactions and flips; 0 is a heavy drop with no throw |
-| `sv_ragdoll_shootable` | 0 | 1 lets `DotPlayerRagdolls.shoot` push a lying body |
-| `sv_ragdoll_weapon_drop` | 1 | the dead player's weapon drops as a short-lived prop (`DotPlayerRagdolls.drop_prop`) |
+| `sv_ragdoll_shootable` | 0 | 1 lets `GSPlayerRagdolls.shoot` push a lying body |
+| `sv_ragdoll_weapon_drop` | 1 | the dead player's weapon drops as a short-lived prop (`GSPlayerRagdolls.drop_prop`) |
 | `sv_ragdoll_weapon_time` | 8 | seconds a dropped weapon lies |
 | `sv_ragdoll_reactions` | (stock) | `id=weight,...`; 0 turns one off |
 
@@ -78,7 +78,7 @@ A one-piece body has "landed" only when it is lying down (its up axis well off v
 
 ## Sounds
 
-A reaction names a `start_sound` (the launches' whoosh) and a `land_sound` (a thud, the face plant's smack, a crumple's slump), played once, where and when the head or torso first hits something at `land_speed` or more. The bodies emit them; `DotPlayerRagdolls.sound_fn` (GameSpice Audio's `play_at` fits) or its `sound` signal hand them to the game. The files are Kenney's CC0 impact and foley sounds in `addons/dot_player_char/death/sounds/` (credited in its `CREDITS.md`), described by `DotPlayerDeathSounds.rows()` as plain data, because this addon does not depend on GameSpice Audio. The start sound is emitted deferred, since whoever built the body connects after `build` returns.
+A reaction names a `start_sound` (the launches' whoosh) and a `land_sound` (a thud, the face plant's smack, a crumple's slump), played once, where and when the head or torso first hits something at `land_speed` or more. The bodies emit them; `GSPlayerRagdolls.sound_fn` (GameSpice Audio's `play_at` fits) or its `sound` signal hand them to the game. The files are Kenney's CC0 impact and foley sounds in `addons/dot_player_char/death/sounds/` (credited in its `CREDITS.md`), described by `GSPlayerDeathSounds.rows()` as plain data, because this addon does not depend on GameSpice Audio. The start sound is emitted deferred, since whoever built the body connects after `build` returns.
 
 ## The fade
 
@@ -86,7 +86,7 @@ After `sv_ragdoll_time` a body shrinks about one point on the floor under it and
 
 ## A skinned body
 
-A figure drawn by a skeleton (the family's people, game-zombie-zone's zombies) falls through the same code as a body of rigid meshes. `DotPlayerRagdoll.build` finds the skinned meshes (`skinned_meshes`), copies their skeleton as it is posed, with copies of the meshes on it, and builds the same six parts with the same joints, pushes, settling, cap and fade. The difference is what a part carries: bones, each with its offset from the part, and after every step the copied skeleton's bones are put where their parts are (`_pose_bones`, parents first). A bone takes the role of its name (`role_of_name`: `UpperArm.L` is the left arm, `Foot.R` the right leg) or its parent's; a part's box is laid along the limb, from where it joins the torso to the middle of its vertices (each vertex by the bone that moves it most, the outer tenth trimmed so a spike of hair is not what it lands on). Anything else on the figure (a gun on a hand bone) is copied as a mesh and rides on the nearest part.
+A figure drawn by a skeleton (the family's people, game-zombie-zone's zombies) falls through the same code as a body of rigid meshes. `GSPlayerRagdoll.build` finds the skinned meshes (`skinned_meshes`), copies their skeleton as it is posed, with copies of the meshes on it, and builds the same six parts with the same joints, pushes, settling, cap and fade. The difference is what a part carries: bones, each with its offset from the part, and after every step the copied skeleton's bones are put where their parts are (`_pose_bones`, parents first). A bone takes the role of its name (`role_of_name`: `UpperArm.L` is the left arm, `Foot.R` the right leg) or its parent's; a part's box is laid along the limb, from where it joins the torso to the middle of its vertices (each vertex by the bone that moves it most, the outer tenth trimmed so a spike of hair is not what it lands on). Anything else on the figure (a gun on a hand bone) is copied as a mesh and rides on the nearest part.
 
 **One path, not `PhysicalBoneSimulator3D`.** A physical-bone ragdoll is a second ragdoll with its own joints, its own limits and its own tuning, and none of what was tuned here would carry over: the plank that becomes jointed only when the face lands, the crumple's fold, the launches. Driving bones from the existing parts gives a skinned body every reaction exactly as tuned, the cap and the frozen settle that make eight bodies cost nothing, `sv_ragdoll 0`'s topple (the bones follow the toppling piece), and the fade (the copied skeleton's node shrinks about the floor point, which shrinks the skin, and works on the compatibility renderer). The cost is the same as a block body: six rigid bodies, not one per bone.
 

@@ -1,5 +1,5 @@
 @tool
-class_name DotPlayerCharDef
+class_name GSPlayerCharDef
 extends Resource
 
 ## One character: how big it is, what it is called, and which content it names.
@@ -42,13 +42,13 @@ extends Resource
 
 @export_group("Content ids")
 
-## [DotPlayerModelDef] id, for a 3D game.
+## [GSPlayerModelDef] id, for a 3D game.
 @export var model_id: StringName = &""
 
-## [DotPlayerSpriteDef] id, for a 2D game.
+## [GSPlayerSpriteDef] id, for a 2D game.
 @export var sprite_id: StringName = &""
 
-## [DotPlayerAnimSet] id.
+## [GSPlayerAnimSet] id.
 @export var animation_set: StringName = &""
 
 ## GameSpice Audio voice set id.
@@ -88,8 +88,8 @@ static func make(
 	p_id: StringName,
 	p_height: float = 1.8,
 	p_radius: float = 0.35
-) -> DotPlayerCharDef:
-	var c := DotPlayerCharDef.new()
+) -> GSPlayerCharDef:
+	var c := GSPlayerCharDef.new()
 	c.id = p_id
 	c.display_name = String(p_id).capitalize()
 	c.height = p_height
@@ -100,21 +100,21 @@ static func make(
 	return c
 
 
-func validate() -> DotResult:
+func validate() -> GSResult:
 	if id == &"":
-		return DotResult.fail(DotError.CODE_INVALID, "A character with no id.")
+		return GSResult.fail(GSError.CODE_INVALID, "A character with no id.")
 
 	if crouch_height > height:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"'%s' is %.2f tall and %.2f crouched." % [String(id), height, crouch_height],
 			"Crouching would make it bigger, so it would get stuck coming out of every "
 			+ "gap it crouched into."
 		)
 
 	if eye_height > height:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"'%s' has its eyes %.2f above the ground and is %.2f tall."
 			% [String(id), eye_height, height],
 			"The camera would sit above the collision hull, so the player would see "
@@ -122,8 +122,8 @@ func validate() -> DotResult:
 		)
 
 	if crouch_eye_height > crouch_height:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"'%s' has its crouched eyes above its crouched height." % String(id)
 		)
 
@@ -131,13 +131,13 @@ func validate() -> DotResult:
 		# Not refused: a wide low character is legal and some games want one. Worth
 		# saying, because a capsule wider than it is tall behaves as a sphere and
 		# stops climbing stairs.
-		DotLog.debug(
+		GSLog.debug(
 			"player.char",
 			"a character is wider than it is tall; its capsule is effectively a sphere",
 			{"char": String(id)}
 		)
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 func allows(team: StringName, player_class: StringName) -> bool:
@@ -229,8 +229,8 @@ func to_dict() -> Dictionary:
 	}
 
 
-static func from_dict(d: Dictionary) -> DotPlayerCharDef:
-	var c := DotPlayerCharDef.new()
+static func from_dict(d: Dictionary) -> GSPlayerCharDef:
+	var c := GSPlayerCharDef.new()
 	c.id = StringName(str(d.get("id", "")))
 	c.display_name = str(d.get("name", String(c.id).capitalize()))
 	c.height = float(d.get("height", 1.8))
@@ -260,4 +260,4 @@ func describe() -> String:
 
 
 func _to_string() -> String:
-	return "DotPlayerCharDef(%s)" % describe()
+	return "GSPlayerCharDef(%s)" % describe()

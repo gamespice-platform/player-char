@@ -1,25 +1,25 @@
-class_name DotHumanoidFigure
+class_name GSHumanoidFigure
 extends "dot_humanoid_figure_clips.gd"
 
-## One of the family's people, drawn: a skinned body from `people/` wearing a [DotHumanoidLook]'s colours, playing
-## [DotHumanoidClips] from how it moves, holding a weapon, and handing its skeleton to [DotPlayerRagdoll] on death.
+## One of the family's people, drawn: a skinned body from `people/` wearing a [GSHumanoidLook]'s colours, playing
+## [GSHumanoidClips] from how it moves, holding a weapon, and handing its skeleton to [GSPlayerRagdoll] on death.
 ## Client side only. The upper body is written over the locomotion pose after the clip (LOD rates in docs/people.md).
 
 ## Builds the figure for [param p_look], [param p_height] metres tall, feet at this node's origin,
 ## facing -Z.
-func build(p_look: DotHumanoidLook, p_height: float = 1.8) -> void:
-	look = p_look if p_look != null else DotHumanoidLook.stock(0)
+func build(p_look: GSHumanoidLook, p_height: float = 1.8) -> void:
+	look = p_look if p_look != null else GSHumanoidLook.stock(0)
 	height = p_height
 	_forget_body()
 
-	var scene := DotHumanoidAssets.scene(body_path(look.body))
+	var scene := GSHumanoidAssets.scene(body_path(look.body))
 	if scene != null:
 		_model = scene.instantiate() as Node3D
 
 	if _model == null:
 		# A capsule rather than nothing: an invisible player is worse than a grey one.
-		DotLog.warn(CHANNEL, "no body model; drawing a capsule", {"body": String(look.body)})
-		_model = DotHumanoidFrames.capsule(height, look.top)
+		GSLog.warn(CHANNEL, "no body model; drawing a capsule", {"body": String(look.body)})
+		_model = GSHumanoidFrames.capsule(height, look.top)
 		add_child(_model)
 		from_art = false
 		return
@@ -32,8 +32,8 @@ func build(p_look: DotHumanoidLook, p_height: float = 1.8) -> void:
 	_mesh = meshes.front() as MeshInstance3D if not meshes.is_empty() else null
 	_details.clear()
 	_detail = 0
-	if DotHumanoidLook.registered.has(look.body):
-		_details = DotHumanoidAssets.detail_meshes(_model)
+	if GSHumanoidLook.registered.has(look.body):
+		_details = GSHumanoidAssets.detail_meshes(_model)
 	if not _details.is_empty():
 		# One instance swaps its mesh by distance, so the ragdoll, the gibs and the own view see one body, not three.
 		_mesh = _model.find_child("LOD0", true, false) as MeshInstance3D
@@ -53,7 +53,7 @@ func build(p_look: DotHumanoidLook, p_height: float = 1.8) -> void:
 	# Advanced here, not by the engine: see the class note.
 	_anim.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 
-	var library := DotHumanoidAssets.library_for(look.body, _skeleton)
+	var library := GSHumanoidAssets.library_for(look.body, _skeleton)
 	if library != null:
 		for name in _anim.get_animation_library_list():
 			_anim.remove_animation_library(name)
@@ -66,26 +66,26 @@ func build(p_look: DotHumanoidLook, p_height: float = 1.8) -> void:
 
 	# The kit faces +Z and this family's forward is -Z; scaled to the height asked for, measured
 	# from the mesh rather than assumed.
-	var tall := DotHumanoidFrames.measure(_mesh, _model)
+	var tall := GSHumanoidFrames.measure(_mesh, _model)
 	var s := height / maxf(tall, 0.01)
 	_model_basis = Basis(Vector3.UP, PI).scaled(Vector3.ONE * s)
 	_model_origin = Vector3.ZERO
 	_model.transform = Transform3D(_model_basis, _model_origin)
 	_floor_ankles.clear()
 	if _skeleton != null:
-		_skel_to_model = DotHumanoidFrames.to_model(_skeleton, _model)
-		for names: Array in DotHumanoidLegs.LEGS:
+		_skel_to_model = GSHumanoidFrames.to_model(_skeleton, _model)
+		for names: Array in GSHumanoidLegs.LEGS:
 			var foot := _skeleton.find_bone(names[2])
 			if foot >= 0:
 				_floor_ankles.append((_model.transform * _skel_to_model * _skeleton.get_bone_global_rest(foot).origin).y)
 
-	for bone in DotHumanoidClips.UPPER_BONES:
+	for bone in GSHumanoidClips.UPPER_BONES:
 		var i := _skeleton.find_bone(bone) if _skeleton != null else -1
 		if i >= 0:
 			_upper[bone] = i
 			_upper_paths[bone] = NodePath("%s:%s" % [String(_model.get_path_to(_skeleton)), bone])
 
-	_play(DotHumanoidClips.IDLE, 1.0)
+	_play(GSHumanoidClips.IDLE, 1.0)
 	_anim.advance(0.0)
 
 
@@ -172,7 +172,7 @@ func _process(delta: float) -> void:
 # The registered body's mesh for a camera [param distance] away.
 func _pick_detail(distance: float) -> void:
 	var level := 0
-	for far in DotHumanoidAssets.lod_distances:
+	for far in GSHumanoidAssets.lod_distances:
 		if distance > far and level + 1 < _details.size():
 			level += 1
 	# Swapped on a change of level only: a figure that replaced its own mesh (the view arms' stripped copy) keeps it near.
@@ -182,7 +182,7 @@ func _pick_detail(distance: float) -> void:
 
 
 ## The look changed colours only: a new material, no rebuild.
-func recolour(p_look: DotHumanoidLook) -> void:
+func recolour(p_look: GSHumanoidLook) -> void:
 	if p_look == null:
 		return
 	if look == null or p_look.body != look.body or _mesh == null:
@@ -227,8 +227,8 @@ func _animate_step(speed: float, p_delta: float) -> void:
 	var delta := p_delta + _owed
 	_owed = 0.0
 	# The layers drawn this frame ([constant SUPPORT_RANGE]), from the step just worked out.
-	var seen := DotHumanoidFrames.last_seen if _anim != null else true
-	var far := DotHumanoidFrames.last_distance if _anim != null else 0.0
+	var seen := GSHumanoidFrames.last_seen if _anim != null else true
+	var far := GSHumanoidFrames.last_distance if _anim != null else 0.0
 	_step_state(delta, speed)
 
 	if _anim == null:
@@ -290,11 +290,11 @@ func _skip_frame(p_delta: float) -> bool:
 	# frame over the whole of it, and nothing is written to the skeleton (a write marks it dirty, and the engine then redoes every bone's global pose and the skin).
 	_frame += 1
 	var was_step := anim_step
-	anim_step = DotHumanoidFrames.step_for_distance(self, _mesh)
-	_step_distance = DotHumanoidFrames.last_distance
-	_step_seen = DotHumanoidFrames.last_seen
+	anim_step = GSHumanoidFrames.step_for_distance(self, _mesh)
+	_step_distance = GSHumanoidFrames.last_distance
+	_step_seen = GSHumanoidFrames.last_seen
 	if not _details.is_empty():
-		_pick_detail(DotHumanoidFrames.last_distance)
+		_pick_detail(GSHumanoidFrames.last_distance)
 	# A figure coming into view (or nearer) is redrawn at once, not up to seven frames later.
 	if _frame % anim_step != 0 and anim_step >= was_step:
 		_owed += p_delta
@@ -312,14 +312,14 @@ func _step_state(delta: float, speed: float) -> void:
 	var crouch_to := clampf(float(_motion["crouch"]), 0.0, 1.0) if _motion.has("crouch") else (1.0 if bool(_motion.get("crouched", false)) or bool(_motion.get("sliding", false)) else 0.0)
 	crouch_amount = move_toward(crouch_amount, crouch_to, delta / CROUCH_BLEND)
 	_end_action_if_moved()
-	var carry_sprint := sprinting if _motion.has("sprinting") else state == DotPlayerAnimState.RUN
+	var carry_sprint := sprinting if _motion.has("sprinting") else state == GSPlayerAnimState.RUN
 	_sprint = move_toward(_sprint, 1.0 if carry_sprint and hold == Hold.GUN and not downed else 0.0, delta / SPRINT_SECONDS)
-	var standing := not (downed or seated or driving) and _action_full == &"" and state != DotPlayerAnimState.DEAD
-	carry.step(delta, hold == Hold.GUN and standing and state != DotPlayerAnimState.SWIM and state != DotPlayerAnimState.CLIMB)
+	var standing := not (downed or seated or driving) and _action_full == &"" and state != GSPlayerAnimState.DEAD
+	carry.step(delta, hold == Hold.GUN and standing and state != GSPlayerAnimState.SWIM and state != GSPlayerAnimState.CLIMB)
 	var grip := support_point.is_finite() or carry.support_grip.is_finite()
 	_support_weight = move_toward(_support_weight, 1.0 if grip and hold == Hold.GUN and not downed else 0.0, delta / 0.15)
 	var pumping := carry_sprint and _motion.has("sprinting") and hold != Hold.GUN and standing and overlay == &"" \
-		and (state == DotPlayerAnimState.RUN or state == DotPlayerAnimState.WALK)
+		and (state == GSPlayerAnimState.RUN or state == GSPlayerAnimState.WALK)
 	if downed or not standing:
 		arms.charge = -1.0
 	arms.step(delta, pumping, _speed, _stride_fraction() if _anim != null else -1.0)
@@ -355,7 +355,7 @@ func _lift_body() -> void:
 		_frame_tf_ok = false
 
 
-## Keeps a standing body's drawn feet out of the floor its origin stands on ([method DotHumanoidLegs.on_floor]):
+## Keeps a standing body's drawn feet out of the floor its origin stands on ([method GSHumanoidLegs.on_floor]):
 ## a clip's stride can carry an ankle under it; first the body is stood on the floor under its origin ([member floor_mask]).
 ## Not in the air, on a wall, a ladder, a seat or the ground.
 ## Stands the body on the floor and lifts drawn ankles out of it; returns whether the feet were kept out of the floor.
@@ -381,7 +381,7 @@ func _skeleton_up() -> Vector3:
 
 
 func _apply_crawl_feet(speed: float, dt: float) -> void:
-	var id := StringName(downed_clips.get(&"crawl", DotHumanoidClips.CRAWL))
+	var id := StringName(downed_clips.get(&"crawl", GSHumanoidClips.CRAWL))
 	_crawl.step(self, _skeleton, downed and not propped and clip == id and _anim.current_animation == String(id), speed, dt)
 
 
@@ -392,7 +392,7 @@ func mend() -> void:
 	_own.mend(_skeleton, _mesh)
 
 
-## Everything else about how the player moves, as [method DotPlayerAnimState.advance] reads it, plus `downed`,
+## Everything else about how the player moves, as [method GSPlayerAnimState.advance] reads it, plus `downed`,
 ## `wall_running`, `sliding`, `velocity` (world; turns the legs), `wall` (a world [Plane]), `seated`
 ## ([method seat_height]), `driving` and `aim` (radians, up positive; left out, it stays).
 func set_motion(motion: Dictionary) -> void:
@@ -417,10 +417,10 @@ func aim(pitch_radians: float) -> void:
 ## How high above the feet the hips are when sitting, in metres at this figure's height: a game
 ## puts the figure's origin this far under the seat.
 func seat_height() -> float:
-	var base: float = DotHumanoidAssets.sit_height()
+	var base: float = GSHumanoidAssets.sit_height()
 	if _skeleton == null or base <= 0.0:
 		return height * 0.25
-	return base * height / maxf(DotHumanoidFrames.measure(_mesh, _model), 0.01)
+	return base * height / maxf(GSHumanoidFrames.measure(_mesh, _model), 0.01)
 
 
 ## What the hand holds: [enum Hold].
@@ -428,11 +428,11 @@ func set_hold(kind: int) -> void:
 	hold = kind
 
 
-## A melee swing over whatever the legs are doing: [constant DotHumanoidClips.SLASH] by default,
-## [constant DotHumanoidClips.STAB] or [constant DotHumanoidClips.PUNCH] for empty hands.
+## A melee swing over whatever the legs are doing: [constant GSHumanoidClips.SLASH] by default,
+## [constant GSHumanoidClips.STAB] or [constant GSHumanoidClips.PUNCH] for empty hands.
 func swing(which: StringName = &"") -> void:
 	if which == &"":
-		which = DotHumanoidClips.PUNCH if hold == Hold.NONE else DotHumanoidClips.SLASH
+		which = GSHumanoidClips.PUNCH if hold == Hold.NONE else GSHumanoidClips.SLASH
 	_start_overlay(which, 1.4)
 
 
@@ -450,7 +450,7 @@ func throw_release() -> void:
 
 ## A hit: the kit's flinch on the upper body, pushed past its authored pose so a third-person view reads it.
 func flinch() -> void:
-	_start_overlay(DotHumanoidClips.HIT, 1.0)
+	_start_overlay(GSHumanoidClips.HIT, 1.0)
 	_overlay_gain = FLINCH_GAIN
 
 
@@ -460,14 +460,14 @@ func emote(which: StringName) -> void:
 
 
 ## Plays the avatar action [param id] that began [param elapsed] seconds ago, so a late joiner lands
-## in step. Upper body over the legs, except [constant DotHumanoidActions.FULL_BODY] ids. A looping
+## in step. Upper body over the legs, except [constant GSHumanoidActions.FULL_BODY] ids. A looping
 ## action holds until [method stop_action] or the player moves. False when the body has no clip.
 func play_action(id: StringName, loop: bool = false, elapsed: float = 0.0) -> bool:
-	var wanted := DotHumanoidActions.clip_name(id)
+	var wanted := GSHumanoidActions.clip_name(id)
 	if _anim == null or not _anim.has_animation(wanted):
 		return false
 	stop_action()
-	if DotHumanoidActions.is_full_body(id):
+	if GSHumanoidActions.is_full_body(id):
 		action = id
 		_action_full = wanted
 		return true
@@ -484,20 +484,20 @@ func play_action(id: StringName, loop: bool = false, elapsed: float = 0.0) -> bo
 
 ## Adds the uploaded action [param id] from [param scene] (a built GLB) so [method play_action] can
 ## play it; the library is shared by every figure of the body. Success is false when already there.
-func add_action_scene(id: StringName, scene: Node, clip: String, loop: bool = false) -> DotResult:
-	if _anim == null or _skeleton == null or not _anim.has_animation(DotHumanoidClips.IDLE):
-		return DotResult.fail(DotError.CODE_STATE, "this figure has no skinned body to play a clip on")
-	var wanted := DotHumanoidActions.clip_name(id)
+func add_action_scene(id: StringName, scene: Node, clip: String, loop: bool = false) -> GSResult:
+	if _anim == null or _skeleton == null or not _anim.has_animation(GSHumanoidClips.IDLE):
+		return GSResult.fail(GSError.CODE_STATE, "this figure has no skinned body to play a clip on")
+	var wanted := GSHumanoidActions.clip_name(id)
 	if _anim.has_animation(wanted):
-		return DotResult.success(false)
-	var prefix := DotHumanoidClips._skeleton_prefix(_anim.get_animation(DotHumanoidClips.IDLE))
-	var made := DotHumanoidActions.from_upload(scene, clip, _skeleton, prefix, loop)
+		return GSResult.success(false)
+	var prefix := GSHumanoidClips._skeleton_prefix(_anim.get_animation(GSHumanoidClips.IDLE))
+	var made := GSHumanoidActions.from_upload(scene, clip, _skeleton, prefix, loop)
 	if not made.ok:
 		return made
 	var err := _anim.get_animation_library(&"").add_animation(wanted, made.value)
 	if err != OK:
-		return DotResult.failure(DotError.from_engine(err, "adding an uploaded action"))
-	return DotResult.success(true)
+		return GSResult.failure(GSError.from_engine(err, "adding an uploaded action"))
+	return GSResult.success(true)
 
 
 ## The node a held weapon hangs from: "right_hand" or "hand" ([constant HAND_BONE]), turned so its
@@ -512,7 +512,7 @@ func attachment(point: StringName) -> Node3D:
 		return _hand
 	_hand = _bone_mount("Hand", HAND_BONE, Vector3(0.26, height * 0.62, -0.34))
 	if _hand.get_parent() != self:
-		_hand.transform = DotHumanoidFrames.hand_frame(_skeleton, _anim, _model, _to_figure()) * Transform3D(Basis.from_scale(Vector3.ONE * held_scale), Vector3.ZERO)
+		_hand.transform = GSHumanoidFrames.hand_frame(_skeleton, _anim, _model, _to_figure()) * Transform3D(Basis.from_scale(Vector3.ONE * held_scale), Vector3.ZERO)
 	return _hand
 
 
@@ -521,7 +521,7 @@ func _crown_mount() -> Node3D:
 		return _crown
 	_crown = _bone_mount("Crown", HEAD_BONE, Vector3(0.0, height, 0.0))
 	if _crown.get_parent() != self:
-		_crown.transform = DotHumanoidFrames.crown_local(_skeleton, _to_figure(), height)
+		_crown.transform = GSHumanoidFrames.crown_local(_skeleton, _to_figure(), height)
 	return _crown
 
 
@@ -541,7 +541,7 @@ func _bone_mount(node_name: String, bone_name: String, fallback: Vector3) -> Nod
 	return node
 
 
-## The drawn model, for [DotPlayerRagdoll] (it finds the skeleton and the skinned mesh under it).
+## The drawn model, for [GSPlayerRagdoll] (it finds the skeleton and the skinned mesh under it).
 func body_node() -> Node3D:
 	return _model
 
@@ -555,15 +555,15 @@ func mesh() -> MeshInstance3D:
 
 
 ## The pose as drawn now, for a replay (overlays, aim and swim tilt included); [method pose_apply]
-## puts it back. See [DotHumanoidPoseRecord] for the layout.
+## puts it back. See [GSHumanoidPoseRecord] for the layout.
 func pose_record() -> PackedFloat32Array:
-	return DotHumanoidPoseRecord.record(_skeleton, _model)
+	return GSHumanoidPoseRecord.record(_skeleton, _model)
 
 
 ## Draws the pose between two [method pose_record]s, [param alpha] of the way to [param b]. False
 ## (and nothing changed) when either is from another skeleton.
 func pose_apply(a: PackedFloat32Array, b: PackedFloat32Array, alpha: float) -> bool:
-	if not DotHumanoidPoseRecord.apply(_skeleton, _model, a, b, alpha):
+	if not GSHumanoidPoseRecord.apply(_skeleton, _model, a, b, alpha):
 		return false
 	# Two recorded rows apart the blend can carry a foot under the floor; every leg bone was just written, so the lift does not add up.
 	_apply_floor()
@@ -579,46 +579,46 @@ func set_drawn(on: bool) -> void:
 
 ## The directory the people's files are in.
 static func directory() -> String:
-	return DotHumanoidAssets.directory()
+	return GSHumanoidAssets.directory()
 
 
 ## Every file a figure may load, for a preloader or a pack manifest.
 static func content_paths() -> PackedStringArray:
-	return DotHumanoidAssets.content_paths()
+	return GSHumanoidAssets.content_paths()
 
 
 ## The baked real clips' path; a figure without the file plays the made ones.
 static func real_clips_path() -> String:
-	return DotHumanoidAssets.real_clips_path()
+	return GSHumanoidAssets.real_clips_path()
 
 
 static func body_path(id: StringName) -> String:
-	return DotHumanoidAssets.body_path(id)
+	return GSHumanoidAssets.body_path(id)
 
 
-## A model by path, imported or not (see [method DotHumanoidAssets.load_model]).
+## A model by path, imported or not (see [method GSHumanoidAssets.load_model]).
 static func load_model(path: String) -> PackedScene:
-	return DotHumanoidAssets.load_model(path)
+	return GSHumanoidAssets.load_model(path)
 
 
 ## A texture by path, imported or not.
 static func load_texture(path: String) -> Texture2D:
-	return DotHumanoidAssets.load_texture(path)
+	return GSHumanoidAssets.load_texture(path)
 
 
 ## One material per look: people with the same colours share it.
-static func material_for(p_look: DotHumanoidLook) -> ShaderMaterial:
-	return DotHumanoidAssets.material_for(p_look)
+static func material_for(p_look: GSHumanoidLook) -> ShaderMaterial:
+	return GSHumanoidAssets.material_for(p_look)
 
 
 ## How many distinct materials the looks drawn so far made: a crowd's draw-state cost.
 static func material_count() -> int:
-	return DotHumanoidAssets.material_count()
+	return GSHumanoidAssets.material_count()
 
 
 ## Drops every shared scene, library, material, shader and atlas so a process can exit without leaking them.
 static func clear_cache() -> void:
-	DotHumanoidAssets.clear_cache()
+	GSHumanoidAssets.clear_cache()
 
 
 func describe() -> Dictionary:
@@ -674,8 +674,8 @@ func _apply_overlays() -> void:
 			weight = minf(1.0, _overlay_time / _overlay_blend) * minf(1.0, (source.length - _overlay_time) / BLEND_OUT)
 	if source != null:
 		_overlay_weight = clampf(weight, 0.0, 1.0)
-	if source == null and hold == Hold.GUN and not downed and _action_full == &"" and not String(clip).ends_with("_gun") and clip != DotHumanoidClips.DEATH and clip != DotHumanoidClips.SWIM:
-		source = _anim.get_animation(DotHumanoidClips.IDLE_GUN)
+	if source == null and hold == Hold.GUN and not downed and _action_full == &"" and not String(clip).ends_with("_gun") and clip != GSHumanoidClips.DEATH and clip != GSHumanoidClips.SWIM:
+		source = _anim.get_animation(GSHumanoidClips.IDLE_GUN)
 		t = 0.0
 		weight = 1.0
 	if source == null or weight <= 0.0:
@@ -691,4 +691,4 @@ func _apply_overlays() -> void:
 	for k in range(0, pairs.size(), 2):
 		var index := pairs[k]
 		var q := source.rotation_track_interpolate(pairs[k + 1], t)
-		_skeleton.set_bone_pose_rotation(index, DotHumanoidBlend.toward(_skeleton.get_bone_pose_rotation(index), q, w, _overlay_gain))
+		_skeleton.set_bone_pose_rotation(index, GSHumanoidBlend.toward(_skeleton.get_bone_pose_rotation(index), q, w, _overlay_gain))

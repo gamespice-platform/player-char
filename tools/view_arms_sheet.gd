@@ -17,7 +17,7 @@ var _left := false
 var _hands := false
 var _mitts := false
 var _kinds: PackedStringArray = ["rifle", "pistol", "shotgun", "launcher", "sniper", "grenade", "knife", "knife_throw"]
-var _look: DotHumanoidLook = null
+var _look: GSHumanoidLook = null
 
 
 func _initialize() -> void:
@@ -26,7 +26,7 @@ func _initialize() -> void:
 			_out = arg.trim_prefix("--out=")
 		elif arg.begins_with("--register="):
 			for pair in arg.trim_prefix("--register=").split(","):
-				var _ok := DotHumanoidAssets.register_body(StringName(pair.get_slice(":", 0)), pair.substr(pair.find(":") + 1))
+				var _ok := GSHumanoidAssets.register_body(StringName(pair.get_slice(":", 0)), pair.substr(pair.find(":") + 1))
 		elif arg == "--held":
 			_held = true
 		elif arg == "--left":
@@ -39,7 +39,7 @@ func _initialize() -> void:
 			_kinds = arg.trim_prefix("--kinds=").split(",")
 		elif arg.begins_with("--look="):
 			var f := arg.trim_prefix("--look=").split(",")
-			_look = DotHumanoidLook.make(StringName(f[0]), Color(f[1]), Color(f[2]), Color(f[3]), Color(f[4]))
+			_look = GSHumanoidLook.make(StringName(f[0]), Color(f[1]), Color(f[2]), Color(f[3]), Color(f[4]))
 		elif arg == "--side":
 			_side = true
 		elif arg.begins_with("--off="):
@@ -86,7 +86,7 @@ func _run() -> void:
 	if _held:
 		await _held_sheet(sub, world, cam)
 		return
-	var arms := DotPlayerViewArms.new()
+	var arms := GSPlayerViewArms.new()
 	if _off.is_finite():
 		arms.eye_from_head = _off
 	if _side:
@@ -95,7 +95,7 @@ func _run() -> void:
 		cam.look_at(Vector3(0, 0.1, -0.5))
 	else:
 		world.add_child(arms)
-	arms.build(_look if _look != null else DotHumanoidLook.stock(7), 1.8)
+	arms.build(_look if _look != null else GSHumanoidLook.stock(7), 1.8)
 	arms.set_downed(true)
 	arms.tick(1.0, 0.05)
 	for _i in 4:
@@ -123,7 +123,7 @@ func _run() -> void:
 func _held_sheet(sub: SubViewport, world: Node3D, cam: Camera3D) -> void:
 	var pivot := Node3D.new()
 	world.add_child(pivot)
-	var arms := DotPlayerViewArms.new()
+	var arms := GSPlayerViewArms.new()
 	pivot.add_child(arms)
 	cam.get_parent().remove_child(cam)
 	pivot.add_child(cam)
@@ -164,7 +164,7 @@ func _held_sheet(sub: SubViewport, world: Node3D, cam: Camera3D) -> void:
 	marks["grip"].position = grip_pt
 	marks["support"].position = support_pt
 	arms.show_idle_left_arm = _left
-	arms.build(_look if _look != null else DotHumanoidLook.stock(7), 1.8)
+	arms.build(_look if _look != null else GSHumanoidLook.stock(7), 1.8)
 	var side_cam := Camera3D.new()
 	side_cam.fov = 60
 	pivot.add_child(side_cam)
@@ -173,7 +173,7 @@ func _held_sheet(sub: SubViewport, world: Node3D, cam: Camera3D) -> void:
 	var rows := 4
 	var sheet := Image.create(CELL.x * 6, CELL.y * rows, false, Image.FORMAT_RGBA8)
 	for row in rows:
-		arms.set_held(DotViewGrip.one_hand(weapon, grip_pt) if row == 0 else DotViewGrip.two_hand(weapon, grip_pt, support_pt))
+		arms.set_held(GSViewGrip.one_hand(weapon, grip_pt) if row == 0 else GSViewGrip.two_hand(weapon, grip_pt, support_pt))
 		cam.current = row != 2
 		side_cam.current = row == 2
 		cam.rotation_degrees.x = -60.0 if row == 3 else -5.0
@@ -247,13 +247,13 @@ func _stand_in(parent: Node3D, kind: String) -> Array:
 func _hands_sheet(sub: SubViewport, world: Node3D, cam: Camera3D) -> void:
 	var pivot := Node3D.new()
 	world.add_child(pivot)
-	var arms := DotPlayerViewArms.new()
+	var arms := GSPlayerViewArms.new()
 	arms.real_hands = not _mitts
 	pivot.add_child(arms)
 	cam.get_parent().remove_child(cam)
 	pivot.add_child(cam)
 	cam.rotation_degrees.x = -5.0
-	arms.build(_look if _look != null else DotHumanoidLook.stock(7), 1.8)
+	arms.build(_look if _look != null else GSHumanoidLook.stock(7), 1.8)
 	var close := Camera3D.new()
 	close.fov = 40
 	pivot.add_child(close)
@@ -271,7 +271,7 @@ func _hands_sheet(sub: SubViewport, world: Node3D, cam: Camera3D) -> void:
 			held_at = Vector3(0.0, -0.17, -0.42)
 		weapon.position = held_at
 		var points := _stand_in(weapon, kind)
-		var grip := DotViewGrip.one_hand(weapon, points[0]) if not (points[1] as Vector3).is_finite() else DotViewGrip.two_hand(weapon, points[0], points[1])
+		var grip := GSViewGrip.one_hand(weapon, points[0]) if not (points[1] as Vector3).is_finite() else GSViewGrip.two_hand(weapon, points[0], points[1])
 		grip.kind = StringName("knife" if kind == "knife_throw" else kind)
 		if kind in ["knife", "knife_throw"]:
 			# The blade runs along the weapon's +Y; its forward is where the edge points.

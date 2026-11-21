@@ -14,7 +14,7 @@ var _world: Node3D = null
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run()
 
 
@@ -32,11 +32,11 @@ func _run() -> void:
 	await _test_styles()
 	await _test_cap_and_life()
 	await _test_skinned()
-	await DotRagdollPoseNativeChecks.new(self).run()
+	await GSRagdollPoseNativeChecks.new(self).run()
 	await _test_faceplant_sweep()
-	await DotRagdollWeaponChecks.new(self).run()
+	await GSRagdollWeaponChecks.new(self).run()
 	await _test_against_wall()
-	await DotRagdollNanChecks.new(self).run()
+	await GSRagdollNanChecks.new(self).run()
 	await _test_non_finite()
 
 	_line("")
@@ -57,17 +57,17 @@ func _run() -> void:
 
 # The rule
 
-func _count(reactions: DotPlayerDeathReactions, headshot: bool, power: float, damage: float, named: StringName, n: int) -> Dictionary:
+func _count(reactions: GSPlayerDeathReactions, headshot: bool, power: float, damage: float, named: StringName, n: int) -> Dictionary:
 	var out := {}
 	for i in range(n):
-		var id := reactions.pick(headshot, power, damage, named, DotPlayerDeath.seed_of(i, 1000 + i))
+		var id := reactions.pick(headshot, power, damage, named, GSPlayerDeath.seed_of(i, 1000 + i))
 		out[id] = int(out.get(id, 0)) + 1
 	return out
 
 
 func _test_reactions() -> void:
 	_section("which reaction a death picks")
-	var r := DotPlayerDeathReactions.stock()
+	var r := GSPlayerDeathReactions.stock()
 	_check(r.size() == 5 and r.has(&"limp") and r.has(&"headshot_launch") and r.has(&"power_launch")
 		and r.has(&"face_plant") and r.has(&"crumple"), "the stock set is limp, two launches, face plant and crumple")
 
@@ -101,7 +101,7 @@ func _test_reactions() -> void:
 
 func _test_weights() -> void:
 	_section("weights a server sets")
-	var r := DotPlayerDeathReactions.stock()
+	var r := GSPlayerDeathReactions.stock()
 	_check(r.apply_weights("face_plant=0, crumple=0") == 2, "two weights read")
 	var counted := _count(r, false, 0.0, 50.0, &"", 500)
 	_check(counted.get(&"limp", 0) == 500, "with face plant and crumple at 0, every ordinary death is limp")
@@ -109,7 +109,7 @@ func _test_weights() -> void:
 	r.apply_weights("limp=0")
 	_check(r.pick(false, 0.0, 50.0, &"", 5) == &"limp", "nothing left to draw is still a limp fall")
 
-	var r2 := DotPlayerDeathReactions.stock()
+	var r2 := GSPlayerDeathReactions.stock()
 	_check(r2.apply_weights("bogus=3,face_plant=x,limp:2") == 1, "an unknown id and a non-number are skipped; id:weight is read")
 	_check(r2.find(&"limp").weight == 2.0, "and the one it read took")
 
@@ -118,12 +118,12 @@ func _test_weights() -> void:
 		"a weapon cannot force a reaction the server turned off")
 
 	var def := RefCounted.new()
-	_check(DotPlayerDeathReactions.weapon_reaction(def) == &"" and DotPlayerDeathReactions.weapon_power(null) == 0.0,
+	_check(GSPlayerDeathReactions.weapon_reaction(def) == &"" and GSPlayerDeathReactions.weapon_power(null) == 0.0,
 		"an object with no params names nothing and has no power")
 	var with_params := _FakeWeapon.new()
 	with_params.params = {&"death_reaction": &"power_launch", &"death_power": 0.9}
-	_check(DotPlayerDeathReactions.weapon_reaction(with_params) == &"power_launch"
-		and is_equal_approx(DotPlayerDeathReactions.weapon_power(with_params), 0.9),
+	_check(GSPlayerDeathReactions.weapon_reaction(with_params) == &"power_launch"
+		and is_equal_approx(GSPlayerDeathReactions.weapon_power(with_params), 0.9),
 		"a weapon def's params.death_reaction and death_power are read")
 
 
@@ -134,27 +134,27 @@ class _FakeWeapon:
 
 func _test_death() -> void:
 	_section("the death that travels with a kill")
-	var r := DotPlayerDeathReactions.stock()
+	var r := GSPlayerDeathReactions.stock()
 	var w := _FakeWeapon.new()
 	w.params = {&"death_power": 1.0}
-	var d := DotPlayerDeath.decide(r, false, 150.0, Vector3(2, 0, 0), 4242, w)
+	var d := GSPlayerDeath.decide(r, false, 150.0, Vector3(2, 0, 0), 4242, w)
 	_check(d.direction.is_equal_approx(Vector3.RIGHT), "the direction is normalised")
-	var back := DotPlayerDeath.from_dict(d.to_dict())
+	var back := GSPlayerDeath.from_dict(d.to_dict())
 	_check(back.reaction == d.reaction and back.roll_seed == d.roll_seed and back.direction == d.direction
 		and back.damage == d.damage and back.headshot == d.headshot, "to_dict and from_dict round-trip (%s)" % d.reaction)
-	var old := DotPlayerDeath.from_dict({"killer_id": 1})
+	var old := GSPlayerDeath.from_dict({"killer_id": 1})
 	_check(old.reaction == &"limp" and old.direction == Vector3.ZERO, "a kill from an older server is a plain fall")
-	_check(DotPlayerDeath.seed_of(3, 100) == DotPlayerDeath.seed_of(3, 100)
-		and DotPlayerDeath.seed_of(3, 100) != DotPlayerDeath.seed_of(3, 101), "seed_of is stable and spreads")
-	var twice := DotPlayerDeath.decide(r, false, 150.0, Vector3.RIGHT, 4242, w)
+	_check(GSPlayerDeath.seed_of(3, 100) == GSPlayerDeath.seed_of(3, 100)
+		and GSPlayerDeath.seed_of(3, 100) != GSPlayerDeath.seed_of(3, 101), "seed_of is stable and spreads")
+	var twice := GSPlayerDeath.decide(r, false, 150.0, Vector3.RIGHT, 4242, w)
 	_check(twice.reaction == d.reaction, "the server deciding the same kill twice decides the same")
-	_check(DotPlayerDeath.decide(r, false, 10.0, Vector3.RIGHT, 1, null, -1.0, &"face_plant").reaction == &"face_plant",
+	_check(GSPlayerDeath.decide(r, false, 10.0, Vector3.RIGHT, 1, null, -1.0, &"face_plant").reaction == &"face_plant",
 		"a game whose killer is no weapon names the reaction itself")
 
 	var wire := _FakeWire.new()
 	d.headshot = true
 	d.write_to(wire)
-	var read := DotPlayerDeath.read_from(wire)
+	var read := GSPlayerDeath.read_from(wire)
 	_check(read.reaction == d.reaction and read.roll_seed == d.roll_seed and read.damage == 150.0
 		and read.direction == d.direction and read.headshot, "write_to and read_from carry it over a writer and a reader")
 
@@ -208,27 +208,27 @@ func _add_cvar(cvar_name: String, default: String, _description: String, _flags:
 
 func _test_rules() -> void:
 	_section("the server's rules")
-	var rules := DotPlayerRagdollRules.new()
-	_check(rules.effective_style() == DotPlayerRagdollRules.Style.RAGDOLL, "ragdolls by default")
+	var rules := GSPlayerRagdollRules.new()
+	_check(rules.effective_style() == GSPlayerRagdollRules.Style.RAGDOLL, "ragdolls by default")
 	var made := rules.bind_cvars(_add_cvar)
 	_check(made.size() == 11, "eleven sv_ragdoll cvars")
 	_check(rules.max_count == 5, "a value the cvar already held is read back (sv_ragdoll_max 5)")
 	(_made_cvars["sv_ragdoll"] as _FakeCvar).set_string("0")
-	_check(not rules.enabled and rules.effective_style() == DotPlayerRagdollRules.Style.TOPPLE,
+	_check(not rules.enabled and rules.effective_style() == GSPlayerRagdollRules.Style.TOPPLE,
 		"sv_ragdoll 0 falls back to the no-physics topple")
 	(_made_cvars["sv_ragdoll_style"] as _FakeCvar).set_string("hide")
-	_check(rules.effective_style() == DotPlayerRagdollRules.Style.HIDE, "sv_ragdoll_style hide hides, on or off")
+	_check(rules.effective_style() == GSPlayerRagdollRules.Style.HIDE, "sv_ragdoll_style hide hides, on or off")
 	(_made_cvars["sv_ragdoll_style"] as _FakeCvar).set_string("cartwheel")
-	_check(rules.style == DotPlayerRagdollRules.Style.HIDE, "a style it does not know is refused")
+	_check(rules.style == GSPlayerRagdollRules.Style.HIDE, "a style it does not know is refused")
 	(_made_cvars["sv_ragdoll_time"] as _FakeCvar).set_string("3.5")
 	(_made_cvars["sv_ragdoll_reactions"] as _FakeCvar).set_string("face_plant=9")
 	_check(rules.lifetime == 3.5 and rules.reactions().find(&"face_plant").weight == 9.0,
 		"lifetime and reaction weights follow their cvars")
 
-	var client := DotPlayerRagdollRules.new()
+	var client := GSPlayerRagdollRules.new()
 	var link := _FakeLink.new()
 	link.held = {"sv_ragdoll_style": "stiff", "sv_ragdoll_max": "3"}
-	_check(client.follow_cvars(link) and client.style == DotPlayerRagdollRules.Style.STIFF and client.max_count == 3,
+	_check(client.follow_cvars(link) and client.style == GSPlayerRagdollRules.Style.STIFF and client.max_count == 3,
 		"a client follows the server's replicated values")
 	link.replicated_cvar_changed.emit("sv_ragdoll", "0")
 	_check(not client.enabled, "and every change after")
@@ -239,13 +239,13 @@ func _test_rules() -> void:
 
 func _test_roles() -> void:
 	_section("which part is which")
-	var R := DotPlayerRagdoll.Role
-	_check(DotPlayerRagdoll.role_of_name("leg-left") == R.LEG_L and DotPlayerRagdoll.role_of_name("arm-right") == R.ARM_R
-		and DotPlayerRagdoll.role_of_name("torso") == R.TORSO and DotPlayerRagdoll.role_of_name("head") == R.HEAD,
+	var R := GSPlayerRagdoll.Role
+	_check(GSPlayerRagdoll.role_of_name("leg-left") == R.LEG_L and GSPlayerRagdoll.role_of_name("arm-right") == R.ARM_R
+		and GSPlayerRagdoll.role_of_name("torso") == R.TORSO and GSPlayerRagdoll.role_of_name("head") == R.HEAD,
 		"the block characters' names")
-	_check(DotPlayerRagdoll.role_of_name("LeftHand") == R.ARM_L and DotPlayerRagdoll.role_of_name("RightFoot") == R.LEG_R
-		and DotPlayerRagdoll.role_of_name("Chest") == R.TORSO, "the humanoid mount names")
-	_check(DotPlayerRagdoll.role_of_name("arm") == R.OTHER and DotPlayerRagdoll.role_of_name("crest") == R.OTHER,
+	_check(GSPlayerRagdoll.role_of_name("LeftHand") == R.ARM_L and GSPlayerRagdoll.role_of_name("RightFoot") == R.LEG_R
+		and GSPlayerRagdoll.role_of_name("Chest") == R.TORSO, "the humanoid mount names")
+	_check(GSPlayerRagdoll.role_of_name("arm") == R.OTHER and GSPlayerRagdoll.role_of_name("crest") == R.OTHER,
 		"an arm with no side, and a crest, are not a limb")
 
 
@@ -291,15 +291,15 @@ func _figure(at: Vector3, named := true) -> Node3D:
 	return fig
 
 
-func _settle(body: DotPlayerRagdoll, seconds: float) -> void:
+func _settle(body: GSPlayerRagdoll, seconds: float) -> void:
 	var waited := 0.0
 	while waited < seconds and is_instance_valid(body) and not body.settled:
 		await get_tree().physics_frame
 		waited += get_physics_process_delta_time()
 
 
-func _death(reaction: StringName, dir := Vector3(0, 0, 1), headshot := false, damage := 100.0) -> DotPlayerDeath:
-	var d := DotPlayerDeath.new()
+func _death(reaction: StringName, dir := Vector3(0, 0, 1), headshot := false, damage := 100.0) -> GSPlayerDeath:
+	var d := GSPlayerDeath.new()
 	d.reaction = reaction
 	d.roll_seed = 99
 	d.direction = dir
@@ -310,7 +310,7 @@ func _death(reaction: StringName, dir := Vector3(0, 0, 1), headshot := false, da
 
 func _test_ragdoll_falls() -> void:
 	_section("a ragdoll falls, lies down and stops")
-	var yard := DotPlayerRagdolls.new()
+	var yard := GSPlayerRagdolls.new()
 	yard.rules.lifetime = 60.0
 	_world.add_child(yard)
 	var heard: Array[StringName] = []
@@ -362,19 +362,19 @@ func _test_ragdoll_falls() -> void:
 
 func _test_styles() -> void:
 	_section("the other styles, and figures with no limbs")
-	var yard := DotPlayerRagdolls.new()
+	var yard := GSPlayerRagdolls.new()
 	_world.add_child(yard)
 
-	yard.rules.style = DotPlayerRagdollRules.Style.STIFF
+	yard.rules.style = GSPlayerRagdollRules.Style.STIFF
 	var stiff := yard.spawn(_figure(Vector3(0, 0, 10)), _death(&"limp"))
 	_check(stiff.part_count() == 1 and stiff.joint_count() == 0 and stiff.part_nodes()[0] is RigidBody3D, "stiff is one rigid piece")
 	await _settle(stiff, 8.0)
 	_check(stiff.centre().y < 0.6 and stiff.lowest_point() > -0.12, "and it falls over onto the floor (%.2f)" % stiff.centre().y)
 
-	yard.rules.style = DotPlayerRagdollRules.Style.RAGDOLL
+	yard.rules.style = GSPlayerRagdollRules.Style.RAGDOLL
 	yard.rules.enabled = false
 	var topple := yard.spawn(_figure(Vector3(4, 0, 10)), _death(&"limp", Vector3(1, 0, 0)))
-	_check(topple.style == DotPlayerRagdollRules.Style.TOPPLE and not (topple.part_nodes()[0] is RigidBody3D),
+	_check(topple.style == GSPlayerRagdollRules.Style.TOPPLE and not (topple.part_nodes()[0] is RigidBody3D),
 		"sv_ragdoll 0: a topple, with no physics body at all")
 	for i in range(90):
 		await get_tree().physics_frame
@@ -382,14 +382,14 @@ func _test_styles() -> void:
 	_check(absf(topple.lowest_point()) < 0.05, "lying on the floor, not in it (%.3f)" % topple.lowest_point())
 
 	yard.rules.enabled = true
-	yard.rules.style = DotPlayerRagdollRules.Style.HIDE
+	yard.rules.style = GSPlayerRagdollRules.Style.HIDE
 	var gone_fig := _figure(Vector3(8, 0, 10))
 	_check(yard.spawn(gone_fig, _death(&"limp")) == null and not gone_fig.visible, "hide builds nothing and hides the figure")
 
-	yard.rules.style = DotPlayerRagdollRules.Style.RAGDOLL
+	yard.rules.style = GSPlayerRagdollRules.Style.RAGDOLL
 	var blob := _figure(Vector3(12, 0, 10), false)
 	var blob_body := yard.spawn(blob, _death(&"limp"))
-	_check(blob_body.style == DotPlayerRagdollRules.Style.STIFF, "a figure with no named torso falls as one piece")
+	_check(blob_body.style == GSPlayerRagdollRules.Style.STIFF, "a figure with no named torso falls as one piece")
 
 	# The local player's body is hidden in first person (set_drawn(false) on the model); dying then still leaves a corpse.
 	var first_person := _figure(Vector3(16, 0, 10))
@@ -404,14 +404,14 @@ func _test_styles() -> void:
 
 func _test_cap_and_life() -> void:
 	_section("the cap, and a body's life")
-	var yard := DotPlayerRagdolls.new()
+	var yard := GSPlayerRagdolls.new()
 	yard.rules.max_count = 3
 	yard.rules.lifetime = 1.0
 	yard.rules.fade = 0.3
 	yard.local_cap = 64
 	_world.add_child(yard)
 
-	var first: DotPlayerRagdoll = null
+	var first: GSPlayerRagdoll = null
 	for i in range(5):
 		var b := yard.spawn(_figure(Vector3(i * 3.0, 0, 20)), _death(&"limp"))
 		if i == 0:
@@ -428,15 +428,15 @@ func _test_cap_and_life() -> void:
 		await get_tree().physics_frame
 		waited += get_physics_process_delta_time()
 	_check(yard.live().is_empty(), "every body fades and is gone after its lifetime (%.1f s)" % waited)
-	var fps := DotPlayerRagdolls.default_local_cap()
+	var fps := GSPlayerRagdolls.default_local_cap()
 	_check(fps == 0 or fps >= 4, "a machine's own cap is unlimited (0) or never below four (%d)" % fps)
 
 
-func _person(at: Vector3) -> DotHumanoidFigure:
-	var person := DotHumanoidFigure.new()
+func _person(at: Vector3) -> GSHumanoidFigure:
+	var person := GSHumanoidFigure.new()
 	_world.add_child(person)
 	person.global_position = at
-	person.build(DotHumanoidLook.stock(5), 1.8)
+	person.build(GSHumanoidLook.stock(5), 1.8)
 	person.animate(0.0, 0.2)
 	return person
 
@@ -445,7 +445,7 @@ func _person(at: Vector3) -> DotHumanoidFigure:
 ## block figure, carrying the copied skeleton's bones, so it is the skin that ends up on the floor.
 func _test_skinned() -> void:
 	_section("a skinned body falls by its bones")
-	var yard := DotPlayerRagdolls.new()
+	var yard := GSPlayerRagdolls.new()
 	yard.rules.lifetime = 60.0
 	_world.add_child(yard)
 
@@ -456,13 +456,13 @@ func _test_skinned() -> void:
 		"six parts, five joints, from the skeleton (%s)" % (str(body.describe()) if body != null else "none"))
 	_check(not person.visible and body.skeleton_copy() != null and body.skeleton_copy().get_child_count() >= 1,
 		"the figure is hidden and its skinned mesh is drawn on a copied skeleton")
-	var skin_mesh := DotPlayerRagdoll.skinned_meshes(person, true)[0].mesh
-	var read := DotSkinSurfaces.of(skin_mesh)
+	var skin_mesh := GSPlayerRagdoll.skinned_meshes(person, true)[0].mesh
+	var read := GSSkinSurfaces.of(skin_mesh)
 	var sampled := 0
 	for surface: Dictionary in read:
 		for picked: PackedVector3Array in surface["samples"]:
 			sampled += picked.size()
-	_check(not read.is_empty() and is_same(read, DotSkinSurfaces.of(skin_mesh)) and sampled > 0,
+	_check(not read.is_empty() and is_same(read, GSSkinSurfaces.of(skin_mesh)) and sampled > 0,
 		"the skin's arrays are read once and kept for the next death (%d surfaces, %d samples)" % [read.size(), sampled])
 	var copies := 0
 	for part in body.part_nodes():
@@ -490,7 +490,7 @@ func _test_skinned() -> void:
 	# Held out in front, a gun and the arms made the one piece as deep as it was wide, and the
 	# plank stood back up: the column is the head, the body and the legs.
 	var armed := _person(Vector3(16, 0, 40))
-	armed.set_hold(DotHumanoidFigure.Hold.GUN)
+	armed.set_hold(GSHumanoidFigure.Hold.GUN)
 	armed.animate(0.0, 0.3)
 	_hand_box(armed, Vector3(0.08, 0.14, 0.9))
 	var armed_plant := yard.spawn(armed, _death(&"face_plant"))
@@ -499,7 +499,7 @@ func _test_skinned() -> void:
 	# And limp: boxed round the pistol in its hand, an arm propped a dead person up on their
 	# knees for good. What a hand holds is drawn on its part, never collided.
 	var armed_limp := _person(Vector3(20, 0, 40))
-	armed_limp.set_hold(DotHumanoidFigure.Hold.GUN)
+	armed_limp.set_hold(GSHumanoidFigure.Hold.GUN)
 	armed_limp.animate(0.0, 0.3)
 	_hand_box(armed_limp, Vector3(0.1, 0.25, 0.7))
 	var limp_body := yard.spawn(armed_limp, _death(&"limp", Vector3(-0.75, 0, -0.67)))
@@ -515,7 +515,7 @@ func _test_skinned() -> void:
 		await get_tree().physics_frame
 	var tskel := topple.skeleton_copy()
 	var thead := (tskel.global_transform * tskel.get_bone_global_pose(tskel.find_bone("Head"))).origin.y
-	_check(topple.style == DotPlayerRagdollRules.Style.TOPPLE and topple.settled and thead < 0.7,
+	_check(topple.style == GSPlayerRagdollRules.Style.TOPPLE and topple.settled and thead < 0.7,
 		"sv_ragdoll 0: the skinned body topples with no physics (head bone at %.2f m)" % thead)
 	_check(absf(topple.lowest_point()) < 0.15, "onto the floor (%.2f)" % topple.lowest_point())
 
@@ -523,7 +523,7 @@ func _test_skinned() -> void:
 
 
 ## Puts a box of [param size] in [param person]'s right hand, the way a held gun is drawn.
-func _hand_box(person: DotHumanoidFigure, size: Vector3) -> void:
+func _hand_box(person: GSHumanoidFigure, size: Vector3) -> void:
 	var box := MeshInstance3D.new()
 	var box_mesh := BoxMesh.new()
 	box_mesh.size = size
@@ -533,7 +533,7 @@ func _hand_box(person: DotHumanoidFigure, size: Vector3) -> void:
 
 ## A skinned body's fade shrinks its copied skeleton, measured against [param person]'s scale,
 ## and the body is gone after its lifetime. Clears [param yard] at the end.
-func _check_skinned_fade(yard: DotPlayerRagdolls, person: DotHumanoidFigure) -> void:
+func _check_skinned_fade(yard: GSPlayerRagdolls, person: GSHumanoidFigure) -> void:
 	yard.rules.enabled = true
 	yard.rules.lifetime = 0.5
 	yard.rules.fade = 0.5
@@ -557,7 +557,7 @@ func _check_skinned_fade(yard: DotPlayerRagdolls, person: DotHumanoidFigure) -> 
 func _test_faceplant_sweep() -> void:
 	_section("a skinned face plant onto open floor always lies down")
 	_line("   (52 falls of up to 6 s of simulated time each, in wall time: about 5 minutes, not a hang)")
-	var yard := DotPlayerRagdolls.new()
+	var yard := GSPlayerRagdolls.new()
 	yard.rules.lifetime = 60.0
 	_world.add_child(yard)
 	# The games tune movement against about 20 m/s2, not 9.8; a heavier fall asks more of the spin.
@@ -586,7 +586,7 @@ func _test_faceplant_sweep() -> void:
 
 
 ## Thirty-six face plants from varied stances; returns how many ran.
-func _sweep_open_floor(yard: DotPlayerRagdolls, upright: Array[String]) -> int:
+func _sweep_open_floor(yard: GSPlayerRagdolls, upright: Array[String]) -> int:
 	var falls := 0
 	for s in range(36):
 		var person := _person(Vector3(0, [0.0, -0.05, -0.1, 0.03][s % 4], 80))
@@ -613,7 +613,7 @@ func _sweep_open_floor(yard: DotPlayerRagdolls, upright: Array[String]) -> int:
 
 ## A table edge ahead at hip height: the plank tips onto it and stops at about 30 degrees, still
 ## on its feet. Pushing harder does not help; a frozen plank on furniture must let go and slump.
-func _sweep_table_edge(yard: DotPlayerRagdolls, table: StaticBody3D, leaning: Array[String]) -> int:
+func _sweep_table_edge(yard: GSPlayerRagdolls, table: StaticBody3D, leaning: Array[String]) -> int:
 	var tried := 0
 	for s in range(8):
 		var gap: float = [0.3, 0.38, 0.45, 0.55][s % 4]
@@ -637,7 +637,7 @@ func _sweep_table_edge(yard: DotPlayerRagdolls, table: StaticBody3D, leaning: Ar
 
 ## The same lean with something always jostling the plank (never still for the stall timer): it
 ## must not be frozen standing at max_sim_time.
-func _sweep_jostled(yard: DotPlayerRagdolls, table: StaticBody3D, jostled: Array[String]) -> void:
+func _sweep_jostled(yard: GSPlayerRagdolls, table: StaticBody3D, jostled: Array[String]) -> void:
 	for s in range(4):
 		table.global_position = Vector3(40, 0.8 - 0.025, 80 - [0.3, 0.38, 0.45, 0.55][s] - 0.4)
 		var person := _person(Vector3(40, 0, 80))
@@ -662,16 +662,16 @@ func _sweep_jostled(yard: DotPlayerRagdolls, table: StaticBody3D, jostled: Array
 
 func _test_non_finite() -> void:
 	_section("NaN and infinite kills never reach the body")
-	var M := DotPlayerRagdollMath
+	var M := GSPlayerRagdollMath
 	_check(M.finite_or(Vector3(NAN, 0, 1)) == Vector3.ZERO and M.finite_or(Vector3(0, INF, 0), Vector3.UP) == Vector3.UP,
 		"finite_or replaces a NaN or infinite vector")
 	_check(M.finite_or(Vector3(1, 2, 3)) == Vector3(1, 2, 3) and M.finite_float(NAN, 5.0) == 5.0 and M.finite_float(2.0) == 2.0,
 		"and keeps a finite one")
-	var r := DotPlayerDeathReactions.stock()
-	var decided := DotPlayerDeath.decide(r, false, NAN, Vector3(NAN, 1, 0), 7)
+	var r := GSPlayerDeathReactions.stock()
+	var decided := GSPlayerDeath.decide(r, false, NAN, Vector3(NAN, 1, 0), 7)
 	_check(is_finite(decided.damage) and decided.direction == Vector3.ZERO, "decide() sanitises damage and direction")
 
-	var yard := DotPlayerRagdolls.new()
+	var yard := GSPlayerRagdolls.new()
 	_world.add_child(yard)
 	var body := yard.spawn(_figure(Vector3(40, 0, 40)), _death(&"launch", Vector3(NAN, NAN, NAN), false, NAN), Vector3(INF, NAN, 0))
 	_check(body != null and is_finite(body.death.damage) and body.death.direction == Vector3.ZERO, "a NaN death builds with a plain fall")
@@ -716,7 +716,7 @@ func _line(text: String) -> void:
 
 
 ## How far past the plane [param normal].dot(p) = [param offset] any part's box reaches (m, 0 when none does).
-func _past_plane(body: DotPlayerRagdoll, normal: Vector3, offset: float) -> float:
+func _past_plane(body: GSPlayerRagdoll, normal: Vector3, offset: float) -> float:
 	var deepest := 0.0
 	for node in body.part_nodes():
 		for child in node.get_children():
@@ -751,7 +751,7 @@ func _test_against_wall() -> void:
 	_world.add_child(wall)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
-	var yard := DotPlayerRagdolls.new()
+	var yard := GSPlayerRagdolls.new()
 	yard.rules.lifetime = 60.0
 	_world.add_child(yard)
 	for reaction: StringName in [&"limp", &"faceplant", &"stiff"]:
@@ -764,7 +764,7 @@ func _test_against_wall() -> void:
 		var past := _past_plane(body, Vector3.RIGHT, FACE)
 		_check(past < 0.03, "%s: no part reaches into the wall (%.3f m past its face, torso at x %.2f)" % [reaction, past, body.centre().x])
 	yard.rules.shootable = true
-	var lying: DotPlayerRagdoll = yard.live()[-1]
+	var lying: GSPlayerRagdoll = yard.live()[-1]
 	var at := lying.centre()
 	_check(not yard.shoot(at, Vector3.LEFT, 4.0, 0.6, Vector3(3, at.y, at.z)), "a shot from behind the wall does not move the body")
 	_check(yard.shoot(at, Vector3.RIGHT, 4.0, 0.6, Vector3(-3, at.y, at.z)), "a shot from the open side still does")

@@ -1,16 +1,16 @@
-class_name DotKenneyCharacters
+class_name GSKenneyCharacters
 extends RefCounted
 
 ## Kenney's "Animated Characters Protagonists" and "Animated Characters Retro" (CC0, kenney.nl) as people: one body (a 58-bone rig, 3.77 units tall as exported),
 ## eight skins in two packs, and the family's clip set baked onto it (`people/kenney/kenney_clips.res`, built by `tools/kenney_retarget.gd`).
 ## Kenney ships the same model and the same three clips (idle, run, jump) in both packs, so there is one glb and the packs are groups of skins.
-## Beside the Quaternius people ([DotHumanoidFigure]), not instead of them: this builds a plain node tree to play and look at. docs/kenney-characters.md.
+## Beside the Quaternius people ([GSHumanoidFigure]), not instead of them: this builds a plain node tree to play and look at. docs/kenney-characters.md.
 
 const DIR := "res://addons/dot_player_char/people/kenney/"
 const MODEL := DIR + "kenney_character.glb"
 const CLIPS := DIR + "kenney_clips.res"
 
-## The family's height (metres, [DotPlayerCharDef]) over the model's own: the wrapper node carries this scale, because the glTF exporter drops the armature's.
+## The family's height (metres, [GSPlayerCharDef]) over the model's own: the wrapper node carries this scale, because the glTF exporter drops the armature's.
 const SCALE := 1.8 / 3.7654
 
 ## What a pack must be able to play: a pack missing one is a broken build, not a quieter one.
@@ -57,7 +57,7 @@ static func texture_path(pack: StringName, skin: StringName) -> String:
 	return "%s%s_%s.png" % [DIR, pack, skin]
 
 
-## Every file a client must have to draw any of these people (for `DotHumanoidAssets.content_paths`-style lists); pure data.
+## Every file a client must have to draw any of these people (for `GSHumanoidAssets.content_paths`-style lists); pure data.
 static func content_paths() -> Array[String]:
 	var out: Array[String] = [MODEL, CLIPS]
 	for pack in packs():
@@ -79,17 +79,17 @@ static func missing(library: AnimationLibrary) -> Array[StringName]:
 ## Null and an error for an unknown pack or skin or a missing file; nothing is approximated.
 static func build(pack: StringName, skin: StringName) -> Node3D:
 	if display_name(pack, skin) == "":
-		push_error("DotKenneyCharacters: no skin %s in pack %s" % [skin, pack])
+		push_error("GSKenneyCharacters: no skin %s in pack %s" % [skin, pack])
 		return null
 	var scene := load(MODEL) as PackedScene
 	var library := load(CLIPS) as AnimationLibrary
 	var texture := load(texture_path(pack, skin)) as Texture2D
 	if scene == null or library == null or texture == null:
-		push_error("DotKenneyCharacters: %s, %s or %s did not load (import the project once)" % [MODEL, CLIPS, texture_path(pack, skin)])
+		push_error("GSKenneyCharacters: %s, %s or %s did not load (import the project once)" % [MODEL, CLIPS, texture_path(pack, skin)])
 		return null
 	var absent := missing(library)
 	if not absent.is_empty():
-		push_error("DotKenneyCharacters: the clip library lacks %s" % [absent])
+		push_error("GSKenneyCharacters: the clip library lacks %s" % [absent])
 		return null
 	var wrapper := Node3D.new()
 	wrapper.name = display_name(pack, skin)
@@ -107,5 +107,5 @@ static func build(pack: StringName, skin: StringName) -> Node3D:
 	player.root_node = player.get_path_to(model)
 	var err := player.add_animation_library(&"", library)
 	if err != OK:
-		push_error("DotKenneyCharacters: could not add the clips (%s)" % error_string(err))
+		push_error("GSKenneyCharacters: could not add the clips (%s)" % error_string(err))
 	return wrapper

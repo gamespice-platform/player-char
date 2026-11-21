@@ -1,4 +1,4 @@
-class_name DotPeopleLegsChecks
+class_name GSPeopleLegsChecks
 extends RefCounted
 
 ## The suite's legs sections (heading, backward, wall feet, first-person body), split out to keep
@@ -29,23 +29,23 @@ func run() -> void:
 	await _check_own_view()
 
 
-func _figure() -> DotHumanoidFigure:
-	var g := DotHumanoidFigure.new()
+func _figure() -> GSHumanoidFigure:
+	var g := GSHumanoidFigure.new()
 	suite.add_child(g)
-	g.build(DotHumanoidLook.stock(9), 1.8)
+	g.build(GSHumanoidLook.stock(9), 1.8)
 	return g
 
 
 ## Holding a gun, the walk and run carry a drawn ankle (the end of the leg: the foot bones are IK controls) under
 ## the floor; the legs lift it back to its rest height, walking ahead, strafing and turning, at a short body's speeds.
 func _check_floor() -> void:
-	var g := DotHumanoidFigure.new()
+	var g := GSHumanoidFigure.new()
 	suite.add_child(g)
-	g.build(DotHumanoidLook.stock(9), 1.372)
-	g.set_hold(DotHumanoidFigure.Hold.GUN)
+	g.build(GSHumanoidLook.stock(9), 1.372)
+	g.set_hold(GSHumanoidFigure.Hold.GUN)
 	var sk := g.skeleton()
 	var legs: Array = []
-	for names: Array in DotHumanoidLegs.LEGS:
+	for names: Array in GSHumanoidLegs.LEGS:
 		var lower := sk.find_bone(names[1])
 		legs.append([lower, sk.get_bone_global_rest(lower).affine_inverse() * sk.get_bone_global_rest(sk.find_bone(names[2])).origin])
 	var to_fig := g.global_transform.affine_inverse() * sk.global_transform
@@ -97,7 +97,7 @@ func _check_floor_lift() -> void:
 		"floor lift: an origin 0.2 m under the tread draws the body on it (%.3f m, model at %.3f)" % [lifts[0], body.position.y])
 	suite._check(lifts[1] == 0.0 and lifts[2] == 0.0 and lifts[3] == 0.0 and lifts[4] == 0.0,
 		"floor lift: none past the reach, above the floor, swimming or with no mask (%s)" % [lifts])
-	suite._check(is_equal_approx(snappedf(lifts[5], 0.001), 0.2) and g.state in [DotPlayerAnimState.JUMP, DotPlayerAnimState.FALL],
+	suite._check(is_equal_approx(snappedf(lifts[5], 0.001), 0.2) and g.state in [GSPlayerAnimState.JUMP, GSPlayerAnimState.FALL],
 		"floor lift: drawn mid-hop across the riser, still on the tread (%.3f m, state %s)" % [lifts[5], g.state])
 	g.set_motion(ground)
 	g.animate(0.0, DT)
@@ -156,7 +156,7 @@ func _check_far_skip() -> void:
 	await suite.get_tree().process_frame
 
 
-## The client's ranges are read live by figures already built, and past [member DotHumanoidFigure.lift_range] a moved
+## The client's ranges are read live by figures already built, and past [member GSHumanoidFigure.lift_range] a moved
 ## body stands on the floor only on the frames its clip steps (0, the default, lifts it every frame).
 func _check_ranges() -> void:
 	var cam := Camera3D.new()
@@ -176,18 +176,18 @@ func _check_ranges() -> void:
 	await suite.get_tree().physics_frame
 	var mesh := g.mesh()
 	g.animate(0.0, DT)
-	var defaults := mesh.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF and mesh.visibility_range_end == DotHumanoidFigure.DRAW_RANGE
-	DotHumanoidFigure.shadow_range = 0.0
-	DotHumanoidFigure.draw_range = 50.0
-	DotHumanoidFigure.lod_bias = 0.2
+	var defaults := mesh.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF and mesh.visibility_range_end == GSHumanoidFigure.DRAW_RANGE
+	GSHumanoidFigure.shadow_range = 0.0
+	GSHumanoidFigure.draw_range = 50.0
+	GSHumanoidFigure.lod_bias = 0.2
 	g.animate(0.0, DT)
 	suite._check(defaults and mesh.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON and mesh.visibility_range_end == 50.0 \
 			and is_equal_approx(mesh.lod_bias, 0.2),
 		"ranges: at 60 m no shadow by default; shadow_range 0 casts one, draw_range and lod_bias reach the built mesh")
-	DotHumanoidFigure.shadow_range = DotHumanoidFigure.SHADOW_RANGE
-	DotHumanoidFigure.draw_range = DotHumanoidFigure.DRAW_RANGE
-	DotHumanoidFigure.lod_bias = DotHumanoidFigure.LOD_BIAS
-	DotHumanoidFigure.lift_range = 20.0
+	GSHumanoidFigure.shadow_range = GSHumanoidFigure.SHADOW_RANGE
+	GSHumanoidFigure.draw_range = GSHumanoidFigure.DRAW_RANGE
+	GSHumanoidFigure.lod_bias = GSHumanoidFigure.LOD_BIAS
+	GSHumanoidFigure.lift_range = 20.0
 	for i in 4:
 		g.animate(0.0, DT)
 	var first := g.floor_lift
@@ -198,7 +198,7 @@ func _check_ranges() -> void:
 	for i in 4:
 		g.animate(0.0, DT)
 	var stepped := g.floor_lift
-	DotHumanoidFigure.lift_range = 0.0
+	GSHumanoidFigure.lift_range = 0.0
 	g.global_position = Vector3(0.0, 0.0, 0.0)
 	await suite.get_tree().process_frame
 	await suite.get_tree().process_frame
@@ -212,7 +212,7 @@ func _check_ranges() -> void:
 
 
 ## Out of view (behind the camera) the step doubles; hidden, or out of view past the shadow's range, nothing of it is
-## drawn and it is posed every [constant DotHumanoidFigure.UNSEEN_STEP] frames.
+## drawn and it is posed every [constant GSHumanoidFigure.UNSEEN_STEP] frames.
 func _check_offscreen() -> void:
 	var cam := Camera3D.new()
 	suite.add_child(cam)
@@ -290,7 +290,7 @@ func _check_walk(velocity: Vector3, who: String) -> void:
 	var want_turn := rad_to_deg(g.legs.twist)
 	suite._check(stances > 10 and worst < 0.3, "%s: the planted foot stays put (%.2f m/s at most over %d windows)" % [who, worst, stances])
 	var back := velocity.z > 1.0
-	var expect := -DotHumanoidLegs.MAX_TWIST if velocity.x > 1.0 else 0.0
+	var expect := -GSHumanoidLegs.MAX_TWIST if velocity.x > 1.0 else 0.0
 	suite._check(g.legs.backward == back and (rates.slice(60).all(func(r: float) -> bool: return r <= 0.0) if back else rates.slice(60).all(func(r: float) -> bool: return r >= 0.0)),
 		"%s: the stride clip plays %s (backward %s)" % [who, "in reverse" if back else "forward", g.legs.backward])
 	suite._check(is_equal_approx(g.legs.twist, expect) and absf(absf(turn) - absf(want_turn)) < 12.0,
@@ -309,8 +309,8 @@ func _check_layers() -> void:
 	var near := _figure()
 	var behind := _figure()
 	var plain := _figure()
-	for g: DotHumanoidFigure in [near, behind, plain]:
-		g.set_hold(DotHumanoidFigure.Hold.GUN)
+	for g: GSHumanoidFigure in [near, behind, plain]:
+		g.set_hold(GSHumanoidFigure.Hold.GUN)
 		g.aim_pitch = 0.5
 	var steps := []
 	for i in 12:
@@ -335,7 +335,7 @@ func _check_layers() -> void:
 	suite._check(none and steps.max() == 1 and worst < 0.002,
 		"in view near, every bone is posed as with no camera, to the 0.001 rad two figures differ by anyway (worst %.6f rad, no camera %s)" % [worst, none])
 	suite._check(apart > 0.05, "behind the camera the aim and the gun arm are not posed (%.3f rad off at most)" % apart)
-	for g: DotHumanoidFigure in [near, behind, plain]:
+	for g: GSHumanoidFigure in [near, behind, plain]:
 		g.queue_free()
 	cam.queue_free()
 	await suite.get_tree().process_frame
@@ -354,7 +354,7 @@ func _check_wall() -> void:
 		g.animate(5.0, DT)
 		await suite.get_tree().process_frame
 		if i >= 20:
-			var ankle: Vector3 = DotHumanoidLegs.ankles(sk)[0]
+			var ankle: Vector3 = GSHumanoidLegs.ankles(sk)[0]
 			seen.append(Vector2(ankle.y, absf(wall.distance_to(ankle))))
 	var low: float = seen.map(func(v: Vector2) -> float: return v.x).min()
 	var planted := seen.filter(func(v: Vector2) -> bool: return v.x < low + 0.05)
@@ -366,7 +366,7 @@ func _check_wall() -> void:
 	for i in 30:
 		g.animate(0.0, DT)
 		await suite.get_tree().process_frame
-	var ankles := DotHumanoidLegs.ankles(sk)
+	var ankles := GSHumanoidLegs.ankles(sk)
 	suite._check(ankles.all(func(a: Vector3) -> bool: return absf(wall.distance_to(a)) > 0.2), "off the wall the feet are under the body again")
 	g.queue_free()
 
@@ -375,7 +375,7 @@ func _check_own_view() -> void:
 	var g := _figure()
 	var sk := g.skeleton()
 	var scale_of := func(bone: String) -> float: return sk.get_bone_pose_scale(sk.find_bone(bone)).x
-	g.first_person = DotHumanoidOwnView.LEGS
+	g.first_person = GSHumanoidOwnView.LEGS
 	g.set_motion({"on_floor": true})
 	for i in 5:
 		g.animate(0.0, DT)
@@ -383,17 +383,17 @@ func _check_own_view() -> void:
 	var shadow: Skeleton3D = g._own.shadow()
 	suite._check(g.mesh().cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF and shadow != null and shadow.get_bone_pose_scale(shadow.find_bone("Abdomen")).x > 0.9,
 		"legs: the whole person's shadow comes from a shadow-only copy")
-	var low: float = DotHumanoidLegs.ankles(sk).map(func(a: Vector3) -> float: return a.y).min()
+	var low: float = GSHumanoidLegs.ankles(sk).map(func(a: Vector3) -> float: return a.y).min()
 	suite._check(absf(low) < 0.12, "legs: standing, the ankles are at the feet's origin (%.3f m)" % low)
 	var hip_y := func() -> float:
-		return (sk.global_transform * DotHumanoidIk.global_pose(sk, sk.find_bone("UpperLeg.L")).origin).y
+		return (sk.global_transform * GSHumanoidIk.global_pose(sk, sk.find_bone("UpperLeg.L")).origin).y
 	var stand_hip: float = hip_y.call()
 	var leg: float = stand_hip - low
 	suite._check(leg > 0.2 * g.height and leg < 0.65 * g.height, "legs: standing, hip to ankle is %.2f m of a %.2f m person (0.2 to 0.65; short cartoon legs)" % [leg, g.height])
 	g.set_motion({"on_floor": true, "crouched": true})
 	for i in 30:
 		g.animate(0.0, DT)
-	var crouch_low: float = DotHumanoidLegs.ankles(sk).map(func(a: Vector3) -> float: return a.y).min()
+	var crouch_low: float = GSHumanoidLegs.ankles(sk).map(func(a: Vector3) -> float: return a.y).min()
 	var crouch_hip: float = hip_y.call()
 	suite._check(absf(crouch_low) < 0.12 and crouch_hip < stand_hip - 0.02, "legs: crouched, the feet stay on the floor (%.3f m) and the hips drop (%.3f to %.3f m)" % [crouch_low, stand_hip, crouch_hip])
 	g.set_motion({"on_floor": true})
@@ -408,15 +408,15 @@ func _check_own_view() -> void:
 	var want := g.own_look_down_back * g.height / 1.8
 	suite._check(absf(level) < 0.001 and want > 0.1 and absf(down - want) < 0.01,
 		"legs: looking straight down the body trails %.2f m behind the eye (want %.2f), level it does not (%.3f)" % [down, want, level])
-	g.first_person = DotHumanoidOwnView.THIRD
+	g.first_person = GSHumanoidOwnView.THIRD
 	var third: float = back_at.call(-89.0)
-	g.first_person = DotHumanoidOwnView.LEGS
+	g.first_person = GSHumanoidOwnView.LEGS
 	suite._check(absf(third) < 0.001, "third person looking down: the body stays under the eye (%.3f)" % third)
 	back_at.call(0.0)
-	g.first_person = DotHumanoidOwnView.BODY
+	g.first_person = GSHumanoidOwnView.BODY
 	g.animate(0.0, DT)
 	suite._check(scale_of.call("Shoulder.L") < 0.01 and scale_of.call("Neck") < 0.01 and scale_of.call("Abdomen") > 0.9, "body: the head, neck and arms are gone, the chest is not")
-	g.first_person = DotHumanoidOwnView.THIRD
+	g.first_person = GSHumanoidOwnView.THIRD
 	g.animate(0.0, DT)
 	await suite.get_tree().process_frame
 	suite._check(scale_of.call("Abdomen") > 0.9 and scale_of.call("Head") > 0.9 and g._own.shadow() == null and g.mesh().cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON,
@@ -429,11 +429,11 @@ func _check_own_view() -> void:
 
 
 ## `cl_legs` off: first person draws nothing of the body (no shrunk bones, cap or shadow copy), only a shadow; on again brings the legs back.
-func _check_cl_legs(g: DotHumanoidFigure) -> void:
+func _check_cl_legs(g: GSHumanoidFigure) -> void:
 	var sk := g.skeleton()
-	var store := DotCLegsFake.new()
-	DotOwnBodySetting.follow(g, store)
-	g.first_person = DotHumanoidOwnView.LEGS
+	var store := GSCLegsFake.new()
+	GSOwnBodySetting.follow(g, store)
+	g.first_person = GSHumanoidOwnView.LEGS
 	g.animate(0.0, DT)
 	suite._check(g.own_body_shown and sk.get_bone_pose_scale(sk.find_bone("Abdomen")).x < 0.01 and g._own.shadow() != null, "cl_legs on (default): the legs view is built")
 	store.set_value(false)
@@ -443,13 +443,13 @@ func _check_cl_legs(g: DotHumanoidFigure) -> void:
 	store.set_value(true)
 	g.animate(0.0, DT)
 	suite._check(sk.get_bone_pose_scale(sk.find_bone("Abdomen")).x < 0.01 and g._own.shadow() != null, "cl_legs on again: the legs are back")
-	g.first_person = DotHumanoidOwnView.THIRD
+	g.first_person = GSHumanoidOwnView.THIRD
 	g.animate(0.0, DT)
-	DotOwnBodySetting.follow(g, store)
+	GSOwnBodySetting.follow(g, store)
 	suite._check(store.changed.get_connections().size() == 1, "following the same figure and settings twice connects once")
-	var plain := DotCLegsPlain.new()
+	var plain := GSCLegsPlain.new()
 	plain.value = false
-	DotOwnBodySetting.follow(g, plain)
+	GSOwnBodySetting.follow(g, plain)
 	suite._check(not g.own_body_shown, "a settings object without a changed signal still applies")
 	g.own_body_shown = true
 	_check_first_person_body()
@@ -467,9 +467,9 @@ func _check_first_person_body() -> void:
 	head.mesh = BoxMesh.new()
 	body.add_child(head)
 	suite.add_child(body)
-	var fp := DotPlayerFirstPersonBody.new()
-	var store := DotCLegsFake.new()
-	DotOwnBodySetting.follow(fp, store)
+	var fp := GSPlayerFirstPersonBody.new()
+	var store := GSCLegsFake.new()
+	GSOwnBodySetting.follow(fp, store)
 	fp.apply(body)
 	suite._check(chest.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON and is_equal_approx(body.position.z, fp.back_offset), "first-person body, cl_legs on: body drawn and pulled back")
 	store.set_value(false)
@@ -480,14 +480,14 @@ func _check_first_person_body() -> void:
 	body.free()
 
 
-class DotCLegsPlain extends RefCounted:
+class GSCLegsPlain extends RefCounted:
 	var value := true
 
 	func get_bool(_key: StringName, _fallback: bool = false) -> bool:
 		return value
 
 
-class DotCLegsFake extends RefCounted:
+class GSCLegsFake extends RefCounted:
 	signal changed(key: StringName, value: Variant, reason: StringName)
 	var value := true
 
@@ -496,4 +496,4 @@ class DotCLegsFake extends RefCounted:
 
 	func set_value(v: bool) -> void:
 		value = v
-		changed.emit(DotOwnBodySetting.KEY, v, &"user")
+		changed.emit(GSOwnBodySetting.KEY, v, &"user")

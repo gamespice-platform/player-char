@@ -1,4 +1,4 @@
-class_name DotPlayerRagdollMath
+class_name GSPlayerRagdollMath
 extends RefCounted
 
 ## Small pure helpers for building a ragdoll from a skeleton's points.

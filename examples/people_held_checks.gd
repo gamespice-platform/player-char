@@ -1,4 +1,4 @@
-class_name DotPeopleHeldChecks
+class_name GSPeopleHeldChecks
 extends RefCounted
 
 ## The suite's held-weapon and recorded-pose sections, split out to keep people_selftest under the
@@ -13,22 +13,22 @@ func _init(host: Node) -> void:
 
 func run_arms() -> void:
 	suite._section("your own arms holding a weapon")
-	var arms := DotPlayerViewArms.new()
+	var arms := GSPlayerViewArms.new()
 	# These checks place the kit's own hands by palm_offset; the real hands' seats are checked in people_hand_checks.
 	arms.real_hands = false
 	suite.add_child(arms)
 	var weapon := Node3D.new()
 	suite.add_child(weapon)
 	weapon.position = Vector3(0.08, -0.2, -0.4)
-	arms.build(DotHumanoidLook.stock(3), 1.8)
+	arms.build(GSHumanoidLook.stock(3), 1.8)
 	suite._check(not arms.arms().visible and not arms.describe()["held"], "off by default: nothing shown")
 	var grip := Vector3(0.0, -0.08, 0.1)
 	var fore := Vector3(-0.03, -0.07, -0.1)
-	arms.set_held(DotViewGrip.two_hand(weapon, grip, fore))
+	arms.set_held(GSViewGrip.two_hand(weapon, grip, fore))
 	for i in 8:
 		arms.tick(0.0, 1.0 / 30.0)
 		await suite.get_tree().process_frame
-	var sk: Skeleton3D = (arms.arms() as DotHumanoidFigure).skeleton()
+	var sk: Skeleton3D = (arms.arms() as GSHumanoidFigure).skeleton()
 	suite._check(arms.arms().visible and arms.describe()["held"], "shown while a grip is set")
 	var right := _bone_world(sk, "Middle1.R")
 	suite._check(right.distance_to(_palm(arms, weapon.to_global(grip))) < 0.03, "the firing hand is palm_offset from the grip (%.3f m)" % right.distance_to(_palm(arms, weapon.to_global(grip))))
@@ -36,7 +36,7 @@ func run_arms() -> void:
 	suite._check(arms.palm_offset != Vector3.ZERO and off > 0.015 and off < 0.05, "by default the wrist sits on the grip's side, off the centreline but not hanging below it (%.3f m)" % off)
 	var left := _bone_world(sk, "Middle1.L")
 	suite._check(left.distance_to(_palm(arms, weapon.to_global(fore), true)) < 0.05, "the support hand reaches the foregrip (%.3f m)" % left.distance_to(_palm(arms, weapon.to_global(fore), true)))
-	var held_grip := DotViewGrip.two_hand(weapon, grip, fore)
+	var held_grip := GSViewGrip.two_hand(weapon, grip, fore)
 	arms.set_held(held_grip)
 	arms.tick(0.0, 1.0 / 30.0)
 	suite._check(arms.hand_error(held_grip) >= 0.0 and arms.hand_error(held_grip) < 0.05, "hand_error is small on the grip it holds (%.3f m)" % arms.hand_error(held_grip))
@@ -62,28 +62,28 @@ func run_arms() -> void:
 	var short := _grow_error(arms, grip, fore)
 	suite._check(short < 0.06, "swapping from a one-hand grip to a two-hand one at arm's length leans at once: the support hand is on its grip the next frame (%.3f m off; eased it was short)" % short)
 	_check_idle_left_arm(arms, sk, weapon, grip, fore)
-	arms.set_held(DotViewGrip.two_hand(weapon, grip, Vector3(0.0, 5.0, 0.0)))
+	arms.set_held(GSViewGrip.two_hand(weapon, grip, Vector3(0.0, 5.0, 0.0)))
 	arms.tick(0.0, 1.0 / 30.0)
 	suite._check(_bone_world(sk, "Middle1.L").distance_to(weapon.to_global(Vector3(0.0, 5.0, 0.0))) > 1.0, "a support point out of reach is not reached (the check can fail)")
-	arms.set_held(DotViewGrip.two_hand(weapon, grip, fore))
+	arms.set_held(GSViewGrip.two_hand(weapon, grip, fore))
 	arms.set_downed(true)
 	for i in 4:
 		arms.tick(1.0, 1.0 / 30.0)
 		await suite.get_tree().process_frame
-	suite._check(not arms.describe()["held"] and (arms.arms() as DotHumanoidFigure).downed, "downed wins over a held weapon")
+	suite._check(not arms.describe()["held"] and (arms.arms() as GSHumanoidFigure).downed, "downed wins over a held weapon")
 	var head := _bone_world(sk, "Head")
 	var crawl_hand := _bone_world(sk, "Middle1.L")
 	suite._check(crawl_hand.z < head.z - 0.2 and crawl_hand.y < head.y, "and the crawl is as without a grip: the hand ahead of the eye")
 	arms.set_downed(false)
 	arms.set_held(null)
 	suite._check(not arms.arms().visible and arms.sway() == Vector3.ZERO, "mode off hides the arms and stops the sway")
-	suite._check(not DotViewGrip.new().is_valid(), "a grip with no anchor is not valid, so the arms rest")
+	suite._check(not GSViewGrip.new().is_valid(), "a grip with no anchor is not valid, so the arms rest")
 	arms.queue_free()
 	weapon.queue_free()
 
 
-func _check_idle_left_arm(arms: DotPlayerViewArms, sk: Skeleton3D, weapon: Node3D, grip: Vector3, fore: Vector3) -> void:
-	arms.set_held(DotViewGrip.one_hand(weapon, grip))
+func _check_idle_left_arm(arms: GSPlayerViewArms, sk: Skeleton3D, weapon: Node3D, grip: Vector3, fore: Vector3) -> void:
+	arms.set_held(GSViewGrip.one_hand(weapon, grip))
 	arms.tick(0.0, 1.0 / 30.0)
 	var rest_left := _bone_world(sk, "Middle1.L")
 	suite._check(rest_left.distance_to(weapon.to_global(fore)) > 0.1, "a one-hand grip leaves the other hand off the foregrip (%.2f m away)" % rest_left.distance_to(weapon.to_global(fore)))
@@ -93,7 +93,7 @@ func _check_idle_left_arm(arms: DotPlayerViewArms, sk: Skeleton3D, weapon: Node3
 	arms.tick(0.0, 1.0 / 30.0)
 	suite._check(sk.get_bone_pose_scale(sk.find_bone("UpperArm.L")).x > 0.5, "show_idle_left_arm keeps it")
 	arms.show_idle_left_arm = false
-	arms.set_held(DotViewGrip.two_hand(weapon, grip, fore))
+	arms.set_held(GSViewGrip.two_hand(weapon, grip, fore))
 	arms.tick(0.0, 1.0 / 30.0)
 	suite._check(sk.get_bone_pose_scale(sk.find_bone("UpperArm.L")).x > 0.5, "a two-hand grip shows the left arm")
 
@@ -109,43 +109,43 @@ func run_arms_dress() -> void:
 	weapon.position = Vector3(0.08, -0.2, -0.4)
 	var grip := Vector3(0.0, -0.06, 0.12)
 	var fore := Vector3(0.0, -0.06, -0.15)
-	var measured := DotViewGrip.two_hand(weapon, grip, fore).bounds_local()
+	var measured := GSViewGrip.two_hand(weapon, grip, fore).bounds_local()
 	suite._check(measured.size.is_equal_approx(box.size), "a weapon's box is measured from its meshes when it gives none (%s)" % measured.size)
 	# A rifle whose stock runs back to the shoulder and whose receiver is wide: the stock elbows go through it.
 	var rifle := AABB(Vector3(-0.06, -0.22, -0.35), Vector3(0.22, 0.28, 0.75))
 	var depths := []
 	for clear in [false, true]:
-		var arms := DotPlayerViewArms.new()
+		var arms := GSPlayerViewArms.new()
 		arms.keep_arms_clear = clear
 		suite.add_child(arms)
-		arms.build(DotHumanoidLook.stock(3), 1.8)
-		var held := DotViewGrip.two_hand(weapon, grip, fore)
+		arms.build(GSHumanoidLook.stock(3), 1.8)
+		var held := GSViewGrip.two_hand(weapon, grip, fore)
 		held.bounds = rifle
 		arms.set_held(held)
 		for i in 20:
 			arms.tick(0.0, 1.0 / 30.0)
 			await suite.get_tree().process_frame
-		var sk: Skeleton3D = (arms.arms() as DotHumanoidFigure).skeleton()
+		var sk: Skeleton3D = (arms.arms() as GSHumanoidFigure).skeleton()
 		depths.append([_buried(arms, sk, held, "R"), _buried(arms, sk, held, "L"), arms.hand_error(held)])
 		arms.queue_free()
 	suite._check(depths[0][0] + depths[0][1] > 0.01, "the stock elbows put an arm through this gun (%.3f / %.3f m deep; the check can fail)" % [depths[0][0], depths[0][1]])
 	suite._check(depths[1][0] + depths[1][1] < (depths[0][0] + depths[0][1]) * 0.6, "keep_arms_clear turns the elbows out of it (%.3f / %.3f m deep)" % [depths[1][0], depths[1][1]])
 	suite._check(depths[1][2] >= 0.0 and depths[1][2] < 0.05, "and the hands still reach their grips (%.3f m)" % depths[1][2])
 
-	var own := DotHumanoidLook.stock(3)
-	var server := DotHumanoidLook.stock(9)
-	var arms := DotPlayerViewArms.new()
+	var own := GSHumanoidLook.stock(3)
+	var server := GSHumanoidLook.stock(9)
+	var arms := GSPlayerViewArms.new()
 	suite.add_child(arms)
 	arms.build(own, 1.8)
-	var mesh := (arms.arms() as DotHumanoidFigure).mesh()
+	var mesh := (arms.arms() as GSHumanoidFigure).mesh()
 	var material := mesh.material_override as ShaderMaterial
-	suite._check(arms.describe()["detailed"] and material != DotHumanoidAssets.material_for(own) and material == DotViewArmsMaterial.for_look(own), "the arms wear the detailed material for their own look")
+	suite._check(arms.describe()["detailed"] and material != GSHumanoidAssets.material_for(own) and material == GSViewArmsMaterial.for_look(own), "the arms wear the detailed material for their own look")
 	suite._check(material.shader.code.contains("BACKLIGHT") and int(material.get_shader_parameter(&"skin_swaps")) > 0, "with skin swaps marked for the skin detail (%s)" % material.get_shader_parameter(&"skin_swaps"))
 	var rest: PackedFloat32Array = mesh.mesh.surface_get_arrays(0)[Mesh.ARRAY_CUSTOM0]
 	suite._check(rest.size() == (mesh.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array).size() * 4, "every vertex carries its rest position for the pattern (%d floats)" % rest.size())
 	arms.set_look_override(server)
 	suite._check(arms.look == server and arms.own_look == own and arms.describe()["overridden"], "a server's arm set is drawn over the player's own")
-	suite._check((arms.arms() as DotHumanoidFigure).mesh().material_override == DotViewArmsMaterial.for_look(server), "in the server set's colours")
+	suite._check((arms.arms() as GSHumanoidFigure).mesh().material_override == GSViewArmsMaterial.for_look(server), "in the server set's colours")
 	arms.set_look_override(null)
 	suite._check(arms.look == own and not arms.describe()["overridden"], "and clearing it gives the player's own arms back")
 	arms.queue_free()
@@ -153,12 +153,12 @@ func run_arms_dress() -> void:
 
 
 ## The deepest the arm's upper half and forearm (not its hand end) go into the grip's box, sampled from the bones.
-func _buried(arms: DotPlayerViewArms, sk: Skeleton3D, grip: DotViewGrip, side: String) -> float:
+func _buried(arms: GSPlayerViewArms, sk: Skeleton3D, grip: GSViewGrip, side: String) -> float:
 	var box := grip.bounds_local()
 	var to_anchor := grip.anchor.global_transform.affine_inverse()
 	var shoulder := to_anchor * _bone_world(sk, "UpperArm." + side)
 	var elbow := to_anchor * _bone_world(sk, "LowerArm." + side)
-	var hand := (to_anchor * _bone_world(sk, "Middle1." + side)).lerp(elbow, DotPlayerViewArms.CLEAR_HAND_FREE)
+	var hand := (to_anchor * _bone_world(sk, "Middle1." + side)).lerp(elbow, GSPlayerViewArms.CLEAR_HAND_FREE)
 	var deepest := 0.0
 	for i in 9:
 		for q: Vector3 in [shoulder.lerp(elbow, i / 8.0), elbow.lerp(hand, i / 8.0)]:
@@ -170,24 +170,24 @@ func _buried(arms: DotPlayerViewArms, sk: Skeleton3D, grip: DotViewGrip, side: S
 
 
 ## Where the wrist should be for a grip point: the point shifted by palm_offset in the arms' frame (x mirrored for the support hand).
-func _palm(arms: DotPlayerViewArms, point: Vector3, support := false) -> Vector3:
+func _palm(arms: GSPlayerViewArms, point: Vector3, support := false) -> Vector3:
 	var o := arms.palm_offset
 	return point + arms.global_transform.basis * Vector3(-o.x if support else o.x, o.y, o.z)
 
 
 ## The worst per-frame move of the firing shoulder and elbow over the frames after a swap from one weapon held two-handed
 ## at arm's length (the arms lean for the support hand) to another in the same place, one-handed (the lean it needs is less).
-func _swap_step(arms: DotPlayerViewArms, sk: Skeleton3D, grip: Vector3, fore: Vector3) -> float:
+func _swap_step(arms: GSPlayerViewArms, sk: Skeleton3D, grip: Vector3, fore: Vector3) -> float:
 	var far := Node3D.new()
 	suite.add_child(far)
 	far.position = Vector3(0.15, -0.2, -0.75)
-	arms.set_held(DotViewGrip.two_hand(far, grip, fore))
+	arms.set_held(GSViewGrip.two_hand(far, grip, fore))
 	for i in 30:
 		arms.tick(0.0, 1.0 / 30.0)
 	var next := Node3D.new()
 	suite.add_child(next)
 	next.position = far.position
-	arms.set_held(DotViewGrip.one_hand(next, grip))
+	arms.set_held(GSViewGrip.one_hand(next, grip))
 	var worst := 0.0
 	var last := [_bone_world(sk, "UpperArm.R"), _bone_world(sk, "LowerArm.R")]
 	for i in 6:
@@ -203,17 +203,17 @@ func _swap_step(arms: DotPlayerViewArms, sk: Skeleton3D, grip: Vector3, fore: Ve
 
 ## The worst hand_error over the frames after a swap from a one-hand grip to a two-hand one held at arm's length,
 ## whose support hand needs more lean than the one-hand grip had (a launcher drawn after a grenade).
-func _grow_error(arms: DotPlayerViewArms, grip: Vector3, fore: Vector3) -> float:
+func _grow_error(arms: GSPlayerViewArms, grip: Vector3, fore: Vector3) -> float:
 	var near := Node3D.new()
 	suite.add_child(near)
 	near.position = Vector3(0.15, -0.2, -0.75)
-	arms.set_held(DotViewGrip.one_hand(near, grip))
+	arms.set_held(GSViewGrip.one_hand(near, grip))
 	for i in 30:
 		arms.tick(0.0, 1.0 / 30.0)
 	var far := Node3D.new()
 	suite.add_child(far)
 	far.position = near.position
-	var held := DotViewGrip.two_hand(far, grip, fore)
+	var held := GSViewGrip.two_hand(far, grip, fore)
 	arms.set_held(held)
 	var worst := 0.0
 	for i in 6:
@@ -234,10 +234,10 @@ func run_gun_steady() -> void:
 	suite._section("a held gun while the pace flickers")
 	var world := Node3D.new()
 	suite.add_child(world)
-	var f := DotHumanoidFigure.new()
+	var f := GSHumanoidFigure.new()
 	world.add_child(f)
-	f.build(DotHumanoidLook.stock(21), 1.8)
-	f.set_hold(DotHumanoidFigure.Hold.GUN)
+	f.build(GSHumanoidLook.stock(21), 1.8)
+	f.set_hold(GSHumanoidFigure.Hold.GUN)
 	var hand := f.attachment(&"right_hand")
 	var worst := {}
 	for pair: Array in [[2.0, 4.6], [4.6, 6.5]]:
@@ -266,13 +266,13 @@ func run_full_body_action() -> void:
 	suite._section("a held gun while a full-body action plays")
 	var world := Node3D.new()
 	suite.add_child(world)
-	var armed := DotHumanoidFigure.new()
-	var bare := DotHumanoidFigure.new()
-	for f: DotHumanoidFigure in [armed, bare]:
+	var armed := GSHumanoidFigure.new()
+	var bare := GSHumanoidFigure.new()
+	for f: GSHumanoidFigure in [armed, bare]:
 		world.add_child(f)
-		f.build(DotHumanoidLook.stock(21), 1.8)
+		f.build(GSHumanoidLook.stock(21), 1.8)
 		f.set_motion({"on_floor": true})
-	armed.set_hold(DotHumanoidFigure.Hold.GUN)
+	armed.set_hold(GSHumanoidFigure.Hold.GUN)
 	var played := armed.play_action(&"dance", true) and bare.play_action(&"dance", true)
 	for i in 10:
 		armed.animate(0.0, 1.0 / 60.0)
@@ -288,12 +288,12 @@ func run_pose_record() -> void:
 	suite._section("a recorded pose replays as drawn")
 	var world := Node3D.new()
 	suite.add_child(world)
-	var live := DotHumanoidFigure.new()
-	var copy := DotHumanoidFigure.new()
-	for f: DotHumanoidFigure in [live, copy]:
+	var live := GSHumanoidFigure.new()
+	var copy := GSHumanoidFigure.new()
+	for f: GSHumanoidFigure in [live, copy]:
 		world.add_child(f)
-		f.build(DotHumanoidLook.stock(21), 1.8)
-		f.set_hold(DotHumanoidFigure.Hold.GUN)
+		f.build(GSHumanoidLook.stock(21), 1.8)
+		f.set_hold(GSHumanoidFigure.Hold.GUN)
 	var sk := live.skeleton()
 	var steps: Array = []
 	for i in 30:
@@ -337,10 +337,10 @@ func run_pose_record() -> void:
 	var other := live.pose_record()
 	suite._check(copy.pose_apply(last, other, 0.5) and not copy.pose_apply(last, other.slice(0, other.size() - 3), 0.5),
 		"two records blend; records of different sizes are refused (%d floats a pose)" % last.size())
-	var still := DotHumanoidFigure.new()
+	var still := GSHumanoidFigure.new()
 	world.add_child(still)
-	still.build(DotHumanoidLook.stock(21), 1.8)
-	still.set_hold(DotHumanoidFigure.Hold.GUN)
+	still.build(GSHumanoidLook.stock(21), 1.8)
+	still.set_hold(GSHumanoidFigure.Hold.GUN)
 	still.set_motion({"on_floor": true})
 	still.animate(4.6, 0.0)
 	var frozen := still.pose_record()

@@ -1,7 +1,7 @@
-class_name DotHumanoidFrames
+class_name GSHumanoidFrames
 extends RefCounted
 
-## The figure's tuning base, by path: naming DotHumanoidFigure here closed a parser cycle Godot 4.7 never frees.
+## The figure's tuning base, by path: naming GSHumanoidFigure here closed a parser cycle Godot 4.7 never frees.
 const Tuning := preload("dot_humanoid_figure_tuning.gd")
 
 ## Measures a figure's body: where its hand sits, how tall its mesh is, and the stand-in capsule.
@@ -18,10 +18,10 @@ static func hand_frame(skeleton: Skeleton3D, anim: AnimationPlayer, model: Node3
 
 
 ## Bone [param bone]'s pose in skeleton space at the held-gun pose (the first key of
-## [constant DotHumanoidClips.IDLE_GUN]; the rest pose for a bone it does not key).
+## [constant GSHumanoidClips.IDLE_GUN]; the rest pose for a bone it does not key).
 static func held_pose(skeleton: Skeleton3D, anim: AnimationPlayer, model: Node3D, bone: int) -> Transform3D:
 	var library := anim.get_animation_library(&"")
-	var gun := library.get_animation(DotHumanoidClips.IDLE_GUN) if library != null and library.has_animation(DotHumanoidClips.IDLE_GUN) else null
+	var gun := library.get_animation(GSHumanoidClips.IDLE_GUN) if library != null and library.has_animation(GSHumanoidClips.IDLE_GUN) else null
 	var chain: Array[int] = []
 	var i := bone
 	while i >= 0:
@@ -96,7 +96,7 @@ static var last_seen := true
 
 
 ## How many frames apart a figure's clip is advanced at its distance from the camera, doubled out of view
-## ([constant DotHumanoidFigure.OFFSCREEN_STEP]), and [constant DotHumanoidFigure.UNSEEN_STEP] when nothing of it is
+## ([constant GSHumanoidFigure.OFFSCREEN_STEP]), and [constant GSHumanoidFigure.UNSEEN_STEP] when nothing of it is
 ## drawn (hidden, or out of view past its shadow's range); also sets its shadow, draw range and LOD bias.
 static func step_for_distance(figure: Node3D, mesh: MeshInstance3D) -> int:
 	last_distance = 0.0

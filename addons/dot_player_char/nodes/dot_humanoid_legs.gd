@@ -1,7 +1,7 @@
 ## Where a figure's legs point and where its feet land: the lower body turned toward the way it
 ## moves (the chest keeps facing the aim), a backward walk played in reverse, feet set on the
-## wall plane during a wall run and kept out of the floor. One per [DotHumanoidFigure]; it calls these around its clip.
-class_name DotHumanoidLegs
+## wall plane during a wall run and kept out of the floor. One per [GSHumanoidFigure]; it calls these around its clip.
+class_name GSHumanoidLegs
 extends RefCounted
 
 ## Most the hips turn from the facing, radians: a pure strafe past it slides a little sideways.
@@ -100,9 +100,9 @@ func apply(skeleton: Skeleton3D, up: Vector3) -> void:
 	_saved[root] = skeleton.get_bone_pose_rotation(root)
 	_saved[hips] = skeleton.get_bone_pose_rotation(hips)
 	var turn := Quaternion(up.normalized(), twist)
-	var root_parent := DotHumanoidIk.chain_rotation(skeleton, skeleton.get_bone_parent(root))
+	var root_parent := GSHumanoidIk.chain_rotation(skeleton, skeleton.get_bone_parent(root))
 	skeleton.set_bone_pose_rotation(root, (root_parent.inverse() * turn * root_parent * _saved[root]).normalized())
-	var hips_parent := DotHumanoidIk.chain_rotation(skeleton, skeleton.get_bone_parent(hips))
+	var hips_parent := GSHumanoidIk.chain_rotation(skeleton, skeleton.get_bone_parent(hips))
 	skeleton.set_bone_pose_rotation(hips, (hips_parent.inverse() * turn.inverse() * hips_parent * _saved[hips]).normalized())
 
 
@@ -123,20 +123,20 @@ func on_wall(skeleton: Skeleton3D, wall: Plane, up: Vector3, weight: float) -> v
 		var leg: Array[int] = [skeleton.find_bone(names[0]), skeleton.find_bone(names[1]), skeleton.find_bone(names[2])]
 		if leg.has(-1):
 			return
-		var ankle := DotHumanoidIk.global_pose(skeleton, leg[2]).origin
+		var ankle := GSHumanoidIk.global_pose(skeleton, leg[2]).origin
 		ids.append(leg)
 		ankles.append(ankle)
 		heights.append((ankle - skeleton.get_bone_global_rest(leg[2]).origin).dot(up_s))
 	for k in 2:
 		var leg: Array[int] = ids[k]
 		var end_local := skeleton.get_bone_global_rest(leg[1]).affine_inverse() * skeleton.get_bone_global_rest(leg[2]).origin
-		var hip := DotHumanoidIk.global_pose(skeleton, leg[0]).origin
-		var knee := DotHumanoidIk.global_pose(skeleton, leg[1])
+		var hip := GSHumanoidIk.global_pose(skeleton, leg[0]).origin
+		var knee := GSHumanoidIk.global_pose(skeleton, leg[1])
 		var span := ((knee.origin - hip).length() + (knee.basis * end_local).length()) * 0.98
 		var target := _within(plane, hip, plane.project(ankles[k]), span) + plane.normal * maxf(heights[k], 0.0) * WALL_LIFT
-		var reached := DotHumanoidIk.two_bone_to(skeleton, leg[0], leg[1], end_local, ankles[k].lerp(target, wall_weight), plane.normal + up_s * 0.5, 1.0)
+		var reached := GSHumanoidIk.two_bone_to(skeleton, leg[0], leg[1], end_local, ankles[k].lerp(target, wall_weight), plane.normal + up_s * 0.5, 1.0)
 		var parent := skeleton.get_bone_parent(leg[2])
-		skeleton.set_bone_pose_position(leg[2], reached if parent < 0 else DotHumanoidIk.global_pose(skeleton, parent).affine_inverse() * reached)
+		skeleton.set_bone_pose_position(leg[2], reached if parent < 0 else GSHumanoidIk.global_pose(skeleton, parent).affine_inverse() * reached)
 
 
 ## Lifts each drawn ankle (the end of its leg: the foot bones are IK controls the mesh does not follow) that the pose puts under [param floor_y] (per leg, its rest height in the figure's frame) back up to it, by two-bone IK on
@@ -152,7 +152,7 @@ func on_floor(skeleton: Skeleton3D, to_figure: Transform3D, floor_y: PackedFloat
 		var upper: int = leg[0]
 		var lower: int = leg[1]
 		var end_local: Vector3 = leg[2]
-		var knee := DotHumanoidIk.chain_pose(skeleton, leg[4])
+		var knee := GSHumanoidIk.chain_pose(skeleton, leg[4])
 		var ankle := knee * end_local
 		var at := to_figure * ankle
 		var lift := floor_y[k] + raised - at.y
@@ -161,10 +161,10 @@ func on_floor(skeleton: Skeleton3D, to_figure: Transform3D, floor_y: PackedFloat
 		for bone in [upper, lower]:
 			if not _saved.has(bone):
 				_saved[bone] = skeleton.get_bone_pose_rotation(bone)
-		var pole := knee.origin - (DotHumanoidIk.chain_pose(skeleton, leg[3]).origin + ankle) * 0.5
+		var pole := knee.origin - (GSHumanoidIk.chain_pose(skeleton, leg[3]).origin + ankle) * 0.5
 		if pole.length_squared() < 1e-8:
 			pole = to_skel.basis * Vector3.FORWARD
-		var _reached := DotHumanoidIk.two_bone_to(skeleton, upper, lower, end_local, to_skel * (at + Vector3.UP * lift), pole, 1.0)
+		var _reached := GSHumanoidIk.two_bone_to(skeleton, upper, lower, end_local, to_skel * (at + Vector3.UP * lift), pole, 1.0)
 
 
 ## Holds each planted drawn ankle at the world point it came down on, by two-bone IK on the leg: a stride clip has no root motion, and even
@@ -182,7 +182,7 @@ func hold_feet(skeleton: Skeleton3D, to_world: Transform3D, to_figure: Transform
 	var knees: Array[Transform3D] = []
 	var lows := PackedFloat32Array()
 	for k in _floor_legs.size():
-		knees.append(DotHumanoidIk.chain_pose(skeleton, _floor_legs[k][4]))
+		knees.append(GSHumanoidIk.chain_pose(skeleton, _floor_legs[k][4]))
 		lows.append((to_figure * (knees[k] * (_floor_legs[k][2] as Vector3))).y - floor_y[k])
 	for k in _floor_legs.size():
 		var leg: Array = _floor_legs[k]
@@ -216,13 +216,13 @@ func hold_feet(skeleton: Skeleton3D, to_world: Transform3D, to_figure: Transform
 		for bone: int in [leg[0], leg[1]]:
 			if not _saved.has(bone):
 				_saved[bone] = skeleton.get_bone_pose_rotation(bone)
-		var hip_s := DotHumanoidIk.chain_pose(skeleton, leg[3]).origin
+		var hip_s := GSHumanoidIk.chain_pose(skeleton, leg[3]).origin
 		var pole: Vector3 = knee.origin - (hip_s + ankle_s) * 0.5
 		if pole.length_squared() < 1e-8:
 			pole = to_skel.basis * Vector3.FORWARD
 		var target := _within_leg(to_world * hip_s, ankle + shift, (to_world * knee.origin).distance_to(to_world * hip_s)
 			+ (to_world * knee.origin).distance_to(ankle))
-		var _reached := DotHumanoidIk.two_bone_to(skeleton, leg[0], leg[1], leg[2], to_skel * target, pole, 1.0)
+		var _reached := GSHumanoidIk.two_bone_to(skeleton, leg[0], leg[1], leg[2], to_skel * target, pole, 1.0)
 
 
 ## [param target] raised as far as the leg needs to reach it from [param hip] with [param span] (world, metres): a held foot the
@@ -236,7 +236,7 @@ static func _within_leg(hip: Vector3, target: Vector3, span: float) -> Vector3:
 	return Vector3(target.x, maxf(target.y, hip.y - sqrt(most * most - flat)), target.z)
 
 
-## Moves each [method hold_feet] hold to where its ankle is drawn now, across the ground: [DotHumanoidTurnLimit] held the leg back
+## Moves each [method hold_feet] hold to where its ankle is drawn now, across the ground: [GSHumanoidTurnLimit] held the leg back
 ## from the hold after it was set (a leg coming down faster than a limb may turn). Held where it was, the foot would spring back
 ## onto it next frame, a step drawn across the floor; moved, it stays where it came down.
 func resettle(skeleton: Skeleton3D, to_world: Transform3D) -> void:
@@ -246,7 +246,7 @@ func resettle(skeleton: Skeleton3D, to_world: Transform3D) -> void:
 		if _holds[k] == null:
 			continue
 		var leg: Array = _floor_legs[k]
-		var ankle := to_world * (DotHumanoidIk.chain_pose(skeleton, leg[4]) * (leg[2] as Vector3))
+		var ankle := to_world * (GSHumanoidIk.chain_pose(skeleton, leg[4]) * (leg[2] as Vector3))
 		var held: Vector3 = _holds[k]
 		_holds[k] = Vector3(ankle.x, held.y, ankle.z)
 
@@ -275,7 +275,7 @@ static func _floor_bones(skeleton: Skeleton3D) -> Array:
 		if upper < 0 or lower < 0 or foot < 0:
 			break
 		var end_local := skeleton.get_bone_global_rest(lower).affine_inverse() * skeleton.get_bone_global_rest(foot).origin
-		out.append([upper, lower, end_local, DotHumanoidIk.chain_to(skeleton, upper), DotHumanoidIk.chain_to(skeleton, lower)])
+		out.append([upper, lower, end_local, GSHumanoidIk.chain_to(skeleton, upper), GSHumanoidIk.chain_to(skeleton, lower)])
 	return out
 
 
@@ -317,7 +317,7 @@ static func ankles(skeleton: Skeleton3D) -> Array[Vector3]:
 	for names: Array in LEGS:
 		var foot := skeleton.find_bone(names[2])
 		if foot >= 0:
-			out.append(skeleton.global_transform * DotHumanoidIk.global_pose(skeleton, foot).origin)
+			out.append(skeleton.global_transform * GSHumanoidIk.global_pose(skeleton, foot).origin)
 	return out
 
 

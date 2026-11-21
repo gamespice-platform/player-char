@@ -1,4 +1,4 @@
-class_name DotViewGrip
+class_name GSViewGrip
 extends RefCounted
 
 ## Where the hands go on a first-person weapon: points in [member anchor]'s local space, read each frame so the hands follow the weapon wherever the host moves it. Hand one, or both.
@@ -12,7 +12,7 @@ var support: Vector3 = Vector3.INF
 ## The weapon's box in [member anchor]'s space, which the arms keep their elbows and forearms out of. Left empty, it
 ## is measured once from the visible meshes at and under the anchor (not particles or lights); a marker anchor with no mesh under it gets no clearance.
 var bounds: AABB = AABB()
-## What kind of weapon it is, the key into [member DotPlayerViewArms.hand_poses] ([DotViewHandPoses]: rifle, pistol,
+## What kind of weapon it is, the key into [member GSPlayerViewArms.hand_poses] ([GSViewHandPoses]: rifle, pistol,
 ## shotgun, launcher, sniper, grenade, knife, fists); an unknown kind is held as a rifle.
 var kind: StringName = &"rifle"
 ## The weapon's forward (toward the muzzle) and up in [member anchor]'s space, which the hands close round.
@@ -22,15 +22,15 @@ var _measured := false
 
 
 ## A one-hand weapon (a pistol, a knife).
-static func one_hand(p_anchor: Node3D, p_grip: Vector3) -> DotViewGrip:
-	var g := DotViewGrip.new()
+static func one_hand(p_anchor: Node3D, p_grip: Vector3) -> GSViewGrip:
+	var g := GSViewGrip.new()
 	g.anchor = p_anchor
 	g.grip = p_grip
 	return g
 
 
 ## A two-hand weapon: the support hand on the foregrip.
-static func two_hand(p_anchor: Node3D, p_grip: Vector3, p_support: Vector3) -> DotViewGrip:
+static func two_hand(p_anchor: Node3D, p_grip: Vector3, p_support: Vector3) -> GSViewGrip:
 	var g := one_hand(p_anchor, p_grip)
 	g.support = p_support
 	return g

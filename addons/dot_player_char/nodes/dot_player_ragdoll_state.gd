@@ -1,6 +1,6 @@
 extends Node3D
 
-## [DotPlayerRagdoll]'s constants, part record and state, split out to keep each file small.
+## [GSPlayerRagdoll]'s constants, part record and state, split out to keep each file small.
 
 const CHANNEL := "player.ragdoll"
 const PLANK_MIN_SPIN := 1.6
@@ -25,7 +25,7 @@ const MASS_SHARE := {
 	Role.LEG_L: 0.175, Role.LEG_R: 0.175,
 }
 
-## How far each joint swings and twists, in degrees, before [member DotPlayerDeathReaction.looseness].
+## How far each joint swings and twists, in degrees, before [member GSPlayerDeathReaction.looseness].
 ## A shoulder swings far and a neck does not; a hip in between. Cone limits are symmetric, so a
 ## knee-less leg folds as far back as forward, which a block figure cannot show anyway.
 const SWING_DEG := {
@@ -55,12 +55,12 @@ class Part:
 	## Where its joint goes, in world space when built; INF for "work it out from the box".
 	var pivot: Vector3 = Vector3.INF
 
-var rules: DotPlayerRagdollRules = null
-var reaction: DotPlayerDeathReaction = null
-var death: DotPlayerDeath = null
+var rules: GSPlayerRagdollRules = null
+var reaction: GSPlayerDeathReaction = null
+var death: GSPlayerDeath = null
 
-## What this body was built as; see [enum DotPlayerRagdollRules.Style].
-var style: int = DotPlayerRagdollRules.Style.RAGDOLL
+## What this body was built as; see [enum GSPlayerRagdollRules.Style].
+var style: int = GSPlayerRagdollRules.Style.RAGDOLL
 
 ## Seconds since death.
 var age: float = 0.0

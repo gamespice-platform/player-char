@@ -1,13 +1,13 @@
-class_name DotPlayerBodyBreak
+class_name GSPlayerBodyBreak
 extends Node3D
 
 ## A body coming apart: the chosen meshes, copied into tumbling pieces that land, lie a while, and shrink away.
-## See [DotPlayerBreakRules] for how much. Originals are copied and hidden (the player may be freed mid-flight);
+## See [GSPlayerBreakRules] for how much. Originals are copied and hidden (the player may be freed mid-flight);
 ## pieces hang off [param world] and free themselves. Not for a server: needs a physics world.
 
 const CHANNEL := "player.break"
 
-var rules: DotPlayerBreakRules = null
+var rules: GSPlayerBreakRules = null
 
 var _pieces: Array[RigidBody3D] = []
 var _age: float = 0.0
@@ -20,13 +20,13 @@ var _sizes: Array[Vector3] = []
 static func break_apart(
 	body: Node3D,
 	world: Node,
-	p_rules: DotPlayerBreakRules,
+	p_rules: GSPlayerBreakRules,
 	origin: Vector3,
 	direction: Vector3,
 	p_seed: int,
 	lethal: bool = true,
 	critical: bool = true
-) -> DotPlayerBodyBreak:
+) -> GSPlayerBodyBreak:
 	if body == null or world == null or p_rules == null:
 		return null
 
@@ -34,7 +34,7 @@ static func break_apart(
 		return null
 
 	var meshes := visible_meshes(body)
-	var skinned := DotPlayerRagdoll.skinned_meshes(body)
+	var skinned := GSPlayerRagdoll.skinned_meshes(body)
 
 	if meshes.is_empty() and skinned.is_empty():
 		return null
@@ -47,7 +47,7 @@ static func break_apart(
 
 	var chosen: Array[MeshInstance3D] = []
 
-	if p_rules.mode == DotPlayerBreakRules.Mode.EXPLODE:
+	if p_rules.mode == GSPlayerBreakRules.Mode.EXPLODE:
 		chosen = meshes
 	else:
 		var limbs := limbs_of(body, meshes, p_rules.limb_names)
@@ -64,7 +64,7 @@ static func break_apart(
 	if chosen.is_empty():
 		return null
 
-	var made := DotPlayerBodyBreak.new()
+	var made := GSPlayerBodyBreak.new()
 	made.name = "BodyBreak"
 	made.rules = p_rules
 	world.add_child(made)
@@ -76,11 +76,11 @@ static func break_apart(
 		made._add_piece(mesh, centre, along, rng)
 		mesh.visible = false
 
-	if p_rules.mode == DotPlayerBreakRules.Mode.EXPLODE:
+	if p_rules.mode == GSPlayerBreakRules.Mode.EXPLODE:
 		body.visible = false
 
-	DotLog.debug(CHANNEL, "body broke", {
-		"mode": DotPlayerBreakRules.Mode.keys()[p_rules.mode],
+	GSLog.debug(CHANNEL, "body broke", {
+		"mode": GSPlayerBreakRules.Mode.keys()[p_rules.mode],
 		"pieces": made.piece_count(),
 	})
 
@@ -91,11 +91,11 @@ static func break_apart(
 ## and its top bones shrink to nothing. EXPLODE takes every limb and the head; the torso stays as the ragdoll's.
 ## Baked, not copied: a skinned mesh copied without its skeleton draws its bind pose.
 static func _break_skinned(
-	body: Node3D, world: Node, p_rules: DotPlayerBreakRules, skinned: Array[MeshInstance3D],
+	body: Node3D, world: Node, p_rules: GSPlayerBreakRules, skinned: Array[MeshInstance3D],
 	direction: Vector3, rng: RandomNumberGenerator
-) -> DotPlayerBodyBreak:
+) -> GSPlayerBodyBreak:
 	var skeleton := skinned[0].get_node(skinned[0].skeleton) as Skeleton3D
-	var R := DotPlayerRagdoll.Role
+	var R := GSPlayerRagdoll.Role
 	var named := {R.HEAD: "head", R.ARM_L: "arm", R.ARM_R: "arm", R.LEG_L: "leg", R.LEG_R: "leg"}
 	var roles: Array[int] = []
 	for role: int in [R.HEAD, R.ARM_L, R.ARM_R, R.LEG_L, R.LEG_R]:
@@ -106,11 +106,11 @@ static func _break_skinned(
 		var swap := roles[i]
 		roles[i] = roles[j]
 		roles[j] = swap
-	var count := roles.size() if p_rules.mode == DotPlayerBreakRules.Mode.EXPLODE else mini(p_rules.limbs, roles.size())
+	var count := roles.size() if p_rules.mode == GSPlayerBreakRules.Mode.EXPLODE else mini(p_rules.limbs, roles.size())
 	if count == 0:
 		return null
 
-	var made := DotPlayerBodyBreak.new()
+	var made := GSPlayerBodyBreak.new()
 	made.name = "BodyBreak"
 	made.rules = p_rules
 	world.add_child(made)
@@ -129,16 +129,16 @@ static func _break_skinned(
 			if parent < 0 or not bones.has(parent):
 				skeleton.set_bone_pose_scale(bone, Vector3.ONE * 0.001)
 
-	DotLog.debug(CHANNEL, "skinned body broke", {"pieces": made.piece_count()})
+	GSLog.debug(CHANNEL, "skinned body broke", {"pieces": made.piece_count()})
 	return made
 
 
-## Every bone of [param role] on [param skeleton] (by [method DotPlayerRagdoll.role_of_name]) and
+## Every bone of [param role] on [param skeleton] (by [method GSPlayerRagdoll.role_of_name]) and
 ## every bone under them: an arm's fingers, a leg's foot.
 static func bones_of_role(skeleton: Skeleton3D, role: int) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for i in skeleton.get_bone_count():
-		var mine := DotPlayerRagdoll.role_of_name(skeleton.get_bone_name(i)) == role
+		var mine := GSPlayerRagdoll.role_of_name(skeleton.get_bone_name(i)) == role
 		var p := skeleton.get_bone_parent(i)
 		while not mine and p >= 0:
 			if out.has(p):
@@ -179,7 +179,7 @@ static func bake_bones(mesh: MeshInstance3D, skeleton: Skeleton3D, bones: Packed
 	var out_v := PackedVector3Array()
 	var out_n := PackedVector3Array()
 	var out_uv := PackedVector2Array()
-	for surface: Dictionary in DotSkinSurfaces.of(mesh.mesh):
+	for surface: Dictionary in GSSkinSurfaces.of(mesh.mesh):
 		var verts: PackedVector3Array = surface["verts"]
 		var normals: PackedVector3Array = surface["normals"]
 		var uvs: PackedVector2Array = surface["uvs"]

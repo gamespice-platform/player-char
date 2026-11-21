@@ -1,9 +1,9 @@
 @tool
-class_name DotPlayerBreakRules
-extends DotConfig
+class_name GSPlayerBreakRules
+extends GSConfig
 
 ## How a body comes apart when its player dies: not at all, a limb or two, or every piece.
-## Presentation only and safe to drop; a [DotConfig] so a server owner sets it per mode and map.
+## Presentation only and safe to drop; a [GSConfig] so a server owner sets it per mode and map.
 ## Seeded from the death (victim and tick), so everybody sees the same arm come off the same way.
 
 enum Mode {

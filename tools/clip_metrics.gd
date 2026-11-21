@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Foot skate and pop/jerk per stance, headless; FLAG marks lines over the limits. godot --headless --fixed-fps 60 --path . --script res://tools/clip_metrics.gd
-## Skate: speed ratio of a planted foot against the ground. Pop: biggest one-frame head step. Jerk: peak third difference of head height. Sole: the lowest foot's sole against the floor the figure stands on (absolute metres; its drawn ankle, the end of the leg as [DotClipMetrics] finds it, less the ankle's rest
+## Skate: speed ratio of a planted foot against the ground. Pop: biggest one-frame head step. Jerk: peak third difference of head height. Sole: the lowest foot's sole against the floor the figure stands on (absolute metres; its drawn ankle, the end of the leg as [GSClipMetrics] finds it, less the ankle's rest
 ## height over the mesh bottom), its minimum and the share of frames under -1 cm. `-- --height 1.372 --body sam` draws a shorter body, or another one.
 
 const SCENARIOS := [
@@ -47,7 +47,7 @@ const BONE_STRIDE := 4
 const DT := 1.0 / 60.0
 
 var _failed := false
-var _fig: DotHumanoidFigure
+var _fig: GSHumanoidFigure
 var _i := 0
 var _frame := 0
 var _heads: Array[float] = []
@@ -71,13 +71,13 @@ func _initialize() -> void:
 			_height = float(args[k + 1])
 		elif args[k] == "--body":
 			_body = StringName(args[k + 1])
-	_fig = DotHumanoidFigure.new()
+	_fig = GSHumanoidFigure.new()
 	root.add_child(_fig)
-	var look := DotHumanoidLook.stock(3)
+	var look := GSHumanoidLook.stock(3)
 	if _body != &"":
 		look.body = _body
 	_fig.build(look, _height)
-	_fig.set_hold(DotHumanoidFigure.Hold.GUN)
+	_fig.set_hold(GSHumanoidFigure.Hold.GUN)
 	print("CLIPMETRICS height ", _height, " body ", look.body)
 
 
@@ -88,7 +88,7 @@ func _measure_feet() -> void:
 	var bottom := (mesh.global_transform * mesh.mesh.get_aabb()).position.y
 	for name: String in ["Foot.L", "Foot.R"]:
 		var b := sk.find_bone(name)
-		_feet.append([b, DotClipMetrics._leg_anchor(sk, b), (sk.global_transform * sk.get_bone_global_rest(b).origin).y - bottom])
+		_feet.append([b, GSClipMetrics._leg_anchor(sk, b), (sk.global_transform * sk.get_bone_global_rest(b).origin).y - bottom])
 
 
 ## One sample per rendered frame: the skeleton only poses when the tree has processed it.

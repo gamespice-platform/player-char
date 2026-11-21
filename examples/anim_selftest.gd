@@ -12,7 +12,7 @@ var _section_count := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run()
 
 
@@ -47,7 +47,7 @@ func _run() -> void:
 	get_tree().quit(1 if _failed > 0 else 0)
 
 
-## Stands in for [DotPlayerSpriteVisual], which the driver must never name.
+## Stands in for [GSPlayerSpriteVisual], which the driver must never name.
 class StubSprite extends Node:
 	var row := -1
 	var frame := -1
@@ -78,53 +78,53 @@ func _air(vertical: float) -> Dictionary:
 func _test_states() -> void:
 	_section("locomotion states")
 
-	var s := DotPlayerAnimState.new()
+	var s := GSPlayerAnimState.new()
 	_check(s.validate().ok, "the defaults validate")
-	_check(s.state() == DotPlayerAnimState.IDLE, "and it starts idle")
+	_check(s.state() == GSPlayerAnimState.IDLE, "and it starts idle")
 
-	_check(s.advance(_ground(0.0), 0.016) == DotPlayerAnimState.IDLE, "standing still is idle")
-	_check(s.advance(_ground(1.0), 0.016) == DotPlayerAnimState.WALK, "a slow speed is a walk")
-	_check(s.advance(_ground(8.0), 0.016) == DotPlayerAnimState.RUN, "a fast one is a run")
+	_check(s.advance(_ground(0.0), 0.016) == GSPlayerAnimState.IDLE, "standing still is idle")
+	_check(s.advance(_ground(1.0), 0.016) == GSPlayerAnimState.WALK, "a slow speed is a walk")
+	_check(s.advance(_ground(8.0), 0.016) == GSPlayerAnimState.RUN, "a fast one is a run")
 	_check(s.is_moving(), "and it says so")
-	_check(s.advance(_ground(0.0), 0.016) == DotPlayerAnimState.IDLE, "and back to idle")
+	_check(s.advance(_ground(0.0), 0.016) == GSPlayerAnimState.IDLE, "and back to idle")
 
 	_check(
-		s.advance(_ground(0.0, true), 0.016) == DotPlayerAnimState.CROUCH_IDLE,
+		s.advance(_ground(0.0, true), 0.016) == GSPlayerAnimState.CROUCH_IDLE,
 		"crouching still is its own state"
 	)
 	_check(
-		s.advance(_ground(2.0, true), 0.016) == DotPlayerAnimState.CROUCH_WALK,
+		s.advance(_ground(2.0, true), 0.016) == GSPlayerAnimState.CROUCH_WALK,
 		"and so is crouching along"
 	)
 
 	_test_states_air(s)
 
 
-func _test_states_air(s: DotPlayerAnimState) -> void:
+func _test_states_air(s: GSPlayerAnimState) -> void:
 	# The air has a grace window.
 	s.forget_state()
 	_check(
-		s.advance(_air(0.0), 0.016) == DotPlayerAnimState.IDLE,
+		s.advance(_air(0.0), 0.016) == GSPlayerAnimState.IDLE,
 		"one frame off the ground is not a jump — a stair step, a ramp seam and a "
 		+ "physics jitter all leave the floor for a tick, and a character that started "
 		+ "a jump animation each time would twitch its way upstairs"
 	)
 
 	var state := s.advance(_air(5.0), 0.2)
-	_check(state == DotPlayerAnimState.JUMP, "but a real one, going up, is a jump")
+	_check(state == GSPlayerAnimState.JUMP, "but a real one, going up, is a jump")
 	_check(s.is_airborne(), "and it says so")
-	_check(s.advance(_air(-5.0), 0.016) == DotPlayerAnimState.FALL, "going down is a fall")
+	_check(s.advance(_air(-5.0), 0.016) == GSPlayerAnimState.FALL, "going down is a fall")
 
 	var landing := s.advance(
 		{"speed": 0.0, "on_floor": true, "vertical": -10.0}, 0.016
 	)
-	_check(landing == DotPlayerAnimState.LAND, "a hard landing plays a landing")
+	_check(landing == GSPlayerAnimState.LAND, "a hard landing plays a landing")
 	_check(
-		s.advance(_ground(0.0), 0.016) == DotPlayerAnimState.LAND,
+		s.advance(_ground(0.0), 0.016) == GSPlayerAnimState.LAND,
 		"which holds for its own time rather than being gone the next frame"
 	)
 	_check(
-		s.advance(_ground(0.0), 1.0) == DotPlayerAnimState.IDLE,
+		s.advance(_ground(0.0), 1.0) == GSPlayerAnimState.IDLE,
 		"and then lets locomotion resume"
 	)
 
@@ -134,7 +134,7 @@ func _test_states_air(s: DotPlayerAnimState) -> void:
 	var running := s.advance({"speed": 3.0, "on_floor": true, "vertical": -10.0}, 0.016)
 	var stopped := s.advance({"speed": 0.5, "on_floor": true, "vertical": -10.0}, 0.016)
 	_check(
-		running != DotPlayerAnimState.LAND and stopped != DotPlayerAnimState.LAND,
+		running != GSPlayerAnimState.LAND and stopped != GSPlayerAnimState.LAND,
 		"with land_stride_speed set, a landing still moving that fast goes straight back to its stride (the land clip "
 		+ "stands still and its planted feet would skate), and nothing replays the landing once it has gone"
 	)
@@ -144,35 +144,35 @@ func _test_states_air(s: DotPlayerAnimState) -> void:
 	var _fell := s.advance(_air(-1.0), 0.2)
 	var soft := s.advance({"speed": 0.0, "on_floor": true, "vertical": -1.0}, 0.016)
 	_check(
-		soft != DotPlayerAnimState.LAND,
+		soft != GSPlayerAnimState.LAND,
 		"and a gentle landing plays nothing, so walking off a kerb is not an event"
 	)
 
 	_check(
-		s.advance({"climbing": true}, 0.016) == DotPlayerAnimState.CLIMB,
+		s.advance({"climbing": true}, 0.016) == GSPlayerAnimState.CLIMB,
 		"climbing overrides everything"
 	)
 	_check(
-		s.advance({"swimming": true}, 0.016) == DotPlayerAnimState.SWIM,
+		s.advance({"swimming": true}, 0.016) == GSPlayerAnimState.SWIM,
 		"and so does swimming"
 	)
 	_check(
-		s.advance({"alive": false, "speed": 9.0}, 0.016) == DotPlayerAnimState.DEAD,
+		s.advance({"alive": false, "speed": 9.0}, 0.016) == GSPlayerAnimState.DEAD,
 		"and being dead overrides both"
 	)
 
 	s.forget_state()
-	_check(s.state() == DotPlayerAnimState.IDLE, "it can be put back for a respawn")
+	_check(s.state() == GSPlayerAnimState.IDLE, "it can be put back for a respawn")
 	_check(
-		s.advance({}, 0.016) == DotPlayerAnimState.IDLE,
+		s.advance({}, 0.016) == GSPlayerAnimState.IDLE,
 		"and a caller that knows nothing still gets a state rather than a crash"
 	)
 
-	var bad := DotPlayerAnimState.new()
+	var bad := GSPlayerAnimState.new()
 	bad.run_exit_speed = 9.0
 	_check(not bad.validate().ok, "thresholds with no gap between them are refused")
 
-	var bad2 := DotPlayerAnimState.new()
+	var bad2 := GSPlayerAnimState.new()
 	bad2.move_exit_speed = 5.0
 	_check(not bad2.validate().ok, "at either end")
 	_check(s.describe().contains("idle"), "and it describes itself")
@@ -181,22 +181,22 @@ func _test_states_air(s: DotPlayerAnimState) -> void:
 func _test_hysteresis() -> void:
 	_section("hysteresis")
 
-	var s := DotPlayerAnimState.new()
+	var s := GSPlayerAnimState.new()
 	s.run_speed = 4.0
 	s.run_exit_speed = 3.4
 
-	_check(s.advance(_ground(3.7), 0.016) == DotPlayerAnimState.WALK, "3.7 from a walk is a walk")
-	_check(s.advance(_ground(4.2), 0.016) == DotPlayerAnimState.RUN, "4.2 becomes a run")
+	_check(s.advance(_ground(3.7), 0.016) == GSPlayerAnimState.WALK, "3.7 from a walk is a walk")
+	_check(s.advance(_ground(4.2), 0.016) == GSPlayerAnimState.RUN, "4.2 becomes a run")
 	_check(
-		s.advance(_ground(3.7), 0.016) == DotPlayerAnimState.RUN,
+		s.advance(_ground(3.7), 0.016) == GSPlayerAnimState.RUN,
 		"and 3.7 from a RUN is still a run — which is the whole point: one threshold "
 		+ "makes a player holding a stick at the boundary flicker every tick"
 	)
-	_check(s.advance(_ground(3.0), 0.016) == DotPlayerAnimState.WALK, "below the exit, it walks")
+	_check(s.advance(_ground(3.0), 0.016) == GSPlayerAnimState.WALK, "below the exit, it walks")
 
 	# The flicker, measured. A single-threshold machine changes state on every tick of
 	# this sequence; a hysteretic one changes twice.
-	var noisy := DotPlayerAnimState.new()
+	var noisy := GSPlayerAnimState.new()
 	noisy.forget_state()
 	var changes := 0
 	var last := noisy.state()
@@ -214,11 +214,11 @@ func _test_hysteresis() -> void:
 		% changes + "changes, not forty"
 	)
 
-	var stop := DotPlayerAnimState.new()
-	_check(stop.advance(_ground(0.15), 0.016) == DotPlayerAnimState.IDLE, "0.15 from idle is idle")
-	_check(stop.advance(_ground(0.3), 0.016) == DotPlayerAnimState.WALK, "0.3 starts a walk")
+	var stop := GSPlayerAnimState.new()
+	_check(stop.advance(_ground(0.15), 0.016) == GSPlayerAnimState.IDLE, "0.15 from idle is idle")
+	_check(stop.advance(_ground(0.3), 0.016) == GSPlayerAnimState.WALK, "0.3 starts a walk")
 	_check(
-		stop.advance(_ground(0.15), 0.016) == DotPlayerAnimState.WALK,
+		stop.advance(_ground(0.15), 0.016) == GSPlayerAnimState.WALK,
 		"and the same trick applies at the standing-still boundary, where it stops a "
 		+ "character twitching while being pushed by a slope"
 	)
@@ -227,7 +227,7 @@ func _test_hysteresis() -> void:
 func _test_clips() -> void:
 	_section("clips")
 
-	var c := DotPlayerAnimClip.make(&"walk", true, 1, 8)
+	var c := GSPlayerAnimClip.make(&"walk", true, 1, 8)
 	c.fps = 10.0
 	_check(c.name_for_player() == &"walk", "a clip names itself for an AnimationPlayer")
 
@@ -239,7 +239,7 @@ func _test_clips() -> void:
 	_check(c.frame_at(0.25) == 2, "and advances")
 	_check(c.frame_at(0.85) == 0, "and a looping clip wraps")
 
-	var once := DotPlayerAnimClip.make(&"land", false, 7, 3)
+	var once := GSPlayerAnimClip.make(&"land", false, 7, 3)
 	once.fps = 10.0
 	_check(
 		once.frame_at(9.0) == 2,
@@ -251,7 +251,7 @@ func _test_clips() -> void:
 	_check(not c.finished_at(999.0), "while a looping clip is never finished")
 
 	# Events, which are the part that is wrong in a way nobody can describe.
-	var stepper := DotPlayerAnimClip.make(&"walk", true, 1, 8)
+	var stepper := GSPlayerAnimClip.make(&"walk", true, 1, 8)
 	stepper.fps = 10.0
 	stepper.footsteps = PackedFloat32Array([0.25])
 	stepper.events = {"swish": 0.75}
@@ -288,22 +288,22 @@ func _test_clips() -> void:
 func _test_set() -> void:
 	_section("an animation set")
 
-	var set := DotPlayerAnimSet.locomotion()
+	var set := GSPlayerAnimSet.locomotion()
 	_check(set.build().ok, "the locomotion preset builds")
 	_check(set.ids().size() == 11, "with eleven clips")
 	_check(
-		set.missing_for(DotPlayerAnimSet.locomotion_states()).is_empty(),
+		set.missing_for(GSPlayerAnimSet.locomotion_states()).is_empty(),
 		"covering every state the machine can produce — a state with no clip is "
 		+ "invisible at runtime, because the character just keeps playing what it was"
 	)
 
-	_check(set.clip(DotPlayerAnimState.RUN).id == &"run", "a state resolves to its clip")
+	_check(set.clip(GSPlayerAnimState.RUN).id == &"run", "a state resolves to its clip")
 	_check(
-		set.clip(&"nonsense").id == DotPlayerAnimState.IDLE,
+		set.clip(&"nonsense").id == GSPlayerAnimState.IDLE,
 		"and an unmapped one falls back, because the set declared a fallback"
 	)
 
-	var strict := DotPlayerAnimSet.locomotion()
+	var strict := GSPlayerAnimSet.locomotion()
 	strict.fallback = &""
 	_check(
 		strict.clip(&"nonsense") == null,
@@ -311,35 +311,35 @@ func _test_set() -> void:
 		+ "quietly using the first clip, plays an idle for every unmapped action"
 	)
 
-	var partial := DotPlayerAnimSet.new()
-	partial.clips = [DotPlayerAnimClip.make(&"idle")]
+	var partial := GSPlayerAnimSet.new()
+	partial.clips = [GSPlayerAnimClip.make(&"idle")]
 	_check(partial.build().ok, "a smaller set builds")
 	_check(
-		partial.missing_for(DotPlayerAnimSet.locomotion_states()).size() == 10,
+		partial.missing_for(GSPlayerAnimSet.locomotion_states()).size() == 10,
 		"and reports every state it cannot cover, all at once rather than one bug "
 		+ "report at a time"
 	)
 
-	var dup := DotPlayerAnimSet.new()
-	dup.clips = [DotPlayerAnimClip.make(&"a"), DotPlayerAnimClip.make(&"a")]
+	var dup := GSPlayerAnimSet.new()
+	dup.clips = [GSPlayerAnimClip.make(&"a"), GSPlayerAnimClip.make(&"a")]
 	_check(not dup.build().ok, "two clips with one name are refused")
 
-	var bad := DotPlayerAnimSet.new()
-	bad.clips = [DotPlayerAnimClip.make(&"a")]
+	var bad := GSPlayerAnimSet.new()
+	bad.clips = [GSPlayerAnimClip.make(&"a")]
 	bad.fallback = &"missing"
 	_check(not bad.build().ok, "and a fallback that is not in the set")
-	_check(not DotPlayerAnimSet.new().build().ok, "and an empty one")
+	_check(not GSPlayerAnimSet.new().build().ok, "and an empty one")
 	_check(set.describe_lines().size() == 12, "and a set describes itself")
 
 
 func _test_driver() -> void:
 	_section("the driver")
 
-	var player := DotPlayer.new()
+	var player := GSPlayer.new()
 	add_child(player)
 
-	var driver := DotPlayerAnimDriver.new()
-	driver.anim_set = DotPlayerAnimSet.locomotion()
+	var driver := GSPlayerAnimDriver.new()
+	driver.anim_set = GSPlayerAnimSet.locomotion()
 	driver.auto_drive = false
 	player.add_child(driver)
 
@@ -354,10 +354,10 @@ func _test_driver() -> void:
 		events.append(String(event))
 	)
 
-	_check(driver.state() == DotPlayerAnimState.IDLE, "the driver starts idle")
+	_check(driver.state() == GSPlayerAnimState.IDLE, "the driver starts idle")
 
 	var clip := driver.drive(_ground(8.0), 0.016)
-	_check(clip != null and clip.id == DotPlayerAnimState.RUN, "driving picks a clip")
+	_check(clip != null and clip.id == GSPlayerAnimState.RUN, "driving picks a clip")
 	_check(changes.size() == 1, "with a signal when the state changed")
 	_check(driver.elapsed() == 0.0, "and a fresh clip starts at zero")
 
@@ -384,13 +384,13 @@ func _test_driver() -> void:
 		+ "as 'the reload does not work'"
 	)
 
-	_check(driver.play_action(DotPlayerAnimState.LAND).ok, "a mapped one starts")
+	_check(driver.play_action(GSPlayerAnimState.LAND).ok, "a mapped one starts")
 	_check(actions.size() == 1, "with a signal")
-	_check(driver.action() == DotPlayerAnimState.LAND, "and is current")
+	_check(driver.action() == GSPlayerAnimState.LAND, "and is current")
 
 	driver.drive(_ground(8.0), 0.016)
 	_check(
-		driver.state() == DotPlayerAnimState.RUN,
+		driver.state() == GSPlayerAnimState.RUN,
 		"and the locomotion state carries on underneath — a character reloading while "
 		+ "running is doing both, and a driver that replaced the state stops their legs"
 	)
@@ -399,8 +399,8 @@ func _test_driver() -> void:
 	_check(driver.action() == &"", "a one-shot finishes on its own")
 	_check(finished.size() == 1 and not bool(finished[0][1]), "reporting it was not interrupted")
 
-	var _a := driver.play_action(DotPlayerAnimState.LAND)
-	var _b := driver.play_action(DotPlayerAnimState.JUMP)
+	var _a := driver.play_action(GSPlayerAnimState.LAND)
+	var _b := driver.play_action(GSPlayerAnimState.JUMP)
 	_check(
 		finished.size() == 2 and bool(finished[1][1]),
 		"and one started over another reports the first as interrupted"
@@ -412,10 +412,10 @@ func _test_driver() -> void:
 	_check(finished.size() == 3, "and cancelling nothing fires nothing")
 
 	driver.forget_state()
-	_check(driver.state() == DotPlayerAnimState.IDLE, "everything can be put back")
+	_check(driver.state() == GSPlayerAnimState.IDLE, "everything can be put back")
 	_check(driver.clip() == null, "with no clip playing")
 
-	var setless := DotPlayerAnimDriver.new()
+	var setless := GSPlayerAnimDriver.new()
 	setless.auto_drive = false
 	player.add_child(setless)
 	await get_tree().process_frame
@@ -432,16 +432,16 @@ func _test_driver() -> void:
 func _test_sinks() -> void:
 	_section("sinks")
 
-	var player := DotPlayer.new()
+	var player := GSPlayer.new()
 	add_child(player)
 
-	var driver := DotPlayerAnimDriver.new()
-	driver.anim_set = DotPlayerAnimSet.locomotion()
+	var driver := GSPlayerAnimDriver.new()
+	driver.anim_set = GSPlayerAnimSet.locomotion()
 	driver.auto_drive = false
 	player.add_child(driver)
 
 	# The sprite sink, duck-typed.
-	var sprite_sink := DotPlayerAnimSpriteSink.new()
+	var sprite_sink := GSPlayerAnimSpriteSink.new()
 	driver.add_child(sprite_sink)
 
 	var stub := StubSprite.new()
@@ -483,7 +483,7 @@ func _test_sinks() -> void:
 
 
 func _test_sinks_player(
-	player: DotPlayer, driver: DotPlayerAnimDriver, sprite_sink: DotPlayerAnimSpriteSink
+	player: GSPlayer, driver: GSPlayerAnimDriver, sprite_sink: GSPlayerAnimSpriteSink
 ) -> void:
 	# The AnimationPlayer sink, against a real one.
 	var anim_player := AnimationPlayer.new()
@@ -493,7 +493,7 @@ func _test_sinks_player(
 	var _added := library.add_animation(&"run", animation)
 	var _lib := anim_player.add_animation_library(&"", library)
 
-	var player_sink := DotPlayerAnimPlayerSink.new()
+	var player_sink := GSPlayerAnimPlayerSink.new()
 	driver.add_child(player_sink)
 	player_sink.add_child(anim_player)
 
@@ -502,10 +502,10 @@ func _test_sinks_player(
 	_check(player_sink.player() == anim_player, "an AnimationPlayer sink finds its player")
 	_check(player_sink.is_ready_to_play(), "and is ready")
 
-	player_sink.play(driver.anim_set.clip(DotPlayerAnimState.RUN), 0.0)
+	player_sink.play(driver.anim_set.clip(GSPlayerAnimState.RUN), 0.0)
 	_check(player_sink.playing() == &"run", "and plays a clip it has")
 
-	player_sink.play(driver.anim_set.clip(DotPlayerAnimState.SWIM), 0.0)
+	player_sink.play(driver.anim_set.clip(GSPlayerAnimState.SWIM), 0.0)
 	_check(
 		player_sink.playing() == &"run",
 		"while a clip it does not have leaves the previous one alone and warns once — "
@@ -515,14 +515,14 @@ func _test_sinks_player(
 	player_sink.stop()
 	_check(player_sink.playing() == &"", "and it can be stopped")
 
-	var orphan := DotPlayerAnimPlayerSink.new()
+	var orphan := GSPlayerAnimPlayerSink.new()
 	add_child(orphan)
 	await get_tree().process_frame
 	_check(
 		not orphan.is_ready_to_play(),
 		"a sink with nothing to drive says so, and a driver skips it"
 	)
-	orphan.play(driver.anim_set.clip(DotPlayerAnimState.RUN), 0.0)
+	orphan.play(driver.anim_set.clip(GSPlayerAnimState.RUN), 0.0)
 	_check(orphan.playing() == &"", "and driving it does nothing rather than crashing")
 
 	_check(player_sink.describe_lines().size() == 1, "sinks describe themselves")
@@ -537,11 +537,11 @@ func _test_foot_plant() -> void:
 
 	var drifted := Quaternion(Vector3.UP, 1.0)
 	drifted = Quaternion(drifted.x * 1.05, drifted.y * 1.05, drifted.z * 1.05, drifted.w * 1.05)
-	var gained := DotHumanoidBlend.toward(Quaternion.IDENTITY, drifted, 1.0, 1.5)
+	var gained := GSHumanoidBlend.toward(Quaternion.IDENTITY, drifted, 1.0, 1.5)
 	_check(absf(gained.length() - 1.0) < 0.001, "toward returns a unit rotation from a drifted target")
 	_check(absf(gained.get_angle() - 1.5) < 0.01, "toward still applies the gain from a drifted target")
 
-	var plant := DotFootPlant.new()
+	var plant := GSFootPlant.new()
 	var velocity := Vector3(1.2, 0.0, 0.0)
 	var dt := 1.0 / 60.0
 	var still := 0.0
@@ -580,9 +580,9 @@ func _test_foot_plant() -> void:
 	skeleton.set_bone_parent(1, 0)
 	skeleton.set_bone_rest(1, Transform3D(Basis.IDENTITY, Vector3(0, -0.5, 0)))
 	skeleton.reset_bone_poses()
-	var reached := DotHumanoidIk.two_bone_to(skeleton, 0, 1, Vector3(0, -0.5, 0), Vector3(0.3, -0.6, 0.2), Vector3(0, 0, 1), 1.0)
+	var reached := GSHumanoidIk.two_bone_to(skeleton, 0, 1, Vector3(0, -0.5, 0), Vector3(0.3, -0.6, 0.2), Vector3(0, 0, 1), 1.0)
 	_check(reached.distance_to(Vector3(0.3, -0.6, 0.2)) < 0.002, "two_bone_to reaches a target in reach (%.4f m off)" % reached.distance_to(Vector3(0.3, -0.6, 0.2)))
-	reached = DotHumanoidIk.two_bone_to(skeleton, 0, 1, Vector3(0, -0.5, 0), Vector3(0, -3, 0), Vector3(0, 0, 1), 1.0)
+	reached = GSHumanoidIk.two_bone_to(skeleton, 0, 1, Vector3(0, -0.5, 0), Vector3(0, -3, 0), Vector3(0, 0, 1), 1.0)
 	_check(absf(reached.length() - 1.0) < 0.01 and reached.y < -0.99, "and straightens toward one out of reach")
 	skeleton.free()
 

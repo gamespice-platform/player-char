@@ -1,12 +1,12 @@
 @tool
-class_name DotPlayerModelDef
+class_name GSPlayerModelDef
 extends Resource
 
 ## A 3D character model: which rig, which mounts, and how a slot maps onto one.
 ## Names content by path and id, never holds a [PackedScene], so a server can carry
-## a catalogue without loading a mesh; a client resolves them in [DotPlayerModelBuilder].
+## a catalogue without loading a mesh; a client resolves them in [GSPlayerModelBuilder].
 
-## The name everything else uses. Usually the same as a [DotPlayerCharDef]'s.
+## The name everything else uses. Usually the same as a [GSPlayerCharDef]'s.
 @export var id: StringName = &""
 
 @export var display_name: String = ""
@@ -59,22 +59,22 @@ extends Resource
 @export var attributes: Dictionary = {}
 
 
-static func make(p_id: StringName, p_rig: String = "") -> DotPlayerModelDef:
-	var m := DotPlayerModelDef.new()
+static func make(p_id: StringName, p_rig: String = "") -> GSPlayerModelDef:
+	var m := GSPlayerModelDef.new()
 	m.id = p_id
 	m.display_name = String(p_id).capitalize()
 	m.rig_scene = p_rig
 	return m
 
 
-func validate() -> DotResult:
+func validate() -> GSResult:
 	if id == &"":
-		return DotResult.fail(DotError.CODE_INVALID, "A model with no id.")
+		return GSResult.fail(GSError.CODE_INVALID, "A model with no id.")
 
 	for part_id: Variant in parts.keys():
 		if not part_slots.has(part_id):
-			return DotResult.fail(
-				DotError.CODE_INVALID,
+			return GSResult.fail(
+				GSError.CODE_INVALID,
 				"Part '%s' has no slot." % str(part_id),
 				"It would be built into whichever mount happened to be asked for it, "
 				+ "which is how a hat ends up on a foot."
@@ -83,13 +83,13 @@ func validate() -> DotResult:
 		var slot := str(part_slots[part_id])
 
 		if not mounts.has(slot):
-			return DotResult.fail(
-				DotError.CODE_INVALID,
+			return GSResult.fail(
+				GSError.CODE_INVALID,
 				"Part '%s' goes in slot '%s', which this rig has no mount for."
 				% [str(part_id), slot]
 			)
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 func mount_name(slot: StringName) -> String:
@@ -134,4 +134,4 @@ func describe() -> String:
 
 
 func _to_string() -> String:
-	return "DotPlayerModelDef(%s)" % describe()
+	return "GSPlayerModelDef(%s)" % describe()

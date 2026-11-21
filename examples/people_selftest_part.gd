@@ -14,16 +14,16 @@ func _test_break() -> void:
 	_section("a skinned body comes apart")
 	var world := Node3D.new()
 	add_child(world)
-	var f := DotHumanoidFigure.new()
+	var f := GSHumanoidFigure.new()
 	world.add_child(f)
-	f.build(DotHumanoidLook.stock(77), 1.8)
+	f.build(GSHumanoidLook.stock(77), 1.8)
 	f.animate(0.0, 0.1)
-	var rules := DotPlayerBreakRules.new()
-	rules.mode = DotPlayerBreakRules.Mode.LIMBS
+	var rules := GSPlayerBreakRules.new()
+	rules.mode = GSPlayerBreakRules.Mode.LIMBS
 	rules.limbs = 1
 	var skel := f.skeleton()
 	var whole := _small_bones(skel)
-	var broke := DotPlayerBodyBreak.break_apart(f, world, rules, f.global_position, Vector3.FORWARD, 42, true, true)
+	var broke := GSPlayerBodyBreak.break_apart(f, world, rules, f.global_position, Vector3.FORWARD, 42, true, true)
 	_check(broke != null and broke.piece_count() == 1, "a limb comes off as one piece (%d)" % (broke.piece_count() if broke != null else -1))
 	var piece_mesh: Mesh = null
 	if broke != null and broke.piece_count() > 0:
@@ -33,12 +33,12 @@ func _test_break() -> void:
 	_check(piece_mesh != null and piece_mesh.get_faces().size() > 30 and piece_mesh.get_aabb().size.length() < 1.5,
 		"baked from the skin: a mesh of its own, limb-sized, not the whole body")
 	_check(_small_bones(skel) > whole, "and the limb's bones shrank to the stump")
-	var again := DotPlayerBodyBreak.break_apart(f, world, rules, f.global_position, Vector3.FORWARD, 42, true, true)
+	var again := GSPlayerBodyBreak.break_apart(f, world, rules, f.global_position, Vector3.FORWARD, 42, true, true)
 	_check(again != null, "the same seed takes a limb again")
 	f.mend()
 	_check(_small_bones(skel) == whole, "a respawn puts every bone back")
-	rules.mode = DotPlayerBreakRules.Mode.EXPLODE
-	var all := DotPlayerBodyBreak.break_apart(f, world, rules, f.global_position, Vector3.FORWARD, 7, true, true)
+	rules.mode = GSPlayerBreakRules.Mode.EXPLODE
+	var all := GSPlayerBodyBreak.break_apart(f, world, rules, f.global_position, Vector3.FORWARD, 7, true, true)
 	_check(all != null and all.piece_count() == 5, "explode: both arms, both legs and the head (%d)" % (all.piece_count() if all != null else -1))
 	world.queue_free()
 	await get_tree().process_frame
@@ -53,9 +53,9 @@ static func _small_bones(skel: Skeleton3D) -> int:
 
 
 func _library_of(id: StringName) -> AnimationLibrary:
-	var f := DotHumanoidFigure.new()
+	var f := GSHumanoidFigure.new()
 	add_child(f)
-	f.build(DotHumanoidLook.make(id, Color.WHITE, Color.BLACK, Color.RED, Color.BLUE), 1.8)
+	f.build(GSHumanoidLook.make(id, Color.WHITE, Color.BLACK, Color.RED, Color.BLUE), 1.8)
 	var out := (f.body_node().find_child("AnimationPlayer", true, false) as AnimationPlayer).get_animation_library(&"")
 	f.free()
 	return out
@@ -73,18 +73,18 @@ func _test_actions() -> void:
 	_section("avatar actions")
 	var ids := ["wave", "point", "thumbs_up", "nod", "shrug", "cheer", "dance", "clap", "bow", "sit", "salute", "arms_crossed", "hands_on_hips"]
 	for body in [&"matt", &"lis"]:
-		var f := DotHumanoidFigure.new()
+		var f := GSHumanoidFigure.new()
 		add_child(f)
-		f.build(DotHumanoidLook.make(body, Color.WHITE, Color.BLACK, Color.RED, Color.BLUE), 1.8)
+		f.build(GSHumanoidLook.make(body, Color.WHITE, Color.BLACK, Color.RED, Color.BLUE), 1.8)
 		var all := true
 		for id in ids:
 			all = all and f.play_action(StringName(id), true)
 			f.animate(0.0, 0.1)
 		_check(all, "%s plays all %d starter actions" % [body, ids.size()])
 		f.free()
-	var f := DotHumanoidFigure.new()
+	var f := GSHumanoidFigure.new()
 	add_child(f)
-	f.build(DotHumanoidLook.stock(3), 1.8)
+	f.build(GSHumanoidLook.stock(3), 1.8)
 	_check(not f.play_action(&"no_such_thing"), "an id with no clip plays nothing")
 	var rest := f.skeleton().get_bone_pose_rotation(f.skeleton().find_bone("UpperArm.R"))
 	f.play_action(&"cheer", true)
@@ -101,14 +101,14 @@ func _test_actions() -> void:
 	f.set_motion({})
 	f.play_action(&"dance", true)
 	f.animate(0.0, 0.1)
-	_check(f.clip == DotHumanoidActions.clip_name(&"dance"), "dance takes the legs while standing")
+	_check(f.clip == GSHumanoidActions.clip_name(&"dance"), "dance takes the legs while standing")
 	f.animate(4.0, 0.1)
-	_check(f.action == &"" and f.clip != DotHumanoidActions.clip_name(&"dance"), "and gives them back on the move")
+	_check(f.action == &"" and f.clip != GSHumanoidActions.clip_name(&"dance"), "and gives them back on the move")
 	f.play_action(&"bow", false, 99.0)
 	_check(f.action == &"", "a one-shot that began long ago is already over")
 	f.swing()
 	f.play_action(&"wave", false)
-	_check(f.overlay == DotHumanoidClips.WAVE, "a later action replaces a swing")
+	_check(f.overlay == GSHumanoidClips.WAVE, "a later action replaces a swing")
 	f.free()
 	var anim := Animation.new()
 	var t := anim.add_track(Animation.TYPE_ROTATION_3D)
@@ -120,7 +120,7 @@ func _test_actions() -> void:
 	var map := BoneMap.new()
 	map.profile = SkeletonProfileHumanoid.new()
 	map.set_skeleton_bone_name(&"Spine", &"mixamorig_Spine")
-	var renamed := DotHumanoidActions.rename_humanoid(anim, map, {"mixamorig_Spine": Transform3D.IDENTITY})
+	var renamed := GSHumanoidActions.rename_humanoid(anim, map, {"mixamorig_Spine": Transform3D.IDENTITY})
 	var out: Animation = renamed["animation"]
 	_check(out.get_track_count() == 1 and String(out.track_get_path(0)).ends_with(":Abdomen") and renamed["rests"].has("Abdomen"),
 		"an uploaded humanoid clip is renamed onto the kit's bones, unmapped bones dropped")
@@ -129,11 +129,11 @@ func _test_actions() -> void:
 
 ## An uploaded clip's scene, as the content cache builds it: Mixamo bone names, its own skeleton path.
 func _test_upload() -> void:
-	_check(DotHumanoidActions.profile_bone_of("mixamorig_LeftForeArm") == "LeftLowerArm"
-		and DotHumanoidActions.profile_bone_of("thigh_R") == "RightUpperLeg"
-		and DotHumanoidActions.profile_bone_of("upper_arm.L") == "LeftUpperArm"
-		and DotHumanoidActions.profile_bone_of("mixamorig:Hips") == "Hips"
-		and DotHumanoidActions.profile_bone_of("LeftHandIndex1") == "",
+	_check(GSHumanoidActions.profile_bone_of("mixamorig_LeftForeArm") == "LeftLowerArm"
+		and GSHumanoidActions.profile_bone_of("thigh_R") == "RightUpperLeg"
+		and GSHumanoidActions.profile_bone_of("upper_arm.L") == "LeftUpperArm"
+		and GSHumanoidActions.profile_bone_of("mixamorig:Hips") == "Hips"
+		and GSHumanoidActions.profile_bone_of("LeftHandIndex1") == "",
 		"source bone names are guessed onto the humanoid profile, unknown ones left out")
 	var scene := Node3D.new()
 	var skel := Skeleton3D.new()
@@ -158,11 +158,11 @@ func _test_upload() -> void:
 	var lib := AnimationLibrary.new()
 	var _l := lib.add_animation(&"Take", anim)
 	var _p := player.add_animation_library(&"", lib)
-	var f := DotHumanoidFigure.new()
+	var f := GSHumanoidFigure.new()
 	add_child(f)
-	f.build(DotHumanoidLook.stock(2), 1.8)
+	f.build(GSHumanoidLook.stock(2), 1.8)
 	var id := &"action/12/3"
-	_check(not DotHumanoidActions.clip_name(id).contains("/"), "a content id makes a clip name without a slash")
+	_check(not GSHumanoidActions.clip_name(id).contains("/"), "a content id makes a clip name without a slash")
 	_check(not f.add_action_scene(id, scene, "Missing").ok, "an upload without the named clip is refused")
 	var added := f.add_action_scene(id, scene, "Take", true)
 	_check(added.ok and added.value == true, "an uploaded clip is added to the body (%s)" % (added.error.message if not added.ok else "ok"))

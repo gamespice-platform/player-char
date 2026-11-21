@@ -2,7 +2,7 @@
 
     python3 -I tools/split_people_atlas.py addons/dot_player_char/people
 
-`DotHumanoidAssets.WEARS` tints by colour, but a few swatches are painted on two parts (sam's
+`GSHumanoidAssets.WEARS` tints by colour, but a few swatches are painted on two parts (sam's
 b2b2b2 is his top and his shoes). Run after `build_people.py`: for each SPLITS entry the vertices
 whose strongest bone matches move their UV to a pixel in the unused bottom edge of the atlas,
 painted `new`. List `new` in WEARS to tint it, leave it out to keep the painted colour. It must be

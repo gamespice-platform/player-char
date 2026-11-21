@@ -1,4 +1,4 @@
-class_name DotHumanoidLook
+class_name GSHumanoidLook
 extends RefCounted
 
 ## What one of the family's people looks like: which of four bodies, and the colours of skin, hair, top and bottom.
@@ -10,7 +10,7 @@ extends RefCounted
 const BODIES: Array[StringName] = [&"matt", &"lis", &"sam", &"shaun"]
 
 ## Bodies a game added beside [constant BODIES] (id to model path), set through
-## [method DotHumanoidAssets.register_body]. A seed or a site letter never picks one; a game names it.
+## [method GSHumanoidAssets.register_body]. A seed or a site letter never picks one; a game names it.
 static var registered: Dictionary = {}
 
 ## Skin tones a stock look draws from: real ones, light to dark.
@@ -54,8 +54,8 @@ var top: Color = Color("3f5f8a")
 var bottom: Color = Color("2f3a4f")
 
 
-static func make(p_body: StringName, p_skin: Color, p_hair: Color, p_top: Color, p_bottom: Color) -> DotHumanoidLook:
-	var look := DotHumanoidLook.new()
+static func make(p_body: StringName, p_skin: Color, p_hair: Color, p_top: Color, p_bottom: Color) -> GSHumanoidLook:
+	var look := GSHumanoidLook.new()
 	look.body = p_body if is_body(p_body) else BODIES[0]
 	look.skin = p_skin
 	look.hair = p_hair
@@ -71,10 +71,10 @@ static func is_body(id: StringName) -> bool:
 
 ## A stock person from [param seed] (a game passes a hash of the player's id): every client
 ## makes the same one. Its own generator, never the global one.
-static func stock(seed: int) -> DotHumanoidLook:
+static func stock(seed: int) -> GSHumanoidLook:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed
-	var look := DotHumanoidLook.new()
+	var look := GSHumanoidLook.new()
 	look.body = BODIES[rng.randi_range(0, BODIES.size() - 1)]
 	look.skin = Color(SKIN_TONES[rng.randi_range(0, SKIN_TONES.size() - 1)])
 	look.hair = Color(HAIR[rng.randi_range(0, HAIR.size() - 1)])
@@ -86,7 +86,7 @@ static func stock(seed: int) -> DotHumanoidLook:
 ## A member's site avatar (the site's `builtin` document) as a person: the face's letter picks the body, skin and hair.
 ## Null for a document that is not the site's, or one with no face, top or legs this table knows.
 ## Duck-typed (`schema_id`, `part_in(slot)`) so this addon does not depend on GameSpice User Avatar.
-static func from_site(foreign: Object) -> DotHumanoidLook:
+static func from_site(foreign: Object) -> GSHumanoidLook:
 	if foreign == null or not foreign.has_method(&"part_in"):
 		return null
 
@@ -107,7 +107,7 @@ static func from_site(foreign: Object) -> DotHumanoidLook:
 	top_letter = top_letter if top_letter != "" else fallback
 	legs = legs if legs != "" else fallback
 
-	var look := DotHumanoidLook.new()
+	var look := GSHumanoidLook.new()
 	look.body = BODIES[("abcdefghijklmnopqr".find(face)) % BODIES.size()]
 	look.skin = Color(SITE_SKINS[face][0])
 	look.hair = Color(SITE_SKINS[face][1])
@@ -119,14 +119,14 @@ static func from_site(foreign: Object) -> DotHumanoidLook:
 ## The person one of Kenney's eighteen skins (`a` to `r`) is, worn head to foot: the games that
 ## drew the blocky kit chose people by its atlas letter, and keep their choices this way. Accepts
 ## a letter or an atlas path (`.../texture-k.png`). Null for anything else.
-static func from_letter(letter_or_path: String) -> DotHumanoidLook:
+static func from_letter(letter_or_path: String) -> GSHumanoidLook:
 	var letter := letter_or_path
 	if letter.length() != 1:
 		var file := letter_or_path.get_file().get_basename()
 		letter = file.substr(file.length() - 1, 1) if file.begins_with("texture-") else ""
 	if not SITE_SKINS.has(letter):
 		return null
-	var look := DotHumanoidLook.new()
+	var look := GSHumanoidLook.new()
 	look.body = BODIES["abcdefghijklmnopqr".find(letter) % BODIES.size()]
 	look.skin = Color(SITE_SKINS[letter][0])
 	look.hair = Color(SITE_SKINS[letter][1])
@@ -151,14 +151,14 @@ static func site_letter(foreign: Object, slot: StringName) -> String:
 ## This look with the top moved [param amount] of the way to [param colour]: a side's colour
 ## on the torso, which is the first thing anybody needs to read off a body when friendly fire
 ## is on.
-func with_side(colour: Color, amount: float) -> DotHumanoidLook:
+func with_side(colour: Color, amount: float) -> GSHumanoidLook:
 	var out := copy()
 	out.top = top.lerp(colour, clampf(amount, 0.0, 1.0))
 	return out
 
 
-func copy() -> DotHumanoidLook:
-	return DotHumanoidLook.make(body, skin, hair, top, bottom)
+func copy() -> GSHumanoidLook:
+	return GSHumanoidLook.make(body, skin, hair, top, bottom)
 
 
 ## What decides the material: two looks with one key share it.
@@ -178,11 +178,11 @@ func to_dict() -> Dictionary:
 
 ## The look a dictionary describes, or null for one that is not a look. Unknown bodies become
 ## the first body rather than a refusal: a body retired later still draws a person.
-static func from_dict(data: Dictionary) -> DotHumanoidLook:
+static func from_dict(data: Dictionary) -> GSHumanoidLook:
 	for k in ["skin", "hair", "top", "bottom"]:
 		if not data.has(k) or not Color.html_is_valid(str(data[k])):
 			return null
-	return DotHumanoidLook.make(StringName(str(data.get("body", ""))), Color(str(data["skin"])),
+	return GSHumanoidLook.make(StringName(str(data.get("body", ""))), Color(str(data["skin"])),
 		Color(str(data["hair"])), Color(str(data["top"])), Color(str(data["bottom"])))
 
 

@@ -1,8 +1,8 @@
-class_name DotViewArmsPoseDebug
+class_name GSViewArmsPoseDebug
 extends MeshInstance3D
 ## Draws what the held arms solve for, over everything: each grip socket (yellow), the hand target the IK aims at
 ## (cyan), a line from target to the hand that reached for it (red when off by more than [member tolerance]), and
-## each arm bone's axes (x red, y green, z blue). Added by [member DotPlayerViewArms.debug_pose].
+## each arm bone's axes (x red, y green, z blue). Added by [member GSPlayerViewArms.debug_pose].
 
 const ARM_BONES: Array[String] = ["UpperArm.R", "LowerArm.R", "Middle1.R", "UpperArm.L", "LowerArm.L", "Middle1.L"]
 

@@ -1,20 +1,20 @@
-class_name DotPlayerChar
-extends DotPlayerComponent
+class_name GSPlayerChar
+extends GSPlayerComponent
 
 ## Which character a player is, and the one place everything asks about their body.
 ## Capsule, crouch test, camera height, hitboxes and model must agree on height, so they ask here.
-## Children: a [DotPlayerCharVisual] (model, sprite or none); [method apply_to_body] sizes the capsule.
+## Children: a [GSPlayerCharVisual] (model, sprite or none); [method apply_to_body] sizes the capsule.
 
-## Not [code]CHANNEL[/code]: [DotPlayerComponent] declares one already.
+## Not [code]CHANNEL[/code]: [GSPlayerComponent] declares one already.
 const CHAR_CHANNEL := "player.char"
 
 ## The character, or the look, changed.
-signal char_changed(def: DotPlayerCharDef)
+signal char_changed(def: GSPlayerCharDef)
 
 ## The stance changed. A camera and a visual both want this.
 signal stance_changed(crouched: bool)
 
-@export var catalogue: DotPlayerCharCatalogue = null
+@export var catalogue: GSPlayerCharCatalogue = null
 
 ## Which character. Empty takes the catalogue's fallback on the first bind.
 @export var char_id: StringName = &"":
@@ -32,9 +32,9 @@ signal stance_changed(crouched: bool)
 ## Whether to keep the roster's [code]char_id[/code] in step with this node.
 @export var report_to_roster: bool = true
 
-var look: DotPlayerCharLook = null
+var look: GSPlayerCharLook = null
 
-var _def: DotPlayerCharDef = null
+var _def: GSPlayerCharDef = null
 var _crouched: bool = false
 
 
@@ -46,7 +46,7 @@ func _ready() -> void:
 
 
 func _on_child_entered(node: Node) -> void:
-	var visual := node as DotPlayerCharVisual
+	var visual := node as GSPlayerCharVisual
 
 	if visual == null:
 		return
@@ -58,7 +58,7 @@ func _on_child_entered(node: Node) -> void:
 	visual.call_deferred("set_stance", _crouched)
 
 
-func _on_bound(_p: DotPlayer) -> void:
+func _on_bound(_p: GSPlayer) -> void:
 	_refresh()
 
 
@@ -69,31 +69,31 @@ func refresh_visuals() -> void:
 
 
 ## The definition in force, or null when there is no catalogue.
-func def() -> DotPlayerCharDef:
+func def() -> GSPlayerCharDef:
 	return _def
 
 
 ## Changes character, validating the look against the new one.
-func set_char(new_id: StringName) -> DotResult:
+func set_char(new_id: StringName) -> GSResult:
 	if catalogue == null:
-		return DotResult.fail(
-			DotError.CODE_STATE, "This DotPlayerChar has no catalogue."
+		return GSResult.fail(
+			GSError.CODE_STATE, "This GSPlayerChar has no catalogue."
 		)
 
 	if not catalogue.has_char(new_id):
-		return DotResult.fail(
-			DotError.CODE_INVALID, "No such character: '%s'." % String(new_id)
+		return GSResult.fail(
+			GSError.CODE_INVALID, "No such character: '%s'." % String(new_id)
 		)
 
 	char_id = new_id
-	return DotResult.success(_def)
+	return GSResult.success(_def)
 
 
 ## Replaces the look, conforming it rather than refusing it.
 ## Conform, not validate: this is the loading path, and a saved character whose hat was
 ## removed should lose the hat, not be locked out. Validating a client's look is the game's call.
-func set_look(new_look: DotPlayerCharLook) -> int:
-	look = new_look if new_look != null else DotPlayerCharLook.make(char_id)
+func set_look(new_look: GSPlayerCharLook) -> int:
+	look = new_look if new_look != null else GSPlayerCharLook.make(char_id)
 	look.char_id = char_id
 
 	var dropped := 0
@@ -168,18 +168,18 @@ func eye_transform(feet: Transform3D, look_basis: Basis) -> Transform3D:
 
 ## Sizes the player's collision shape to this character.
 ## Public for a game that builds its body after the character is set.
-func apply_to_body() -> DotResult:
+func apply_to_body() -> GSResult:
 	return _size_body()
 
 
-func _size_body() -> DotResult:
+func _size_body() -> GSResult:
 	if _def == null or not is_bound():
-		return DotResult.fail(DotError.CODE_STATE, "No character or no player.")
+		return GSResult.fail(GSError.CODE_STATE, "No character or no player.")
 
 	var body := player().body()
 
 	if body == null:
-		return DotResult.fail(DotError.CODE_STATE, "This player has no body.")
+		return GSResult.fail(GSError.CODE_STATE, "This player has no body.")
 
 	var shaped := false
 
@@ -202,22 +202,22 @@ func _size_body() -> DotResult:
 			shaped = true
 
 	if not shaped:
-		return DotResult.fail(
-			DotError.CODE_STATE,
+		return GSResult.fail(
+			GSError.CODE_STATE,
 			"This player's body has no collision shape to size.",
-			"DotPlayerChar sizes a CollisionShape3D or CollisionShape2D under the "
+			"GSPlayerChar sizes a CollisionShape3D or CollisionShape2D under the "
 			+ "body. A body built later should call apply_to_body() once it has one."
 		)
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## Every visual under this node.
-func visuals() -> Array[DotPlayerCharVisual]:
-	var out: Array[DotPlayerCharVisual] = []
+func visuals() -> Array[GSPlayerCharVisual]:
+	var out: Array[GSPlayerCharVisual] = []
 
 	for child in get_children():
-		var v := child as DotPlayerCharVisual
+		var v := child as GSPlayerCharVisual
 		if v != null:
 			out.append(v)
 
@@ -227,7 +227,7 @@ func visuals() -> Array[DotPlayerCharVisual]:
 ## Turns exactly one visual on and the rest off.
 ## For camera changes: a first-person rig and a third-person body are both under one
 ## player, and drawing both shows you your own head.
-func use_visual(which: DotPlayerCharVisual) -> void:
+func use_visual(which: GSPlayerCharVisual) -> void:
 	for v in visuals():
 		v.visual_enabled = v == which
 
@@ -272,11 +272,11 @@ func _refresh() -> void:
 	_def = catalogue.get_char(char_id)
 
 	if _def == null:
-		DotLog.warn(CHAR_CHANNEL, "no such character", {"char": String(char_id)})
+		GSLog.warn(CHAR_CHANNEL, "no such character", {"char": String(char_id)})
 		return
 
 	if look == null:
-		look = DotPlayerCharLook.make(char_id)
+		look = GSPlayerCharLook.make(char_id)
 
 	look.char_id = char_id
 	var _dropped := look.conform(_def)

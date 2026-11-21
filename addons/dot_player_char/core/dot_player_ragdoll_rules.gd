@@ -1,9 +1,9 @@
 @tool
-class_name DotPlayerRagdollRules
-extends DotConfig
+class_name GSPlayerRagdollRules
+extends GSConfig
 
 ## What a dead body does: jointed ragdoll, topple as one piece, fall without physics, or vanish; for how long, how many
-## at once, and which reactions a server allows. A [DotConfig] exposed as the [code]sv_ragdoll*[/code] cvars ([method bind_cvars]).
+## at once, and which reactions a server allows. A [GSConfig] exposed as the [code]sv_ragdoll*[/code] cvars ([method bind_cvars]).
 ## Presentation only: nothing collides with a corpse, and a dedicated server only picks the reaction.
 
 
@@ -44,7 +44,7 @@ const CVAR_WEAPON_TIME := "sv_ragdoll_weapon_time"
 @export_range(0.05, 10.0, 0.05) var fade: float = 1.0
 
 ## How many bodies may lie about at once: default 8, 0 = unlimited. The oldest goes (quickly
-## faded) when a new one would pass it. A client may hold fewer: see [member DotPlayerRagdolls.local_cap].
+## faded) when a new one would pass it. A client may hold fewer: see [member GSPlayerRagdolls.local_cap].
 @export_range(0, 256, 1, "or_greater") var max_count: int = 8
 
 ## Multiplies every push a reaction gives. 0 drops them all where they stood.
@@ -58,7 +58,7 @@ const CVAR_WEAPON_TIME := "sv_ragdoll_weapon_time"
 ## On: the exaggerated, thrown body.
 @export var exaggerate: bool = false
 
-## Whether a shot into a lying body pushes it ([method DotPlayerRagdolls.shoot]).
+## Whether a shot into a lying body pushes it ([method GSPlayerRagdolls.shoot]).
 @export var shootable: bool = false
 
 ## Whether the dead player's weapon drops as a prop.
@@ -70,7 +70,7 @@ const CVAR_WEAPON_TIME := "sv_ragdoll_weapon_time"
 ## Gravity on a falling body, so the drop has weight.
 @export_range(0.5, 4.0, 0.05) var gravity_scale: float = 1.4
 
-## Weights for the reactions, as [method DotPlayerDeathReactions.apply_weights] reads them.
+## Weights for the reactions, as [method GSPlayerDeathReactions.apply_weights] reads them.
 ## Empty keeps the stock weights. A weight of 0 turns a reaction off.
 @export var reaction_weights: String = ""
 
@@ -117,10 +117,10 @@ func effective_style() -> Style:
 	return style
 
 
-func validate() -> DotResult:
+func validate() -> GSResult:
 	if max_count < 0:
-		return DotResult.fail(DotError.CODE_INVALID, "max_count is a body count, 0 = unlimited.")
-	return DotResult.success(self)
+		return GSResult.fail(GSError.CODE_INVALID, "max_count is a body count, 0 = unlimited.")
+	return GSResult.success(self)
 
 
 static func style_name(value: Style) -> String:
@@ -190,7 +190,7 @@ func bind_cvars(add: Callable, flags: int = 0) -> Array:
 	return made
 
 
-## Keeps these rules on a server's values, as [param source] reports them: GameSpice Server's [code]DotClientLink[/code]
+## Keeps these rules on a server's values, as [param source] reports them: GameSpice Server's [code]GSClientLink[/code]
 ## or anything with [code]replicated_cvar(name, fallback)[/code] and a [code]replicated_cvar_changed[/code] signal.
 ## False when it cannot follow (an older shell's link); the rules keep their own values.
 func follow_cvars(source: Object) -> bool:
@@ -275,8 +275,8 @@ func set_cvar(cvar_name: String, value: String) -> bool:
 
 ## These rules' weights laid over [param base], in place, or over a fresh stock set when it is
 ## null. A game that keeps its own catalogue and wants it untouched passes a fresh one.
-func reactions(base: DotPlayerDeathReactions = null) -> DotPlayerDeathReactions:
-	var out := base if base != null else DotPlayerDeathReactions.stock()
+func reactions(base: GSPlayerDeathReactions = null) -> GSPlayerDeathReactions:
+	var out := base if base != null else GSPlayerDeathReactions.stock()
 	if reaction_weights.strip_edges() != "":
 		var _n := out.apply_weights(reaction_weights)
 	if not exaggerate:
@@ -285,7 +285,7 @@ func reactions(base: DotPlayerDeathReactions = null) -> DotPlayerDeathReactions:
 
 
 func _refuse(cvar_name: String, value: String) -> bool:
-	DotLog.warn(CHANNEL, "cvar value not understood; left as it was", {"cvar": cvar_name, "value": value})
+	GSLog.warn(CHANNEL, "cvar value not understood; left as it was", {"cvar": cvar_name, "value": value})
 	return false
 
 

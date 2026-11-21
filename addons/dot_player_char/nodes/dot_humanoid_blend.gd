@@ -1,4 +1,4 @@
-class_name DotHumanoidBlend
+class_name GSHumanoidBlend
 extends RefCounted
 
 ## Pose blending on a figure's skeleton: the ease out of a stride-clip cut, and the weighted turn

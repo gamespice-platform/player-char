@@ -1,9 +1,9 @@
 @tool
-class_name DotPlayerDeathReaction
+class_name GSPlayerDeathReaction
 extends Resource
 
 ## One way a body goes down: what kills may pick it, how heavily, and the push, pose and sounds. A document:
-## a game or weapon adds its own (see [DotPlayerDeathReactions]). Chosen once by the server and replayed by
+## a game or weapon adds its own (see [GSPlayerDeathReactions]). Chosen once by the server and replayed by
 ## everybody; physics is not bit-exact, so screens agree on the reaction and differ by centimetres.
 
 ## How the body is posed and driven before physics takes it.
@@ -36,7 +36,7 @@ enum Pose {
 
 ## Only a kill whose weapon asked for a launch qualifies: the weapon def's
 ## [code]params.death_reaction[/code] names this id, or its [code]params.death_power[/code]
-## reaches [member min_power]. See [method DotPlayerDeathReactions.weapon_power].
+## reaches [member min_power]. See [method GSPlayerDeathReactions.weapon_power].
 @export var needs_power: bool = false
 
 ## The weapon power (0 to 1) a [member needs_power] reaction wants.
@@ -48,7 +48,7 @@ enum Pose {
 @export_group("Motion")
 
 ## Push along the shot, in m/s added to the whole body, per 100 damage. Scaled by
-## [member DotPlayerRagdollRules.force_scale].
+## [member GSPlayerRagdollRules.force_scale].
 @export_range(0.0, 50.0, 0.1) var push: float = 1.5
 
 ## Extra push at the part that was hit, in m/s, so the hit part leads the fall.

@@ -1,4 +1,4 @@
-class_name DotPlayerHitboxPlan
+class_name GSPlayerHitboxPlan
 extends RefCounted
 
 ## The hit zones of a standing person as plain data, scaled from one height. Pure: no node, no GameSpice Combat.
@@ -7,7 +7,7 @@ const SPHERE := &"sphere"
 const CAPSULE := &"capsule"
 const BOX := &"box"
 
-## Zone ids a config may name; the group is the hit_group GameSpice Combat's resolver and DotStatsHitzones read.
+## Zone ids a config may name; the group is the hit_group GameSpice Combat's resolver and GSStatsHitzones read.
 const STOCK_IDS: Array[StringName] = [
 	&"head", &"neck", &"torso", &"stomach", &"arm_l", &"arm_r", &"hand_l", &"hand_r",
 	&"leg_l", &"leg_r", &"knee_l", &"knee_r", &"foot_l", &"foot_r",
@@ -25,7 +25,7 @@ static func zone(id: StringName, group: StringName, shape: StringName, position:
 	}
 
 
-## The stock set for a body of [param height] metres; [param scale] is DotPlayerCharDef.hitbox_scale.
+## The stock set for a body of [param height] metres; [param scale] is GSPlayerCharDef.hitbox_scale.
 ## [param half_width] above 0 keeps every zone inside that horizontal distance of the body axis (the collision
 ## capsule's radius), so a player flush against a wall has no hit zone on the far side of it.
 static func stock(height: float = REFERENCE_HEIGHT, scale: float = 1.0, half_width: float = 0.0) -> Array[Dictionary]:
@@ -65,36 +65,36 @@ static func clamp_inside(z: Dictionary, half_width: float) -> void:
 
 ## [param base] with a config applied. Keys: `disabled` (ids dropped), `groups` ({id: group}), `zones` (extra or replacing
 ## zone dicts keyed by id with any of the zone fields). A bad entry fails the whole config, nothing is half applied.
-static func from_config(base: Array[Dictionary], config: Dictionary) -> DotResult:
+static func from_config(base: Array[Dictionary], config: Dictionary) -> GSResult:
 	var out: Array[Dictionary] = []
 	for z in base:
 		out.append(z.duplicate())
 	var disabled: Variant = config.get("disabled", [])
 	if not (disabled is Array):
-		return DotResult.fail(DotError.CODE_INVALID, "hitbox config: disabled must be an array")
+		return GSResult.fail(GSError.CODE_INVALID, "hitbox config: disabled must be an array")
 	var groups: Variant = config.get("groups", {})
 	if not (groups is Dictionary):
-		return DotResult.fail(DotError.CODE_INVALID, "hitbox config: groups must be a dictionary")
+		return GSResult.fail(GSError.CODE_INVALID, "hitbox config: groups must be a dictionary")
 	var extra: Variant = config.get("zones", {})
 	if not (extra is Dictionary):
-		return DotResult.fail(DotError.CODE_INVALID, "hitbox config: zones must be a dictionary")
+		return GSResult.fail(GSError.CODE_INVALID, "hitbox config: zones must be a dictionary")
 	for id in extra:
 		var spec: Variant = extra[id]
 		if not (spec is Dictionary):
-			return DotResult.fail(DotError.CODE_INVALID, "hitbox config: zone %s must be a dictionary" % id)
+			return GSResult.fail(GSError.CODE_INVALID, "hitbox config: zone %s must be a dictionary" % id)
 		var at := _index_of(out, StringName(str(id)))
 		var merged: Dictionary = out[at].duplicate() if at >= 0 else zone(StringName(str(id)), &"", SPHERE, Vector3.ZERO, 0.1)
 		for key in spec:
 			var v: Variant = spec[key]
 			if key == "position":
 				if not (v is Array) or v.size() != 3:
-					return DotResult.fail(DotError.CODE_INVALID, "hitbox config: zone %s position must be [x, y, z]" % id)
+					return GSResult.fail(GSError.CODE_INVALID, "hitbox config: zone %s position must be [x, y, z]" % id)
 				v = Vector3(float(v[0]), float(v[1]), float(v[2]))
 			elif key == "group" or key == "shape":
 				v = StringName(str(v))
 			merged[key] = v
 		if not (merged["shape"] in [SPHERE, CAPSULE, BOX]) or float(merged["radius"]) <= 0.0 or merged["group"] == &"":
-			return DotResult.fail(DotError.CODE_INVALID, "hitbox config: zone %s needs a shape, a group and a radius" % id)
+			return GSResult.fail(GSError.CODE_INVALID, "hitbox config: zone %s needs a shape, a group and a radius" % id)
 		if at >= 0:
 			out[at] = merged
 		else:
@@ -102,13 +102,13 @@ static func from_config(base: Array[Dictionary], config: Dictionary) -> DotResul
 	for id in groups:
 		var at2 := _index_of(out, StringName(str(id)))
 		if at2 < 0:
-			return DotResult.fail(DotError.CODE_INVALID, "hitbox config: groups names unknown zone %s" % id)
+			return GSResult.fail(GSError.CODE_INVALID, "hitbox config: groups names unknown zone %s" % id)
 		out[at2]["group"] = StringName(str(groups[id]))
 	var kept: Array[Dictionary] = []
 	for z in out:
 		if not (String(z["id"]) in disabled):
 			kept.append(z)
-	return DotResult.success(kept)
+	return GSResult.success(kept)
 
 
 static func _index_of(zones: Array[Dictionary], id: StringName) -> int:

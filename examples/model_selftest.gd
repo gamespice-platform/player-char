@@ -12,7 +12,7 @@ var _section_count := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run()
 
 
@@ -75,32 +75,32 @@ func _test_body_break() -> void:
 
 	var world := Node3D.new()
 	add_child(world)
-	var rules := DotPlayerBreakRules.new()
+	var rules := GSPlayerBreakRules.new()
 
 	var body := _break_body()
 	world.add_child(body)
-	_check(DotPlayerBodyBreak.visible_meshes(body).size() == 5, "the stand-in body has five meshes")
+	_check(GSPlayerBodyBreak.visible_meshes(body).size() == 5, "the stand-in body has five meshes")
 	_check(
-		DotPlayerBodyBreak.limbs_of(body, DotPlayerBodyBreak.visible_meshes(body), rules.limb_names).size() == 4,
+		GSPlayerBodyBreak.limbs_of(body, GSPlayerBodyBreak.visible_meshes(body), rules.limb_names).size() == 4,
 		"and four of them are limbs: the chest is not"
 	)
 	var stray := MeshInstance3D.new()
 	stray.mesh = BoxMesh.new()
 	stray.top_level = true
 	body.add_child(stray)
-	_check(not DotPlayerBodyBreak.visible_meshes(body).has(stray), "a world-space effect hung under the body is not a piece of it")
+	_check(not GSPlayerBodyBreak.visible_meshes(body).has(stray), "a world-space effect hung under the body is not a piece of it")
 	stray.free()
 
 	# Criticals only, by default: an ordinary death leaves the body whole.
 	_check(
-		DotPlayerBodyBreak.break_apart(body, world, rules, Vector3.ZERO, Vector3.FORWARD, 7, true, false) == null,
+		GSPlayerBodyBreak.break_apart(body, world, rules, Vector3.ZERO, Vector3.FORWARD, 7, true, false) == null,
 		"an ordinary death breaks nothing while criticals_only is on"
 	)
 
 	rules.limbs = 2
-	var limbs := DotPlayerBodyBreak.break_apart(body, world, rules, Vector3.ZERO, Vector3.FORWARD, 7, true, true)
+	var limbs := GSPlayerBodyBreak.break_apart(body, world, rules, Vector3.ZERO, Vector3.FORWARD, 7, true, true)
 	_check(limbs != null and limbs.piece_count() == 2, "a lethal critical takes two limbs off")
-	var hidden := 5 - DotPlayerBodyBreak.visible_meshes(body).size()
+	var hidden := 5 - GSPlayerBodyBreak.visible_meshes(body).size()
 	_check(hidden == 2 and body.visible, "their originals are hidden and the body stays")
 
 	# The same death breaks the same way: every viewer seeds from the death.
@@ -108,8 +108,8 @@ func _test_body_break() -> void:
 	var b := _break_body()
 	world.add_child(a)
 	world.add_child(b)
-	DotPlayerBodyBreak.break_apart(a, world, rules, Vector3.ZERO, Vector3.FORWARD, 99)
-	DotPlayerBodyBreak.break_apart(b, world, rules, Vector3.ZERO, Vector3.FORWARD, 99)
+	GSPlayerBodyBreak.break_apart(a, world, rules, Vector3.ZERO, Vector3.FORWARD, 99)
+	GSPlayerBodyBreak.break_apart(b, world, rules, Vector3.ZERO, Vector3.FORWARD, 99)
 	var gone_a: Array[String] = []
 	var gone_b: Array[String] = []
 	for mount in a.get_node("Rig").get_children():
@@ -120,11 +120,11 @@ func _test_body_break() -> void:
 			gone_b.append(String(mount.name))
 	_check(gone_a == gone_b and gone_a.size() == 2, "the same seed takes the same limbs off (%s)" % ", ".join(gone_a))
 
-	rules.mode = DotPlayerBreakRules.Mode.EXPLODE
+	rules.mode = GSPlayerBreakRules.Mode.EXPLODE
 	rules.criticals_only = false
 	var whole := _break_body()
 	world.add_child(whole)
-	var blast := DotPlayerBodyBreak.break_apart(whole, world, rules, Vector3.ZERO, Vector3.FORWARD, 3, true, false)
+	var blast := GSPlayerBodyBreak.break_apart(whole, world, rules, Vector3.ZERO, Vector3.FORWARD, 3, true, false)
 	_check(blast != null and blast.piece_count() == 5 and not whole.visible,
 		"explode throws every piece and hides the body")
 
@@ -132,11 +132,11 @@ func _test_body_break() -> void:
 	_check(piece != null and piece.collision_layer == 0, "a piece collides with the world and nothing collides with it")
 	_check(piece.linear_velocity.length() > rules.force * 0.5, "and leaves at speed (%.1f m/s)" % piece.linear_velocity.length())
 
-	rules.mode = DotPlayerBreakRules.Mode.NONE
+	rules.mode = GSPlayerBreakRules.Mode.NONE
 	var untouched := _break_body()
 	world.add_child(untouched)
 	_check(
-		DotPlayerBodyBreak.break_apart(untouched, world, rules, Vector3.ZERO, Vector3.FORWARD, 1) == null,
+		GSPlayerBodyBreak.break_apart(untouched, world, rules, Vector3.ZERO, Vector3.FORWARD, 1) == null,
 		"mode NONE breaks nothing"
 	)
 
@@ -155,7 +155,7 @@ func _test_body_break() -> void:
 func _check_first_person_body(world: Node3D) -> void:
 	var mine := _break_body()
 	world.add_child(mine)
-	var fp := DotPlayerFirstPersonBody.new()
+	var fp := GSPlayerFirstPersonBody.new()
 	fp.apply(mine)
 	var head := mine.get_node("Rig/Head/Mesh") as MeshInstance3D
 	_check(fp.hidden_count() == 1 and head.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY,
@@ -168,7 +168,7 @@ func _check_first_person_body(world: Node3D) -> void:
 		"restore draws the head again where it stood")
 
 	# Only the named parts stay drawn when asked: a box torso under the eye is a grey slab.
-	var legs_only := DotPlayerFirstPersonBody.new()
+	var legs_only := GSPlayerFirstPersonBody.new()
 	legs_only.shown_names = PackedStringArray(["leg"])
 	legs_only.apply(mine)
 	_check((mine.get_node("Rig/Chest/Mesh") as MeshInstance3D).cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY,
@@ -176,8 +176,8 @@ func _check_first_person_body(world: Node3D) -> void:
 	legs_only.restore()
 
 
-func _model() -> DotPlayerModelDef:
-	var m := DotPlayerModelDef.make(&"humanoid")
+func _model() -> GSPlayerModelDef:
+	var m := GSPlayerModelDef.make(&"humanoid")
 	m.mounts = {"head": "Head", "back": "Chest/Back", "right_hand": "RightHand"}
 	m.parts = {"cap": "res://parts/cap.tscn", "pack": "res://parts/pack.tscn"}
 	m.part_slots = {"cap": "head", "pack": "back"}
@@ -212,8 +212,8 @@ func _rig_scene() -> Node3D:
 	return root
 
 
-func _look(cap: bool = true, pack: bool = true) -> DotPlayerCharLook:
-	var l := DotPlayerCharLook.make(&"standard")
+func _look(cap: bool = true, pack: bool = true) -> GSPlayerCharLook:
+	var l := GSPlayerCharLook.make(&"standard")
 
 	if cap:
 		l.choose(&"head", &"cap")
@@ -253,14 +253,14 @@ func _test_def() -> void:
 		"and so is a part whose slot the rig has no mount for"
 	)
 
-	_check(not DotPlayerModelDef.new().validate().ok, "and a model with no id")
+	_check(not GSPlayerModelDef.new().validate().ok, "and a model with no id")
 	_check(m.describe().contains("humanoid"), "and it describes itself")
 
 
 func _test_catalogue() -> void:
 	_section("a catalogue")
 
-	var cat := DotPlayerModelCatalogue.new()
+	var cat := GSPlayerModelCatalogue.new()
 	cat.id = &"test"
 	cat.models = [_model()]
 	cat.default_model = &"humanoid"
@@ -276,12 +276,12 @@ func _test_catalogue() -> void:
 		+ "a part missing"
 	)
 
-	var dup := DotPlayerModelCatalogue.new()
+	var dup := GSPlayerModelCatalogue.new()
 	dup.models = [_model(), _model()]
 	_check(not dup.build().ok, "two models with one name are refused")
-	_check(not DotPlayerModelCatalogue.new().build().ok, "and an empty catalogue")
+	_check(not GSPlayerModelCatalogue.new().build().ok, "and an empty catalogue")
 
-	var humanoid := DotPlayerModelCatalogue.humanoid()
+	var humanoid := GSPlayerModelCatalogue.humanoid()
 	_check(humanoid.build().ok, "the humanoid preset builds")
 	_check(
 		humanoid.get_model(&"humanoid").slot_names().size() == 9,
@@ -299,7 +299,7 @@ func _test_plan() -> void:
 	_section("planning")
 
 	var m := _model()
-	var plan := DotPlayerModelBuilder.plan(m, _look())
+	var plan := GSPlayerModelBuilder.plan(m, _look())
 
 	_check(plan.size() == 2, "a plan covers the filled slots")
 	_check(str(plan[0]["mount"]) != "", "and resolves each to a mount")
@@ -320,34 +320,34 @@ func _test_plan() -> void:
 		+ "client. Whether the scene is really there is decided at build time."
 	)
 
-	_check(DotPlayerModelBuilder.plan(null, _look()).is_empty(), "no model, no plan")
+	_check(GSPlayerModelBuilder.plan(null, _look()).is_empty(), "no model, no plan")
 	_check(
-		DotPlayerModelBuilder.plan(m, DotPlayerCharLook.make(&"x")).is_empty(),
+		GSPlayerModelBuilder.plan(m, GSPlayerCharLook.make(&"x")).is_empty(),
 		"and an empty look plans nothing rather than everything"
 	)
 
-	var partial := DotPlayerModelBuilder.plan(m, _look(true, false))
+	var partial := GSPlayerModelBuilder.plan(m, _look(true, false))
 	_check(partial.size() == 1, "a half-filled look plans half of it")
 
 	var misplaced := _model()
 	misplaced.part_slots["cap"] = "back"
-	var bad := DotPlayerModelBuilder.plan(misplaced, _look(true, false))
+	var bad := GSPlayerModelBuilder.plan(misplaced, _look(true, false))
 	_check(
 		bad.size() == 1 and str(bad[0]["scene"]) == "",
 		"a part asked for in the wrong slot resolves to nothing rather than being "
 		+ "built into the wrong mount"
 	)
 
-	var summary := DotPlayerModelBuilder.summarise(plan)
+	var summary := GSPlayerModelBuilder.summarise(plan)
 	_check(int(summary["slots"]) == 2, "a plan summarises")
 	_check(int(summary["missing"]) == 0, "with the count of parts the model cannot place")
 	_check(bool(summary["complete"]), "and this one is complete")
 	_check(
-		int(DotPlayerModelBuilder.summarise(bad)["missing"]) == 1,
+		int(GSPlayerModelBuilder.summarise(bad)["missing"]) == 1,
 		"while a plan with an unplaceable part is not"
 	)
 	_check(
-		bool(DotPlayerModelBuilder.summarise([])["complete"]),
+		bool(GSPlayerModelBuilder.summarise([])["complete"]),
 		"while an empty plan is trivially complete"
 	)
 
@@ -356,16 +356,16 @@ func _test_plan() -> void:
 		{"slot": "head", "attach_to": "Head", "requested": "crown",
 			"scene_path": "res://x.tscn", "colours": [Color.RED], "layer": 5},
 	]
-	var bridged := DotPlayerModelBuilder.from_plan(avatar_rows)
+	var bridged := GSPlayerModelBuilder.from_plan(avatar_rows)
 	_check(bridged.size() == 1, "an avatar plan converts")
 	_check(str(bridged[0]["mount"]) == "Head", "taking its attachment name")
 	_check(StringName(str(bridged[0]["part"])) == &"crown", "and its part")
 	_check(str(bridged[0]["scene"]) == "res://x.tscn", "and its path")
 	_check(
-		DotPlayerModelBuilder.from_plan([{"slot": "head"}], {"head": "Head"}).size() == 1,
+		GSPlayerModelBuilder.from_plan([{"slot": "head"}], {"head": "Head"}).size() == 1,
 		"and a row with no attachment name takes one from a mount table"
 	)
-	_check(DotPlayerModelBuilder.from_plan([1, 2, 3]).is_empty(), "nonsense converts to nothing")
+	_check(GSPlayerModelBuilder.from_plan([1, 2, 3]).is_empty(), "nonsense converts to nothing")
 
 
 func _test_build() -> void:
@@ -381,8 +381,8 @@ func _test_build() -> void:
 	var _packed := placeholder.pack(stand_in)
 	stand_in.free()
 
-	var plan := DotPlayerModelBuilder.plan(m, _look())
-	var res := DotPlayerModelBuilder.apply(plan, rig, placeholder)
+	var plan := GSPlayerModelBuilder.plan(m, _look())
+	var res := GSPlayerModelBuilder.apply(plan, rig, placeholder)
 	_check(res.ok, "a plan builds")
 	_check(
 		int(res.value) == 2,
@@ -392,7 +392,7 @@ func _test_build() -> void:
 	_check(rig.get_node("Chest/Back").get_child_count() == 1, "and one on the back")
 
 	# The rebuild, which is the thing that has to be right.
-	var built_again := DotPlayerModelBuilder.apply(plan, rig, placeholder)
+	var built_again := GSPlayerModelBuilder.apply(plan, rig, placeholder)
 	_check(built_again.ok, "applying a second plan to the same rig works")
 	await await_free()
 	_check(
@@ -402,11 +402,11 @@ func _test_build() -> void:
 	)
 
 	_check(
-		not DotPlayerModelBuilder.apply(plan, null).ok,
+		not GSPlayerModelBuilder.apply(plan, null).ok,
 		"building on nothing is refused"
 	)
 
-	var no_placeholder := DotPlayerModelBuilder.apply(plan, rig)
+	var no_placeholder := GSPlayerModelBuilder.apply(plan, rig)
 	_check(
 		int(no_placeholder.value) == 0,
 		"and with no placeholder, missing content shows nothing rather than erroring"
@@ -414,7 +414,7 @@ func _test_build() -> void:
 
 	var wrong_rig := Node3D.new()
 	add_child(wrong_rig)
-	var mismatch := DotPlayerModelBuilder.apply(plan, wrong_rig, placeholder)
+	var mismatch := GSPlayerModelBuilder.apply(plan, wrong_rig, placeholder)
 	_check(
 		mismatch.ok and int(mismatch.value) == 0,
 		"a rig with none of the mounts builds nothing and says so, rather than "
@@ -424,7 +424,7 @@ func _test_build() -> void:
 	# Tinting, which must be per-instance.
 	var mesh := MeshInstance3D.new()
 	rig.add_child(mesh)
-	DotPlayerModelBuilder.tint(mesh, [Color.RED, Color.BLUE], "dot_tint_")
+	GSPlayerModelBuilder.tint(mesh, [Color.RED, Color.BLUE], "dot_tint_")
 	_check(
 		mesh.get_instance_shader_parameter("dot_tint_0") is Color,
 		"a tint is written as a per-instance shader parameter, so two players wearing "
@@ -434,15 +434,15 @@ func _test_build() -> void:
 		(mesh.get_instance_shader_parameter("dot_tint_1") as Color).is_equal_approx(Color.BLUE),
 		"one per channel"
 	)
-	DotPlayerModelBuilder.tint(mesh, [], "dot_tint_")
+	GSPlayerModelBuilder.tint(mesh, [], "dot_tint_")
 	_check(
 		mesh.get_instance_shader_parameter("dot_tint_0") is Color,
 		"and an empty colour list leaves what was there alone rather than clearing it"
 	)
 
-	var cleared := DotPlayerModelBuilder.clear(m, rig)
+	var cleared := GSPlayerModelBuilder.clear(m, rig)
 	_check(cleared >= 2, "every mount can be emptied at once")
-	_check(DotPlayerModelBuilder.clear(null, rig) == 0, "with nothing to clear being fine")
+	_check(GSPlayerModelBuilder.clear(null, rig) == 0, "with nothing to clear being fine")
 
 	rig.queue_free()
 	wrong_rig.queue_free()
@@ -459,7 +459,7 @@ func _test_rig() -> void:
 	_section("the rig node")
 
 	var m := _model()
-	var rig := DotPlayerModelRig.new()
+	var rig := GSPlayerModelRig.new()
 	add_child(rig)
 	rig.adopt(_rig_scene(), m)
 	rig.add_child(rig.instance)
@@ -479,7 +479,7 @@ func _test_rig() -> void:
 		+ "where a declared number is wrong"
 	)
 
-	var opinionless := DotPlayerModelRig.new()
+	var opinionless := GSPlayerModelRig.new()
 	add_child(opinionless)
 	var no_eyes := _model()
 	no_eyes.eye_mount = &""
@@ -492,7 +492,7 @@ func _test_rig() -> void:
 		+ "would put the camera in the floor"
 	)
 
-	var missing := DotPlayerModelRig.new()
+	var missing := GSPlayerModelRig.new()
 	add_child(missing)
 	var bad := _model()
 	bad.rig_scene = "res://nothing/here.tscn"
@@ -503,7 +503,7 @@ func _test_rig() -> void:
 	)
 	_check(missing.build_from(null).ok == false, "and so is no definition at all")
 
-	var sceneless := DotPlayerModelRig.new()
+	var sceneless := GSPlayerModelRig.new()
 	add_child(sceneless)
 	var no_scene := _model()
 	no_scene.rig_scene = ""
@@ -523,23 +523,23 @@ func _test_rig() -> void:
 func _test_visual() -> void:
 	_section("the visual")
 
-	var cat := DotPlayerModelCatalogue.new()
+	var cat := GSPlayerModelCatalogue.new()
 	cat.id = &"test"
 	cat.models = [_model()]
 	cat.default_model = &"humanoid"
 	var _built := cat.build()
 
-	var player := DotPlayer.new()
+	var player := GSPlayer.new()
 	add_child(player)
 
-	var ch := DotPlayerChar.new()
-	ch.catalogue = DotPlayerCharCatalogue.standard()
+	var ch := GSPlayerChar.new()
+	ch.catalogue = GSPlayerCharCatalogue.standard()
 	ch.catalogue.get_char(&"standard").model_id = &"humanoid"
 	ch.size_body = false
 	ch.report_to_roster = false
 	player.add_child(ch)
 
-	var visual := DotPlayerModelVisual.new()
+	var visual := GSPlayerModelVisual.new()
 	visual.catalogue = cat
 	ch.add_child(visual)
 
@@ -589,7 +589,7 @@ func _test_visual() -> void:
 	_check(int(visual.summary()["slots"]) >= 0, "and summarises its plan")
 	_check(visual.describe_lines().size() >= 2, "and describes itself")
 
-	var bare := DotPlayerModelVisual.new()
+	var bare := GSPlayerModelVisual.new()
 	ch.add_child(bare)
 	await get_tree().process_frame
 	bare.apply_char(ch.def(), ch.look)
@@ -608,7 +608,7 @@ func _test_visual() -> void:
 func _test_placement() -> void:
 	_section("where the rig is drawn")
 
-	var cat := DotPlayerModelCatalogue.new()
+	var cat := GSPlayerModelCatalogue.new()
 	cat.id = &"placed"
 	cat.models = [_model()]
 	cat.default_model = &"humanoid"
@@ -626,7 +626,7 @@ func _test_placement() -> void:
 	holder.name = "Components"
 	body.add_child(holder)
 
-	var visual := DotPlayerModelVisual.new()
+	var visual := GSPlayerModelVisual.new()
 	visual.catalogue = cat
 	holder.add_child(visual)
 
@@ -661,7 +661,7 @@ func _test_placement() -> void:
 	var late_body := Node3D.new()
 	late_body.name = "LateBody"
 	late_body.position = Vector3(3.0, 0.0, 3.0)
-	var late := DotPlayerModelVisual.new()
+	var late := GSPlayerModelVisual.new()
 	late.catalogue = cat
 	late_body.add_child(late)
 	add_child(late_body)
@@ -677,9 +677,9 @@ func _test_placement() -> void:
 	mount.name = "Mount"
 	mount.position = Vector3(0.0, 1.0, 0.0)
 	body.add_child(mount)
-	var chosen := DotPlayerModelVisual.new()
+	var chosen := GSPlayerModelVisual.new()
 	chosen.catalogue = cat
-	chosen.anchor_ref = DotNodeRef.of_path(NodePath("../../Mount"))
+	chosen.anchor_ref = GSNodeRef.of_path(NodePath("../../Mount"))
 	holder.add_child(chosen)
 	_check(
 		chosen.rig != null and chosen.rig.get_parent() == mount,
@@ -707,7 +707,7 @@ func _test_placement() -> void:
 	# No spatial ancestor at all: exactly as before, the rig stays the visual's own child.
 	var loose_parent := Node.new()
 	add_child(loose_parent)
-	var loose := DotPlayerModelVisual.new()
+	var loose := GSPlayerModelVisual.new()
 	loose.catalogue = cat
 	loose_parent.add_child(loose)
 	await get_tree().process_frame

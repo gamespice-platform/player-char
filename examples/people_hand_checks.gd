@@ -1,6 +1,6 @@
 extends RefCounted
 
-## The suite's real-hands section: DotViewHand's fingers and DotPlayerViewArms closing them on each weapon kind.
+## The suite's real-hands section: GSViewHand's fingers and GSPlayerViewArms closing them on each weapon kind.
 ## Split out to keep people_selftest under the file-size gate; reports through the suite's `_section` and `_check`.
 
 var suite: Node
@@ -13,31 +13,31 @@ func _init(host: Node) -> void:
 func run() -> void:
 	_check_hand_mesh()
 
-	var arms := DotPlayerViewArms.new()
+	var arms := GSPlayerViewArms.new()
 	arms.finger_rate = 0.0
 	suite.add_child(arms)
-	arms.build(DotHumanoidLook.stock(3), 1.8)
+	arms.build(GSHumanoidLook.stock(3), 1.8)
 	var weapon := Node3D.new()
 	suite.add_child(weapon)
 	weapon.position = Vector3(0.08, -0.2, -0.4)
 	var grip := Vector3(0.0, -0.08, 0.1)
 	var fore := Vector3(0.0, -0.05, -0.12)
-	var rifle := DotViewGrip.two_hand(weapon, grip, fore)
+	var rifle := GSViewGrip.two_hand(weapon, grip, fore)
 	arms.set_held(rifle)
 	await _settle(arms, 8)
 	var hands := arms.hands()
 	suite._check(hands.size() == 2 and arms.describe()["real_hands"] and hands[0].visible and hands[1].visible, "a two-hand weapon is held in both real hands")
-	var material := (arms.arms() as DotHumanoidFigure).mesh().material_override
+	var material := (arms.arms() as GSHumanoidFigure).mesh().material_override
 	suite._check(material != null and hands[0].mesh_instance().material_override == material, "the hands wear the arms' own material (one skin family with the bodies)")
 	suite._check(arms.hand_error(rifle) >= 0.0 and arms.hand_error(rifle) < 0.03, "the wrists sit where the hands close on the grips (%.3f m)" % arms.hand_error(rifle))
-	var firing: Dictionary = (DotViewHandPoses.table()[DotViewHandPoses.RIFLE] as Dictionary)[&"firing"]
+	var firing: Dictionary = (GSViewHandPoses.table()[GSViewHandPoses.RIFLE] as Dictionary)[&"firing"]
 	var held := hands[0].global_transform * (firing[&"centre"] as Vector3)
 	suite._check(held.distance_to(rifle.grip_world()) < 0.01, "the grip point is inside the firing hand (%.3f m off)" % held.distance_to(rifle.grip_world()))
 
 	var near := Node3D.new()
 	suite.add_child(near)
 	near.position = Vector3(0.06, -0.12, -0.08)
-	var pulled := DotViewGrip.two_hand(near, grip, Vector3(0.0, -0.05, 0.02))
+	var pulled := GSViewGrip.two_hand(near, grip, Vector3(0.0, -0.05, 0.02))
 	var to_arms := arms.global_transform.affine_inverse()
 	var raw: float = minf(-(to_arms * arms.wrist_targets(pulled)[0]).z, -(to_arms * arms.wrist_targets(pulled)[1]).z)
 	arms.hand_min_depth = 0.1
@@ -52,10 +52,10 @@ func run() -> void:
 
 	var worst := 0.0
 	var named := ""
-	for kind: StringName in [DotViewHandPoses.PISTOL, DotViewHandPoses.SHOTGUN, DotViewHandPoses.LAUNCHER, DotViewHandPoses.SNIPER,
-			DotViewHandPoses.GRENADE, DotViewHandPoses.KNIFE, &"no_such_kind"]:
-		var one := kind in [DotViewHandPoses.GRENADE, DotViewHandPoses.KNIFE]
-		var g := DotViewGrip.one_hand(weapon, grip) if one else DotViewGrip.two_hand(weapon, grip, fore)
+	for kind: StringName in [GSViewHandPoses.PISTOL, GSViewHandPoses.SHOTGUN, GSViewHandPoses.LAUNCHER, GSViewHandPoses.SNIPER,
+			GSViewHandPoses.GRENADE, GSViewHandPoses.KNIFE, &"no_such_kind"]:
+		var one := kind in [GSViewHandPoses.GRENADE, GSViewHandPoses.KNIFE]
+		var g := GSViewGrip.one_hand(weapon, grip) if one else GSViewGrip.two_hand(weapon, grip, fore)
 		g.kind = kind
 		arms.set_held(g)
 		await _settle(arms, 6)
@@ -83,15 +83,15 @@ func run() -> void:
 
 func _check_hand_mesh() -> void:
 	suite._section("your own real hands, a grip per weapon")
-	var hand := DotViewHand.new()
+	var hand := GSViewHand.new()
 	suite.add_child(hand)
 	var verts := (hand.mesh_instance().mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
 	suite._check(verts > 400, "a hand is one skinned mesh with five jointed fingers (%d vertices)" % verts)
 	var open := hand.tip(&"index").distance_to(Vector3(0.0, 0.05, 0.03))
-	hand.pose((DotViewHandPoses.table()[DotViewHandPoses.FISTS] as Dictionary)[&"firing"])
+	hand.pose((GSViewHandPoses.table()[GSViewHandPoses.FISTS] as Dictionary)[&"firing"])
 	var fist := hand.tip(&"index").distance_to(Vector3(0.0, 0.05, 0.03))
 	suite._check(fist < open - 0.03, "a fist pose closes the fingers into the palm (index tip %.3f m from it, open %.3f m)" % [fist, open])
-	var left := DotViewHand.new()
+	var left := GSViewHand.new()
 	left.right = false
 	suite.add_child(left)
 	suite._check(hand.tip(&"thumb").x > 0.0 and left.tip(&"thumb").x < 0.0, "a left hand is the right one mirrored (thumb x %.3f / %.3f)" % [hand.tip(&"thumb").x, left.tip(&"thumb").x])
@@ -99,21 +99,21 @@ func _check_hand_mesh() -> void:
 	left.queue_free()
 
 
-func _check_grenade(arms: DotPlayerViewArms, weapon: Node3D, grip: Vector3, hands: Array) -> void:
-	var grenade := DotViewGrip.one_hand(weapon, grip)
-	grenade.kind = DotViewHandPoses.GRENADE
+func _check_grenade(arms: GSPlayerViewArms, weapon: Node3D, grip: Vector3, hands: Array) -> void:
+	var grenade := GSViewGrip.one_hand(weapon, grip)
+	grenade.kind = GSViewHandPoses.GRENADE
 	arms.set_held(grenade)
 	await _settle(arms, 3)
 	suite._check(hands[0].visible and arms.describe()["real_hands"], "a grenade is held in a hand you can see (it was drawn with none)")
-	var pose: Dictionary = DotViewHandPoses.table()[DotViewHandPoses.GRENADE][&"firing"]
-	var tilt_a := DotViewHandPoses.frame(pose, Vector3.UP, Vector3(0.0002, 1.0, 0.0))
-	var tilt_b := DotViewHandPoses.frame(pose, Vector3.UP, Vector3(-0.0002, 1.0, 0.0001))
+	var pose: Dictionary = GSViewHandPoses.table()[GSViewHandPoses.GRENADE][&"firing"]
+	var tilt_a := GSViewHandPoses.frame(pose, Vector3.UP, Vector3(0.0002, 1.0, 0.0))
+	var tilt_b := GSViewHandPoses.frame(pose, Vector3.UP, Vector3(-0.0002, 1.0, 0.0001))
 	suite._check(tilt_a.is_equal_approx(tilt_b) and tilt_a.is_conformal(), "an up along the forward (a grenade's) gives one steady hand frame, not noise")
 
 
-func _check_knife(arms: DotPlayerViewArms, weapon: Node3D, grip: Vector3, hands: Array) -> void:
-	var knife := DotViewGrip.one_hand(weapon, grip)
-	knife.kind = DotViewHandPoses.KNIFE
+func _check_knife(arms: GSPlayerViewArms, weapon: Node3D, grip: Vector3, hands: Array) -> void:
+	var knife := GSViewGrip.one_hand(weapon, grip)
+	knife.kind = GSViewHandPoses.KNIFE
 	arms.set_held(knife)
 	await _settle(arms, 3)
 	var fist_index: Vector3 = hands[0].curls()[&"index"]
@@ -128,12 +128,12 @@ func _check_knife(arms: DotPlayerViewArms, weapon: Node3D, grip: Vector3, hands:
 	arms.run = 0.0
 
 
-func _check_extended_reach(arms: DotPlayerViewArms, grip: Vector3) -> void:
+func _check_extended_reach(arms: GSPlayerViewArms, grip: Vector3) -> void:
 	var far := Node3D.new()
 	suite.add_child(far)
 	far.position = Vector3(0.1, -0.2, -0.45)
-	var long := DotViewGrip.two_hand(far, grip, Vector3(-0.02, -0.04, -0.5))
-	long.kind = DotViewHandPoses.SNIPER
+	var long := GSViewGrip.two_hand(far, grip, Vector3(-0.02, -0.04, -0.5))
+	long.kind = GSViewHandPoses.SNIPER
 	var errors := []
 	for extend in [false, true]:
 		arms.extend_reach = extend
@@ -145,7 +145,7 @@ func _check_extended_reach(arms: DotPlayerViewArms, grip: Vector3) -> void:
 	far.queue_free()
 
 
-func _settle(arms: DotPlayerViewArms, frames: int) -> void:
+func _settle(arms: GSPlayerViewArms, frames: int) -> void:
 	for i in frames:
 		arms.tick(0.0, 1.0 / 30.0)
 		await suite.get_tree().process_frame

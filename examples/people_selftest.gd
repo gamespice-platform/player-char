@@ -9,7 +9,7 @@ const CHECKS := 282
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run()
 
 
@@ -27,14 +27,14 @@ func _run() -> void:
 	_test_arm_swatches()
 	await _test_break()
 	_test_unimported()
-	await DotPeopleViewChecks.new(self).run()
-	await DotPeopleLegsChecks.new(self).run()
+	await GSPeopleViewChecks.new(self).run()
+	await GSPeopleLegsChecks.new(self).run()
 	await preload("people_stance_checks.gd").new(self).run()
-	await DotPeopleCarryChecks.new(self).run()
+	await GSPeopleCarryChecks.new(self).run()
 	await preload("people_throw_checks.gd").new(self).run()
 	await preload("people_registered_checks.gd").new(self).run()
 	await preload("people_hand_checks.gd").new(self).run()
-	var held := DotPeopleHeldChecks.new(self)
+	var held := GSPeopleHeldChecks.new(self)
 	await held.run_arms()
 	await held.run_arms_dress()
 	await held.run_gun_steady()
@@ -58,22 +58,22 @@ func _run() -> void:
 ## there is a .glb with no imported scene: the state of a project run straight after a pull.
 func _test_unimported() -> void:
 	_section("a body that was never imported")
-	var source := DotHumanoidFigure.body_path(&"lis")
+	var source := GSHumanoidFigure.body_path(&"lis")
 	var copy := "user://people_selftest_unimported.glb"
 	var file := FileAccess.open(copy, FileAccess.WRITE)
 	file.store_buffer(FileAccess.get_file_as_bytes(source))
 	file.close()
 	_check(not ResourceLoader.exists(copy), "the copy has no import")
 	var imported := (load(source) as PackedScene).instantiate()
-	var loaded := DotHumanoidFigure.load_model(copy)
+	var loaded := GSHumanoidFigure.load_model(copy)
 	var read := loaded.instantiate() if loaded != null else null
 	var bones := func(root: Node) -> int:
 		var found := root.find_children("*", "Skeleton3D", true, false) if root != null else []
 		return (found.front() as Skeleton3D).get_bone_count() if not found.is_empty() else -1
 	_check(read != null and bones.call(read) == bones.call(imported) and bones.call(read) > 0,
 		"read from the file: the importer's skeleton (%d bones)" % bones.call(read))
-	var atlas := DotHumanoidFigure.load_texture("user://nothing_here.png")
-	_check(atlas == null and DotHumanoidFigure.load_model("user://nothing_here.glb") == null, "and a file that is not there is nothing")
+	var atlas := GSHumanoidFigure.load_texture("user://nothing_here.png")
+	_check(atlas == null and GSHumanoidFigure.load_model("user://nothing_here.glb") == null, "and a file that is not there is nothing")
 	imported.free()
 	if read != null:
 		read.free()
@@ -82,21 +82,21 @@ func _test_unimported() -> void:
 
 func _test_look() -> void:
 	_section("a look")
-	var a := DotHumanoidLook.stock(42)
-	var b := DotHumanoidLook.stock(42)
+	var a := GSHumanoidLook.stock(42)
+	var b := GSHumanoidLook.stock(42)
 	_check(a.key() == b.key(), "the same seed dresses the same person")
 	var keys := {}
 	var bodies := {}
 	for i in range(40):
-		var l := DotHumanoidLook.stock(i * 7919)
+		var l := GSHumanoidLook.stock(i * 7919)
 		keys[l.key()] = true
 		bodies[l.body] = true
 	_check(keys.size() >= 35 and bodies.size() == 4, "forty seeds: %d looks on %d bodies" % [keys.size(), bodies.size()])
-	var round := DotHumanoidLook.from_dict(a.to_dict())
+	var round := GSHumanoidLook.from_dict(a.to_dict())
 	_check(round != null and round.key() == a.key(), "a look survives a dictionary")
-	_check(DotHumanoidLook.from_dict({"skin": "zz"}) == null, "a dictionary that is not a look is refused")
-	var odd := DotHumanoidLook.from_dict({"body": "retired", "skin": "ffffff", "hair": "000000", "top": "ff0000", "bottom": "0000ff"})
-	_check(odd != null and odd.body == DotHumanoidLook.BODIES[0], "a retired body draws the first body, not nobody")
+	_check(GSHumanoidLook.from_dict({"skin": "zz"}) == null, "a dictionary that is not a look is refused")
+	var odd := GSHumanoidLook.from_dict({"body": "retired", "skin": "ffffff", "hair": "000000", "top": "ff0000", "bottom": "0000ff"})
+	_check(odd != null and odd.body == GSHumanoidLook.BODIES[0], "a retired body draws the first body, not nobody")
 	var red := a.with_side(Color.RED, 1.0)
 	_check(red.top == Color.RED and red.skin == a.skin and a.top != Color.RED, "a side's colour goes on the top of a copy")
 
@@ -105,28 +105,28 @@ func _test_site() -> void:
 	_section("the site's avatar")
 	var doc := _SiteDoc.new()
 	doc.parts = {&"face": &"face.skin-b", &"top": &"top.skin-n", &"legs": &"legs.skin-q"}
-	var look := DotHumanoidLook.from_site(doc)
+	var look := GSHumanoidLook.from_site(doc)
 	_check(look != null, "a builtin document becomes a look")
-	_check(look.skin == Color(DotHumanoidLook.SITE_SKINS["b"][0]) and look.hair == Color(DotHumanoidLook.SITE_SKINS["b"][1]),
+	_check(look.skin == Color(GSHumanoidLook.SITE_SKINS["b"][0]) and look.hair == Color(GSHumanoidLook.SITE_SKINS["b"][1]),
 		"the face gives skin and hair")
-	_check(look.top == Color(DotHumanoidLook.SITE_SKINS["n"][2]) and look.bottom == Color(DotHumanoidLook.SITE_SKINS["q"][3]),
+	_check(look.top == Color(GSHumanoidLook.SITE_SKINS["n"][2]) and look.bottom == Color(GSHumanoidLook.SITE_SKINS["q"][3]),
 		"the top and the legs give the clothes")
 	var bare := _SiteDoc.new()
 	bare.parts = {&"top": &"skin-k"}
-	var only_top := DotHumanoidLook.from_site(bare)
-	_check(only_top != null and only_top.top == Color(DotHumanoidLook.SITE_SKINS["k"][2]) and only_top.bottom == Color(DotHumanoidLook.SITE_SKINS["k"][3]),
+	var only_top := GSHumanoidLook.from_site(bare)
+	_check(only_top != null and only_top.top == Color(GSHumanoidLook.SITE_SKINS["k"][2]) and only_top.bottom == Color(GSHumanoidLook.SITE_SKINS["k"][3]),
 		"a bare part id is read, and one slot dresses the rest")
 	var other := _SiteDoc.new()
 	other.schema_id = &"zz_people"
 	other.parts = doc.parts
-	_check(DotHumanoidLook.from_site(other) == null and DotHumanoidLook.from_site(null) == null, "another schema, or nothing, is no look")
+	_check(GSHumanoidLook.from_site(other) == null and GSHumanoidLook.from_site(null) == null, "another schema, or nothing, is no look")
 	var junk := _SiteDoc.new()
 	junk.parts = {&"top": &"top.hat-3"}
-	_check(DotHumanoidLook.from_site(junk) == null, "a part this table does not know is no look")
-	var kit := DotHumanoidLook.from_letter("res://assets/kenney/characters/Textures/texture-k.png")
-	_check(kit != null and kit.top == Color(DotHumanoidLook.SITE_SKINS["k"][2]) and DotHumanoidLook.from_letter("k").key() == kit.key(),
+	_check(GSHumanoidLook.from_site(junk) == null, "a part this table does not know is no look")
+	var kit := GSHumanoidLook.from_letter("res://assets/kenney/characters/Textures/texture-k.png")
+	_check(kit != null and kit.top == Color(GSHumanoidLook.SITE_SKINS["k"][2]) and GSHumanoidLook.from_letter("k").key() == kit.key(),
 		"a blocky atlas path or its letter is that skin's person")
-	_check(DotHumanoidLook.from_letter("texture-z.png") == null and DotHumanoidLook.from_letter("") == null, "and nothing else is")
+	_check(GSHumanoidLook.from_letter("texture-z.png") == null and GSHumanoidLook.from_letter("") == null, "and nothing else is")
 
 
 func _test_clips() -> void:
@@ -134,87 +134,87 @@ func _test_clips() -> void:
 	var everywhere := true
 	var missing := []
 	var libraries := {}
-	for id in DotHumanoidLook.BODIES:
-		var f := DotHumanoidFigure.new()
+	for id in GSHumanoidLook.BODIES:
+		var f := GSHumanoidFigure.new()
 		add_child(f)
-		f.build(DotHumanoidLook.make(id, Color.WHITE, Color.BLACK, Color.RED, Color.BLUE), 1.8)
+		f.build(GSHumanoidLook.make(id, Color.WHITE, Color.BLACK, Color.RED, Color.BLUE), 1.8)
 		var player := f.body_node().find_child("AnimationPlayer", true, false) as AnimationPlayer
 		libraries[id] = player.get_animation_library(&"")
-		for clip in DotHumanoidClips.ALL:
+		for clip in GSHumanoidClips.ALL:
 			if not player.has_animation(clip):
 				everywhere = false
 				missing.append("%s/%s" % [id, clip])
 		f.free()
-	_check(everywhere, "all %d clips on all four bodies %s" % [DotHumanoidClips.ALL.size(), str(missing)])
+	_check(everywhere, "all %d clips on all four bodies %s" % [GSHumanoidClips.ALL.size(), str(missing)])
 	var matt: AnimationLibrary = libraries[&"matt"]
-	_check(matt.get_animation(DotHumanoidClips.WALK).loop_mode == Animation.LOOP_LINEAR
-		and matt.get_animation(DotHumanoidClips.DEATH).loop_mode == Animation.LOOP_NONE, "walks loop, a death does not")
+	_check(matt.get_animation(GSHumanoidClips.WALK).loop_mode == Animation.LOOP_LINEAR
+		and matt.get_animation(GSHumanoidClips.DEATH).loop_mode == Animation.LOOP_NONE, "walks loop, a death does not")
 	_check(libraries[&"lis"] != matt and libraries[&"sam"] != matt, "the other bodies play a retargeted copy, not the clip body's own")
 	_check(libraries[&"lis"] == _library_of(&"lis"), "and that copy is made once per body and shared")
 
-	var idle := matt.get_animation(DotHumanoidClips.IDLE)
-	var crouch := matt.get_animation(DotHumanoidClips.CROUCH)
+	var idle := matt.get_animation(GSHumanoidClips.IDLE)
+	var crouch := matt.get_animation(GSHumanoidClips.CROUCH)
 	_check(_body_y(crouch, 0.0) < _body_y(idle, 0.0) - 0.05, "the made crouch is lower than standing (%.2f against %.2f)" % [_body_y(crouch, 0.0), _body_y(idle, 0.0)])
 	var highest := -INF
-	var fall := matt.get_animation(DotHumanoidClips.FALL)
+	var fall := matt.get_animation(GSHumanoidClips.FALL)
 	for i in range(11):
 		highest = maxf(highest, _body_y(fall, fall.length * i / 10.0))
 	_check(highest <= _body_y(idle, 0.0) + 0.001, "the fall does not lift the body above standing: the game lifts it")
-	_check(matt.has_animation(DotHumanoidClips.SLIDE), "the real slide clip is on the clip body")
-	var slider := DotHumanoidFigure.new()
+	_check(matt.has_animation(GSHumanoidClips.SLIDE), "the real slide clip is on the clip body")
+	var slider := GSHumanoidFigure.new()
 	add_child(slider)
-	slider.build(DotHumanoidLook.stock(1), 1.8)
+	slider.build(GSHumanoidLook.stock(1), 1.8)
 	for i in range(30):
 		slider.set_motion({"on_floor": true, "alive": true, "crouched": true, "sliding": true, "velocity": Vector3(0, 0, -6)})
 		slider.animate(6.0, 1.0 / 30.0)
-	_check(slider.clip == DotHumanoidClips.SLIDE, "a sliding motion plays the slide (%s)" % slider.clip)
+	_check(slider.clip == GSHumanoidClips.SLIDE, "a sliding motion plays the slide (%s)" % slider.clip)
 	for i in range(15):
 		slider.set_motion({"on_floor": false, "alive": true, "sliding": true, "vertical": -3.0, "velocity": Vector3(0, -3, -6)})
 		slider.animate(6.0, 1.0 / 30.0)
-	_check(slider.clip != DotHumanoidClips.SLIDE, "a slide in the air is a fall, not a slide (%s)" % slider.clip)
+	_check(slider.clip != GSHumanoidClips.SLIDE, "a slide in the air is a fall, not a slide (%s)" % slider.clip)
 	slider.free()
 
 
 func _test_zombie_gait() -> void:
 	_section("the zombie gait")
-	var f := DotHumanoidFigure.new()
+	var f := GSHumanoidFigure.new()
 	add_child(f)
-	f.build(DotHumanoidLook.stock(9), 1.8)
+	f.build(GSHumanoidLook.stock(9), 1.8)
 	f.zombie_gait = true
 	f.animate(0.0, 0.1)
-	_check(f.clip == DotHumanoidClips.ZOMBIE_IDLE, "standing: the zombie idle (%s)" % f.clip)
+	_check(f.clip == GSHumanoidClips.ZOMBIE_IDLE, "standing: the zombie idle (%s)" % f.clip)
 	f.animate(1.3, 0.1)
-	_check(f.clip == DotHumanoidClips.ZOMBIE_WALK, "walking: the zombie walk (%s)" % f.clip)
-	_check(f._anim.get_animation(DotHumanoidClips.ZOMBIE_WALK).loop_mode == Animation.LOOP_LINEAR, "and it loops")
+	_check(f.clip == GSHumanoidClips.ZOMBIE_WALK, "walking: the zombie walk (%s)" % f.clip)
+	_check(f._anim.get_animation(GSHumanoidClips.ZOMBIE_WALK).loop_mode == Animation.LOOP_LINEAR, "and it loops")
 	f.animate(5.0, 0.1)
-	_check(f.clip == DotHumanoidClips.SPRINT, "running: the real sprint (%s)" % f.clip)
+	_check(f.clip == GSHumanoidClips.SPRINT, "running: the real sprint (%s)" % f.clip)
 	f.zombie_gait = false
 	f.animate(1.5, 0.1)
-	_check(f.clip == DotHumanoidClips.WALK, "off again, the person's own walk (%s)" % f.clip)
+	_check(f.clip == GSHumanoidClips.WALK, "off again, the person's own walk (%s)" % f.clip)
 	f.free()
 
 
 func _test_figure() -> void:
 	_section("a figure picks its clip")
-	var f := DotHumanoidFigure.new()
+	var f := GSHumanoidFigure.new()
 	add_child(f)
-	f.build(DotHumanoidLook.stock(9), 1.8)
+	f.build(GSHumanoidLook.stock(9), 1.8)
 	_check(f.from_art and f.skeleton() != null and f.mesh() != null, "the body loaded: a skeleton and one mesh")
 	var head := f.skeleton().find_bone("Head")
 	var top_y := (f.skeleton().global_transform * f.skeleton().get_bone_global_pose(head)).origin.y
 	_check(top_y > 0.8 and top_y < 1.6, "built to the height asked for (head bone at %.2f m of 1.8)" % top_y)
 
 	f.animate(0.0, 0.1)
-	_check(f.clip == DotHumanoidClips.IDLE, "standing: idle")
+	_check(f.clip == GSHumanoidClips.IDLE, "standing: idle")
 	f.animate(1.5, 0.1)
-	_check(f.clip == DotHumanoidClips.WALK, "walking: walk")
+	_check(f.clip == GSHumanoidClips.WALK, "walking: walk")
 	f.animate(5.0, 0.1)
-	_check(f.clip == DotHumanoidClips.RUN, "running: run")
+	_check(f.clip == GSHumanoidClips.RUN, "running: run")
 	f.animate(6.0, 0.1)
-	_check(f.clip == DotHumanoidClips.SPRINT, "above the run clip's pace: the grounded sprint clip, not a hovering run")
-	f.set_hold(DotHumanoidFigure.Hold.GUN)
+	_check(f.clip == GSHumanoidClips.SPRINT, "above the run clip's pace: the grounded sprint clip, not a hovering run")
+	f.set_hold(GSHumanoidFigure.Hold.GUN)
 	f.animate(4.0, 0.1)
-	_check(f.clip == DotHumanoidClips.RUN_GUN, "running with a gun: the gun run")
+	_check(f.clip == GSHumanoidClips.RUN_GUN, "running with a gun: the gun run")
 	for _i in 5:
 		f.animate(6.0, 0.1)
 	_check(f._sprint > 0.99, "a game that never sends `sprinting` still carries the gun sprinting when it runs (%.2f)" % f._sprint)
@@ -222,45 +222,45 @@ func _test_figure() -> void:
 	for _i in 5:
 		f.animate(6.0, 0.1)
 	_check(f._sprint < 0.01, "an explicit sprinting=false wins over the run state (%.2f)" % f._sprint)
-	_check(f.clip == DotHumanoidClips.SPRINT, "sprinting=false does not bring the hovering run clip back above its pace (%s)" % f.clip)
-	var hold_anim: Animation = f._anim.get_animation(DotHumanoidClips.IDLE_GUN)
+	_check(f.clip == GSHumanoidClips.SPRINT, "sprinting=false does not bring the hovering run clip back above its pace (%s)" % f.clip)
+	var hold_anim: Animation = f._anim.get_animation(GSHumanoidClips.IDLE_GUN)
 	var track := hold_anim.find_track(NodePath("%s:LowerArm.L" % f._model.get_path_to(f.skeleton())), Animation.TYPE_ROTATION_3D)
 	var arm_now := f.skeleton().get_bone_pose_rotation(f.skeleton().find_bone("LowerArm.L"))
 	_check(rad_to_deg(arm_now.angle_to(hold_anim.rotation_track_interpolate(track, 0.0))) < 8.0, "a gun held at sprint pace keeps its arms on the gun (the idle-gun overlay)")
 	f.animate(4.5, 0.1)
-	_check(f.clip == DotHumanoidClips.RUN_GUN, "sprinting=false below the run clip's pace: the gun run (%s)" % f.clip)
+	_check(f.clip == GSHumanoidClips.RUN_GUN, "sprinting=false below the run clip's pace: the gun run (%s)" % f.clip)
 	f.set_motion({"crouched": true})
 	f.animate(0.0, 0.1)
-	_check(f.clip == DotHumanoidClips.CROUCH, "crouched: the crouch")
+	_check(f.clip == GSHumanoidClips.CROUCH, "crouched: the crouch")
 	f.animate(1.5, 0.1)
-	_check(f.clip == DotHumanoidClips.CROUCH_WALK, "crouched and moving: the crouch walk")
+	_check(f.clip == GSHumanoidClips.CROUCH_WALK, "crouched and moving: the crouch walk")
 	f.set_motion({"on_floor": false, "vertical": 4.0})
 	f.animate(1.0, 0.2)
-	_check(f.clip == DotHumanoidClips.JUMP, "rising: the jump")
+	_check(f.clip == GSHumanoidClips.JUMP, "rising: the jump")
 	f.set_motion({"on_floor": false, "vertical": -4.0})
 	f.animate(1.0, 0.2)
-	_check(f.clip == DotHumanoidClips.FALL, "dropping: the fall")
+	_check(f.clip == GSHumanoidClips.FALL, "dropping: the fall")
 	f.set_motion({"downed": true})
 	f.animate(0.5, 0.1)
-	_check(f.clip == DotHumanoidClips.CRAWL, "down: crawling")
+	_check(f.clip == GSHumanoidClips.CRAWL, "down: crawling")
 	f.set_motion({"swimming": true})
 	f.animate(2.0, 0.1)
-	_check(f.state == DotPlayerAnimState.SWIM and f.clip == DotHumanoidClips.SWIM, "swimming: the made front crawl, not the run")
+	_check(f.state == GSPlayerAnimState.SWIM and f.clip == GSHumanoidClips.SWIM, "swimming: the made front crawl, not the run")
 	_check_swim_stroke(f)
 	f.set_motion({"alive": false})
 	f.animate(0.0, 0.1)
-	_check(f.clip == DotHumanoidClips.DEATH, "dead: the death")
+	_check(f.clip == GSHumanoidClips.DEATH, "dead: the death")
 
 	f.set_motion({})
-	f.set_hold(DotHumanoidFigure.Hold.MELEE)
+	f.set_hold(GSHumanoidFigure.Hold.MELEE)
 	f.animate(5.0, 0.1)
 	f.swing()
-	_check(f.overlay == DotHumanoidClips.SLASH and f.clip == DotHumanoidClips.RUN, "a swing plays over the run: the legs keep running")
+	_check(f.overlay == GSHumanoidClips.SLASH and f.clip == GSHumanoidClips.RUN, "a swing plays over the run: the legs keep running")
 	for i in range(20):
 		f.animate(6.0, 0.1)
 	_check(f.overlay == &"", "and ends")
 
-	_check_planted_foot(2.0, DotHumanoidClips.WALK, "a walker's")
+	_check_planted_foot(2.0, GSHumanoidClips.WALK, "a walker's")
 	_check_sprint_pop(9.0)
 	_check_handover_slide(7.0)
 	_check_handover_slide(7.5)
@@ -268,14 +268,14 @@ func _test_figure() -> void:
 
 
 ## Through one swim cycle each hand is over its shoulder and under it, in the clip's own upright frame.
-func _check_swim_stroke(f: DotHumanoidFigure) -> void:
+func _check_swim_stroke(f: GSHumanoidFigure) -> void:
 	var sk := f.skeleton()
 	var hand_l := sk.find_bone("Middle1.L") if sk != null else -1
 	var shoulder_l := sk.find_bone("UpperArm.L") if sk != null else -1
 	var over := false
 	var under := false
 	for i in 8:
-		f.animate(2.5, DotHumanoidClips.SWIM_CYCLE / 8.0)
+		f.animate(2.5, GSHumanoidClips.SWIM_CYCLE / 8.0)
 		if hand_l < 0 or shoulder_l < 0:
 			break
 		sk.force_update_all_bone_transforms()
@@ -287,12 +287,12 @@ func _check_swim_stroke(f: DotHumanoidFigure) -> void:
 
 ## A sprinter sampled at 15 fps, as the filmstrip captures, keeps every bone under the pop limit.
 func _check_sprint_pop(pace: float) -> void:
-	var g := DotHumanoidFigure.new()
+	var g := GSHumanoidFigure.new()
 	add_child(g)
-	g.build(DotHumanoidLook.stock(9), 1.8)
+	g.build(GSHumanoidLook.stock(9), 1.8)
 	g.set_run_speeds(6.84, 6.04)
 	g.sprint_speed = 6.0
-	var m := DotClipMetrics.new()
+	var m := GSClipMetrics.new()
 	var dt := 1.0 / 15.0
 	var v := 0.0
 	for i in 42:
@@ -305,15 +305,15 @@ func _check_sprint_pop(pace: float) -> void:
 	for r in m.evaluate({"pop_deg": 135.0}):
 		if r["check"] == "bone_pop":
 			pop = float(r["value"])
-	_check(g.clip == DotHumanoidClips.SPRINT and pop < 135.0, "a sprinter at %.0f m/s keeps bone pop under 135 degrees at 15 fps (clip %s, %.1f)" % [pace, g.clip, pop])
+	_check(g.clip == GSHumanoidClips.SPRINT and pop < 135.0, "a sprinter at %.0f m/s keeps bone pop under 135 degrees at 15 fps (clip %s, %.1f)" % [pace, g.clip, pop])
 	g.queue_free()
 
 
 ## Through the walk-to-sprint hand-over (60 fps ramp) the foot on the ground stays within 8 cm of where it was: the incoming clip enters at the outgoing pose.
 func _check_handover_slide(pace: float) -> void:
-	var g := DotHumanoidFigure.new()
+	var g := GSHumanoidFigure.new()
 	add_child(g)
-	g.build(DotHumanoidLook.stock(9), 1.8)
+	g.build(GSHumanoidLook.stock(9), 1.8)
 	g.set_run_speeds(6.84, 6.04)
 	g.sprint_speed = 6.0
 	var sk := g.skeleton()
@@ -331,7 +331,7 @@ func _check_handover_slide(pace: float) -> void:
 		sk.force_update_all_bone_transforms()
 		var at: Array = feet.map(func(b: int) -> Vector3: return sk.global_transform * sk.get_bone_global_pose(b).origin)
 		if g.clip != last:
-			if last == DotHumanoidClips.WALK:
+			if last == GSHumanoidClips.WALK:
 				switched = i
 			last = g.clip
 		if not before.is_empty() and i == switched:
@@ -341,15 +341,15 @@ func _check_handover_slide(pace: float) -> void:
 					var moved: Vector3 = at[k] - before[k]
 					worst = maxf(worst, Vector2(moved.x, moved.z).length())
 		before = at
-	_check(g.clip == DotHumanoidClips.SPRINT and worst < 0.08, "a ramp to %.1f m/s: the foot on the ground moves under 8 cm over the hand-over frame (%.3f m)" % [pace, worst])
+	_check(g.clip == GSHumanoidClips.SPRINT and worst < 0.08, "a ramp to %.1f m/s: the foot on the ground moves under 8 cm over the hand-over frame (%.3f m)" % [pace, worst])
 	g.queue_free()
 
 
 ## A walker carried forward at a steady pace keeps the foot it stands on still in the world.
 func _check_planted_foot(pace: float, expect: StringName, who: String) -> void:
-	var g := DotHumanoidFigure.new()
+	var g := GSHumanoidFigure.new()
 	add_child(g)
-	g.build(DotHumanoidLook.stock(9), 1.8)
+	g.build(GSHumanoidLook.stock(9), 1.8)
 	var sk := g.skeleton()
 	var feet := [sk.find_bone("Foot.L"), sk.find_bone("Foot.R")]
 	var dt := 1.0 / 60.0
@@ -378,24 +378,24 @@ func _check_planted_foot(pace: float, expect: StringName, who: String) -> void:
 
 
 ## Mounts, the frame step and a carried figure animating itself; frees [param f].
-func _test_figure_mounts(f: DotHumanoidFigure) -> void:
+func _test_figure_mounts(f: GSHumanoidFigure) -> void:
 	var hand := f.attachment(&"right_hand")
 	_check(hand != null and hand.get_parent() is BoneAttachment3D and f.attachment(&"right_hand") == hand,
 		"a weapon hangs from a bone attachment in the hand, made once")
 	_check(f.attachment(&"left_foot") == null, "no other mount")
 	_check(f.anim_step == 1, "with no camera, the clip advances every frame")
-	var walker := DotHumanoidFigure.new()
+	var walker := GSHumanoidFigure.new()
 	add_child(walker)
-	walker.build(DotHumanoidLook.stock(4), 1.8)
+	walker.build(GSHumanoidLook.stock(4), 1.8)
 	walker.auto_animate = true
-	# Long enough for the speed measure to fill its window (DotHumanoidFigureState.AUTO_WINDOW) and the smoothing to settle, however fast frames come.
+	# Long enough for the speed measure to fill its window (GSHumanoidFigureState.AUTO_WINDOW) and the smoothing to settle, however fast frames come.
 	var carried := 0.0
 	while carried < 0.5:
 		var dt := get_process_delta_time()
 		walker.position.x += 3.0 * dt
 		carried += dt
 		await get_tree().process_frame
-	_check(walker.clip in [DotHumanoidClips.WALK, DotHumanoidClips.RUN, DotHumanoidClips.SPRINT],
+	_check(walker.clip in [GSHumanoidClips.WALK, GSHumanoidClips.RUN, GSHumanoidClips.SPRINT],
 		"a figure carried by something else animates from how far it moved (%s)" % walker.clip)
 	# Carried in physics ticks (128 a second) at 3 m/s while frames come at 355: most frames it has not moved.
 	walker.set_process(false)
@@ -411,7 +411,7 @@ func _test_figure_mounts(f: DotHumanoidFigure) -> void:
 		var was := walker.clip
 		walker._process(1.0 / 355.0)
 		switches += 1 if frame > 60 and walker.clip != was else 0
-	_check(walker.clip == DotHumanoidClips.WALK and switches == 0,
+	_check(walker.clip == GSHumanoidClips.WALK and switches == 0,
 		"a body moved in ticks between frames walks steadily, no clip flicker (%s, %d switches)" % [walker.clip, switches])
 	posed = walker._frame - posed
 	_check(posed >= 250 and posed <= 260, "it is posed when it steps, not on the frames between (%d poses for 256 steps)" % posed)
@@ -424,10 +424,10 @@ func _test_figure_mounts(f: DotHumanoidFigure) -> void:
 ## pitch without the bend adding up, a rider sits, a climber climbs, and a crest rides the crown.
 func _test_hand_and_aim() -> void:
 	_section("the right hand, aiming, sitting, climbing, the crown")
-	var raw := DotHumanoidClips.library_of(load(DotHumanoidFigure.body_path(DotHumanoidFigure.CLIP_BODY)) as PackedScene)
-	var mirrored := _library_of(DotHumanoidFigure.CLIP_BODY)
-	var gun_raw := raw.get_animation(DotHumanoidClips.IDLE_GUN)
-	var gun := mirrored.get_animation(DotHumanoidClips.IDLE_GUN)
+	var raw := GSHumanoidClips.library_of(load(GSHumanoidFigure.body_path(GSHumanoidFigure.CLIP_BODY)) as PackedScene)
+	var mirrored := _library_of(GSHumanoidFigure.CLIP_BODY)
+	var gun_raw := raw.get_animation(GSHumanoidClips.IDLE_GUN)
+	var gun := mirrored.get_animation(GSHumanoidClips.IDLE_GUN)
 	var left := gun_raw.find_track(NodePath("CharacterArmature/Skeleton3D:UpperArm.L"), Animation.TYPE_ROTATION_3D)
 	var right := gun.find_track(NodePath("CharacterArmature/Skeleton3D:UpperArm.R"), Animation.TYPE_ROTATION_3D)
 	var a: Quaternion = gun_raw.rotation_track_interpolate(left, 0.0) if left >= 0 else Quaternion()
@@ -437,10 +437,10 @@ func _test_hand_and_aim() -> void:
 
 	var world := Node3D.new()
 	add_child(world)
-	var f := DotHumanoidFigure.new()
+	var f := GSHumanoidFigure.new()
 	world.add_child(f)
-	f.build(DotHumanoidLook.stock(21), 1.8)
-	f.set_hold(DotHumanoidFigure.Hold.GUN)
+	f.build(GSHumanoidLook.stock(21), 1.8)
+	f.set_hold(GSHumanoidFigure.Hold.GUN)
 	var hand := f.attachment(&"right_hand")
 	_check((hand.get_parent() as BoneAttachment3D).bone_name.ends_with(".R"), "the weapon hangs from the right hand's bone")
 	var heights := {}
@@ -480,17 +480,17 @@ func _test_hand_and_aim() -> void:
 
 
 ## Seated, climbing and the crown mount on the figure the aim checks used.
-func _check_seat_climb_crown(world: Node3D, f: DotHumanoidFigure) -> void:
+func _check_seat_climb_crown(world: Node3D, f: GSHumanoidFigure) -> void:
 	f.aim(0.0)
 	f.set_motion({"seated": true})
 	f.animate(3.0, 0.1)
-	_check(f.clip == DotHumanoidClips.SIT, "seated, even carried at speed: sitting")
+	_check(f.clip == GSHumanoidClips.SIT, "seated, even carried at speed: sitting")
 	var seat := f.seat_height()
 	_check(seat > 0.2 and seat < 0.5, "the hips sit at knee height (%.2f m of 1.8: short cartoon legs)" % seat)
-	var real := load(DotHumanoidFigure.real_clips_path()) as AnimationLibrary
+	var real := load(GSHumanoidFigure.real_clips_path()) as AnimationLibrary
 	var player := f.body_node().find_child("AnimationPlayer", true, false) as AnimationPlayer
-	_check(real != null and real.has_animation(DotHumanoidClips.SIT) and player.has_animation(DotHumanoidClips.SIT) \
-		and is_equal_approx(player.get_animation(DotHumanoidClips.SIT).length, real.get_animation(DotHumanoidClips.SIT).length),
+	_check(real != null and real.has_animation(GSHumanoidClips.SIT) and player.has_animation(GSHumanoidClips.SIT) \
+		and is_equal_approx(player.get_animation(GSHumanoidClips.SIT).length, real.get_animation(GSHumanoidClips.SIT).length),
 		"the sit is the library's seated idle, not the made pose")
 	# Past the 0.15 s blend in from the last clip.
 	f.animate(3.0, 0.5)
@@ -503,7 +503,7 @@ func _check_seat_climb_crown(world: Node3D, f: DotHumanoidFigure) -> void:
 		"and its feet are on the floor (%.3f from where they stand), the hips down at the knees" % (feet - stood))
 	f.set_motion({"climbing": true, "vertical": 2.0})
 	f.animate(0.0, 0.1)
-	_check(f.clip == DotHumanoidClips.CLIMB, "on a ladder: climbing, not the crawl")
+	_check(f.clip == GSHumanoidClips.CLIMB, "on a ladder: climbing, not the crawl")
 
 	var crest := f.attachment(&"crest")
 	_check(crest != null and f.attachment(&"hat") == crest and crest.get_parent() is BoneAttachment3D,
@@ -519,62 +519,62 @@ func _check_seat_climb_crown(world: Node3D, f: DotHumanoidFigure) -> void:
 
 func _test_materials() -> void:
 	_section("one material per look")
-	var before := DotHumanoidFigure.material_count()
-	var look := DotHumanoidLook.stock(1234)
-	var m1 := DotHumanoidFigure.material_for(look)
-	var m2 := DotHumanoidFigure.material_for(look.copy())
+	var before := GSHumanoidFigure.material_count()
+	var look := GSHumanoidLook.stock(1234)
+	var m1 := GSHumanoidFigure.material_for(look)
+	var m2 := GSHumanoidFigure.material_for(look.copy())
 	_check(m1 == m2, "two people dressed alike share a material")
-	_check(DotHumanoidFigure.material_count() == before + 1, "and it was made once")
+	_check(GSHumanoidFigure.material_count() == before + 1, "and it was made once")
 	var expected := 0
-	for hexes: Array in DotHumanoidAssets.WEARS[look.body].values():
+	for hexes: Array in GSHumanoidAssets.WEARS[look.body].values():
 		expected += hexes.size()
-	_check(int(m1.get_shader_parameter(&"swaps")) == mini(expected, DotHumanoidAssets.SWAPS), "every mapped swatch of the body is swapped (%d)" % int(m1.get_shader_parameter(&"swaps")))
-	var paths := DotHumanoidFigure.content_paths()
+	_check(int(m1.get_shader_parameter(&"swaps")) == mini(expected, GSHumanoidAssets.SWAPS), "every mapped swatch of the body is swapped (%d)" % int(m1.get_shader_parameter(&"swaps")))
+	var paths := GSHumanoidFigure.content_paths()
 	_check(paths.size() == 6 and Array(paths).all(func(p: String) -> bool: return ResourceLoader.exists(p)), "every file a figure loads is listed, and exists")
-	DotHumanoidFigure.clear_cache()
-	_check(DotHumanoidFigure.material_count() == 0, "clear_cache() empties the shared materials")
-	DotHumanoidFigure.material_for(look)
-	_check(DotHumanoidFigure.material_count() == 1, "and a material refills it")
+	GSHumanoidFigure.clear_cache()
+	_check(GSHumanoidFigure.material_count() == 0, "clear_cache() empties the shared materials")
+	GSHumanoidFigure.material_for(look)
+	_check(GSHumanoidFigure.material_count() == 1, "and a material refills it")
 
 ## The clip sets built off the frame (prepare_libraries) are the ones library_for builds in one.
 func _test_prepared_libraries() -> void:
 	_section("clip sets prepared off the frame")
 	var other := &"lis"
-	var model := DotHumanoidAssets.scene(DotHumanoidAssets.body_path(other))
+	var model := GSHumanoidAssets.scene(GSHumanoidAssets.body_path(other))
 	var probe := model.instantiate()
 	var skeleton := probe.find_children("*", "Skeleton3D", true, false).front() as Skeleton3D
-	DotHumanoidAssets.clear_cache()
-	var sync_base := DotHumanoidAssets.library_for(DotHumanoidAssets.CLIP_BODY, null)
-	var sync_other := DotHumanoidAssets.library_for(other, skeleton)
-	var sync_sit := DotHumanoidAssets.sit_height()
-	DotHumanoidAssets.clear_cache()
-	_check(DotHumanoidAssets.poll_libraries(), "nothing prepared: nothing to wait for")
-	DotHumanoidAssets.prepare_libraries([other])
+	GSHumanoidAssets.clear_cache()
+	var sync_base := GSHumanoidAssets.library_for(GSHumanoidAssets.CLIP_BODY, null)
+	var sync_other := GSHumanoidAssets.library_for(other, skeleton)
+	var sync_sit := GSHumanoidAssets.sit_height()
+	GSHumanoidAssets.clear_cache()
+	_check(GSHumanoidAssets.poll_libraries(), "nothing prepared: nothing to wait for")
+	GSHumanoidAssets.prepare_libraries([other])
 	var frames := 0
-	while not DotHumanoidAssets.poll_libraries() and frames < 1200:
+	while not GSHumanoidAssets.poll_libraries() and frames < 1200:
 		frames += 1
 		await get_tree().process_frame
 	_check(frames < 1200, "the prepared build finishes (%d frames)" % frames)
-	var base := DotHumanoidAssets.library_for(DotHumanoidAssets.CLIP_BODY, null)
+	var base := GSHumanoidAssets.library_for(GSHumanoidAssets.CLIP_BODY, null)
 	_check(base != null and base.get_animation_list() == sync_base.get_animation_list(), "the prepared shared set has the same clips")
-	_check(is_equal_approx(DotHumanoidAssets.sit_height(), sync_sit), "and the same sit height")
-	var prepared_other := DotHumanoidAssets.library_for(other, skeleton)
-	_check(_first_key(prepared_other, DotHumanoidClips.IDLE).is_equal_approx(_first_key(sync_other, DotHumanoidClips.IDLE)), "the prepared retarget is the one library_for makes")
-	DotHumanoidAssets.clear_cache()
-	DotHumanoidAssets.prepare_libraries([other])
-	_check(DotHumanoidAssets.library_for(DotHumanoidAssets.CLIP_BODY, null).get_animation_list() == sync_base.get_animation_list(), "library_for during a prepared build answers at once, the same")
-	DotHumanoidAssets.clear_cache()
+	_check(is_equal_approx(GSHumanoidAssets.sit_height(), sync_sit), "and the same sit height")
+	var prepared_other := GSHumanoidAssets.library_for(other, skeleton)
+	_check(_first_key(prepared_other, GSHumanoidClips.IDLE).is_equal_approx(_first_key(sync_other, GSHumanoidClips.IDLE)), "the prepared retarget is the one library_for makes")
+	GSHumanoidAssets.clear_cache()
+	GSHumanoidAssets.prepare_libraries([other])
+	_check(GSHumanoidAssets.library_for(GSHumanoidAssets.CLIP_BODY, null).get_animation_list() == sync_base.get_animation_list(), "library_for during a prepared build answers at once, the same")
+	GSHumanoidAssets.clear_cache()
 	frames = 0
-	while not DotHumanoidAssets.poll_libraries() and frames < 1200:
+	while not GSHumanoidAssets.poll_libraries() and frames < 1200:
 		frames += 1
 		await get_tree().process_frame
-	_check(frames < 1200 and DotHumanoidAssets.poll_libraries(), "a build cleared mid-way still ends (%d frames)" % frames)
-	DotHumanoidAssets.prepare_libraries([other])
-	while not DotHumanoidAssets.poll_libraries() and frames < 2400:
+	_check(frames < 1200 and GSHumanoidAssets.poll_libraries(), "a build cleared mid-way still ends (%d frames)" % frames)
+	GSHumanoidAssets.prepare_libraries([other])
+	while not GSHumanoidAssets.poll_libraries() and frames < 2400:
 		frames += 1
 		await get_tree().process_frame
-	_check(DotHumanoidAssets.library_for(other, skeleton) == DotHumanoidAssets.library_for(other, skeleton) and frames < 2400, "and a fresh one after it builds")
-	DotHumanoidAssets.clear_cache()
+	_check(GSHumanoidAssets.library_for(other, skeleton) == GSHumanoidAssets.library_for(other, skeleton) and frames < 2400, "and a fresh one after it builds")
+	GSHumanoidAssets.clear_cache()
 	probe.free()
 
 
@@ -594,7 +594,7 @@ func _test_arm_swatches() -> void:
 	var neutral := ["2a2927", "2a2929", "141414"]
 	for id: StringName in [&"matt", &"lis", &"sam", &"shaun"]:
 		var mapped := []
-		for hexes: Array in DotHumanoidAssets.WEARS[id].values():
+		for hexes: Array in GSHumanoidAssets.WEARS[id].values():
 			mapped.append_array(hexes)
 		var model := (load("res://addons/dot_player_char/people/people_%s.glb" % id) as PackedScene).instantiate()
 		var mesh: MeshInstance3D = model.find_children("*", "MeshInstance3D", true, false).front()

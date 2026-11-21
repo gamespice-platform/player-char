@@ -1,10 +1,10 @@
 extends "dot_player_view_arms_state.gd"
 
-## The build-time half of [DotPlayerViewArms]: stripping the figure's mesh down to arms and hands.
+## The build-time half of [GSPlayerViewArms]: stripping the figure's mesh down to arms and hands.
 
 
 ## Gear is skinned into the body mesh, so it goes by dropping its triangles from this figure's own copy of the mesh.
-func _strip_gear(figure: DotHumanoidFigure) -> void:
+func _strip_gear(figure: GSHumanoidFigure) -> void:
 	var instance := figure.mesh()
 	var skeleton := figure.skeleton()
 
@@ -54,11 +54,11 @@ func _strip_gear(figure: DotHumanoidFigure) -> void:
 		# Shrunk to a point, a hidden bone still pulls every vertex that carries any of its weight: the collar and hip
 		# triangles blended onto the head or a leg stretched into a skin wedge across the lower view (PLAYLOT).
 		arrays[Mesh.ARRAY_INDEX] = _keep_off(arrays, skeleton, instance.skin, HIDDEN_BONES)
-		out.add_surface_from_arrays(old.surface_get_primitive_type(s), arrays, [], {}, DotViewArmsMaterial.REST_FORMAT)
+		out.add_surface_from_arrays(old.surface_get_primitive_type(s), arrays, [], {}, GSViewArmsMaterial.REST_FORMAT)
 		out.surface_set_material(s, old.surface_get_material(s))
 		var one := arrays.duplicate()
 		one[Mesh.ARRAY_INDEX] = _keep_off(arrays, skeleton, instance.skin, LEFT_ARM_BONES)
-		one_arm.add_surface_from_arrays(old.surface_get_primitive_type(s), one, [], {}, DotViewArmsMaterial.REST_FORMAT)
+		one_arm.add_surface_from_arrays(old.surface_get_primitive_type(s), one, [], {}, GSViewArmsMaterial.REST_FORMAT)
 		one_arm.surface_set_material(s, old.surface_get_material(s))
 
 	instance.mesh = out
@@ -110,11 +110,11 @@ func _under(skeleton: Skeleton3D, bone: int, roots: Array[String]) -> bool:
 
 
 ## The two real hands, coloured as the kit's own hand is drawn: the arms' material and its hand's spot on the atlas.
-func _make_hands(figure: DotHumanoidFigure) -> void:
+func _make_hands(figure: GSHumanoidFigure) -> void:
 	var instance := figure.mesh()
 	var material: Material = instance.material_override if instance.material_override != null else instance.get_active_material(0)
 	for right in [true, false]:
-		var hand := DotViewHand.new()
+		var hand := GSViewHand.new()
 		hand.name = "HandR" if right else "HandL"
 		hand.right = right
 		hand.skin_uv = _hand_uv(instance, figure.skeleton(), ".R" if right else ".L")
@@ -152,7 +152,7 @@ func _hand_uv(instance: MeshInstance3D, skeleton: Skeleton3D, side: String) -> V
 	return Vector2.ZERO
 
 
-## Each vertex's rest position for [DotViewArmsMaterial]'s pattern, four floats a vertex.
+## Each vertex's rest position for [GSViewArmsMaterial]'s pattern, four floats a vertex.
 func _rest_positions(verts: PackedVector3Array) -> PackedFloat32Array:
 	var out := PackedFloat32Array()
 	out.resize(verts.size() * 4)

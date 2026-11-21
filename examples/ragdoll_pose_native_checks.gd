@@ -1,7 +1,7 @@
-class_name DotRagdollPoseNativeChecks
+class_name GSRagdollPoseNativeChecks
 extends RefCounted
 
-## The ragdoll suite's native pose section: GameSpice Sim's [code]DotSimRagdollPose[/code] against [method DotPlayerRagdoll._pose_bones_script] on falling skinned bodies, every bone to the bit,
+## The ragdoll suite's native pose section: GameSpice Sim's [code]GSSimRagdollPose[/code] against [method GSPlayerRagdoll._pose_bones_script] on falling skinned bodies, every bone to the bit,
 ## and what each costs per call. With no library it says the native half was skipped and passes; [code]GS_SIM_REQUIRE_NATIVE=1[/code] (CI) fails instead. Always two checks, so the suite's count
 ## holds either way.
 
@@ -17,11 +17,11 @@ func _init(host: Node) -> void:
 
 func run() -> void:
 	suite._section("the native bone pose is the script's, to the bit")
-	var native := DotPlayerRagdoll.native_pose_available()
+	var native := GSPlayerRagdoll.native_pose_available()
 	var required := (OS.get_environment("GS_SIM_REQUIRE_NATIVE") if OS.has_environment("GS_SIM_REQUIRE_NATIVE") else OS.get_environment("DOT_SIM_REQUIRE_NATIVE")) == "1"
 	if not native:
 		suite._line("  dot-sim's ragdoll module is not loaded: the native half is skipped")
-	var yard := DotPlayerRagdolls.new()
+	var yard := GSPlayerRagdolls.new()
 	yard.rules.lifetime = 60.0
 	yard.rules.max_count = 8
 	yard.local_cap = 8
@@ -29,7 +29,7 @@ func run() -> void:
 
 	# Falls that hit every path: limp, a launch, a crumple, and a face plant that turns jointed on
 	# landing (its parts, and so the native plan, are rebuilt mid-fall).
-	var bodies: Array[DotPlayerRagdoll] = []
+	var bodies: Array[GSPlayerRagdoll] = []
 	var deaths := [
 		suite._death(&"limp", Vector3(1, 0, 0)),
 		suite._death(&"headshot_launch", Vector3(0, 0, -1), true, 150.0),
@@ -37,7 +37,7 @@ func run() -> void:
 		suite._death(&"face_plant", Vector3(0, 0, 1)),
 	]
 	for i in deaths.size():
-		var person: DotHumanoidFigure = suite._person(Vector3(-20 - 4 * i, 0, 60))
+		var person: GSHumanoidFigure = suite._person(Vector3(-20 - 4 * i, 0, 60))
 		var body := yard.spawn(person, deaths[i])
 		if body != null:
 			bodies.append(body)
@@ -73,13 +73,13 @@ func run() -> void:
 	if native and not bodies.is_empty() and is_instance_valid(bodies[0]):
 		_bench(bodies[0])
 	# The switch: off keeps the script and makes no native poser.
-	var was := DotPlayerRagdoll.native_pose
-	DotPlayerRagdoll.native_pose = false
-	var person: DotHumanoidFigure = suite._person(Vector3(-40, 0, 60))
+	var was := GSPlayerRagdoll.native_pose
+	GSPlayerRagdoll.native_pose = false
+	var person: GSHumanoidFigure = suite._person(Vector3(-40, 0, 60))
 	var plain := yard.spawn(person, suite._death(&"limp"))
 	await suite.get_tree().physics_frame
 	var stayed_script := plain != null and plain.get(&"_poser") == null
-	DotPlayerRagdoll.native_pose = was
+	GSPlayerRagdoll.native_pose = was
 	var planned := false
 	if plain != null:
 		plain._pose_bones()
@@ -92,7 +92,7 @@ func run() -> void:
 
 
 ## Times [constant BENCH_CALLS] script poses of [param body] against as many native ones, for the log.
-func _bench(body: DotPlayerRagdoll) -> void:
+func _bench(body: GSPlayerRagdoll) -> void:
 	var t0 := Time.get_ticks_usec()
 	for i in BENCH_CALLS:
 		body._pose_bones_script()

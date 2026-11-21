@@ -1,7 +1,7 @@
 ## Which of a figure's bones are shrunk away so its own player can look down at it from inside the
 ## head, and a shadow-only copy that keeps the whole person's shadow while they are gone.
-## One per [DotHumanoidFigure]: [member DotHumanoidFigure.hide_head] and [member DotHumanoidFigure.first_person].
-class_name DotHumanoidOwnView
+## One per [GSHumanoidFigure]: [member GSHumanoidFigure.hide_head] and [member GSHumanoidFigure.first_person].
+class_name GSHumanoidOwnView
 extends RefCounted
 
 ## Drawn whole (the head only if [member hide_head] is off).

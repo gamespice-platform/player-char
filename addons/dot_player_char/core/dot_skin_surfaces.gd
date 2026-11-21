@@ -1,4 +1,4 @@
-class_name DotSkinSurfaces
+class_name GSSkinSurfaces
 extends RefCounted
 
 ## A skinned mesh's arrays as a dead body reads them, read once per mesh and kept (main thread only).
@@ -29,7 +29,7 @@ static func of(mesh: Mesh) -> Array:
 		if not read.is_empty():
 			out.append(read)
 	_kept[key] = out
-	DotLog.debug(CHANNEL, "skin arrays read", {"mesh": mesh.resource_name, "surfaces": out.size()})
+	GSLog.debug(CHANNEL, "skin arrays read", {"mesh": mesh.resource_name, "surfaces": out.size()})
 	return out
 
 
@@ -37,7 +37,7 @@ static func of(mesh: Mesh) -> Array:
 ## Returns the surfaces read.
 static func warm(figure: Node) -> int:
 	var n := 0
-	for mesh in DotRagdollScan.skinned_meshes(figure):
+	for mesh in GSRagdollScan.skinned_meshes(figure):
 		n += of(mesh.mesh).size()
 	return n
 

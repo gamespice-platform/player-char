@@ -1,8 +1,8 @@
-class_name DotHumanoidClips
-extends DotHumanoidPoseMath
+class_name GSHumanoidClips
+extends GSHumanoidPoseMath
 
 ## The clip set for skinned people: which clips exist, which loop, retargeting between skeletons, and
-## the made clips (held crouch, sitting, climbing, swimming). Static; [DotHumanoidFigure] hands it libraries.
+## the made clips (held crouch, sitting, climbing, swimming). Static; [GSHumanoidFigure] hands it libraries.
 ## The people and game-zombie-zone's zombies share one rig's bone names, so a clip plays on all (docs/people.md).
 
 ## The clips the people carry, by the family's names. `duck` is the kit's one-shot dodge; the
@@ -40,7 +40,7 @@ const SLIDE := &"ual_slide"
 ## How far the slide's pose is turned toward the crouch's ([method _raise_slide]): 0 is the library's flat slide, 1 a crouch.
 const SLIDE_HULL_FIT := 0.55
 
-## The library's zombie idle and shuffling walk, only from `people/people_ual.res`; a figure with [member DotHumanoidFigure.zombie_gait] but without them plays the made ones.
+## The library's zombie idle and shuffling walk, only from `people/people_ual.res`; a figure with [member GSHumanoidFigure.zombie_gait] but without them plays the made ones.
 const ZOMBIE_IDLE := &"ual_zombie_idle"
 const ZOMBIE_WALK := &"ual_zombie_walk"
 
@@ -268,7 +268,7 @@ static func synthesise(library: AnimationLibrary, skeleton: Skeleton3D = null) -
 		if library.has_animation(SWIM):
 			library.remove_animation(SWIM)
 		var _w := library.add_animation(SWIM, _swimming(idle, skeleton))
-		# DotHumanoidActions by uid, not by name: it names this file, and the pair was a parser cycle Godot 4.7 never frees.
+		# GSHumanoidActions by uid, not by name: it names this file, and the pair was a parser cycle Godot 4.7 never frees.
 		var _actions: AnimationLibrary = load("uid://dmo2ealh0nrqf").add_to(library, idle, skeleton)
 
 	return library
@@ -314,7 +314,7 @@ static func _raise_slide(library: AnimationLibrary) -> void:
 
 
 ## How high the hips are above the feet in [constant SIT], in the clip body's units (the kit is
-## about 1.1 tall): [method DotHumanoidFigure.seat_height] scales it.
+## about 1.1 tall): [method GSHumanoidFigure.seat_height] scales it.
 static func sit_height(library: AnimationLibrary, skeleton: Skeleton3D) -> float:
 	if library == null or skeleton == null or not library.has_animation(SIT):
 		return 0.0
@@ -417,8 +417,8 @@ static func _climbing(idle: Animation, skeleton: Skeleton3D) -> Animation:
 const SWIM_CYCLE := 1.6
 
 
-## A front crawl made from the idle, drawn UPRIGHT: [DotHumanoidFigure] lays the figure forward
-## ([constant DotHumanoidFigure.SWIM_LEAN]), so this clip's "up" is ahead of the swimmer.
+## A front crawl made from the idle, drawn UPRIGHT: [GSHumanoidFigure] lays the figure forward
+## ([constant GSHumanoidFigure.SWIM_LEAN]), so this clip's "up" is ahead of the swimmer.
 ## Arms windmill, the body rolls to breathe, the legs flutter; one cycle is [constant SWIM_CYCLE] seconds.
 static func _swimming(idle: Animation, skeleton: Skeleton3D) -> Animation:
 	var made := Animation.new()

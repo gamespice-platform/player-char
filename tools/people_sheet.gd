@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Renders contact sheets of the people: every clip at six moments, per body, and one of looks.
 ## xvfb-run -a godot --path . --script tools/people_sheet.gd -- [--out=DIR] [--bodies=matt,lis] [--clips=walk,run] [--looks] [--ragdoll] [--break] [--hand] [--aim] [--swim] [--actions] [--carry[=CLASS]] [--crowd=N] [--compare[=FILE.res]]
-## [--register=id:path,...] draws a game's own bodies too ([method DotHumanoidAssets.register_body]); name them in --bodies.
+## [--register=id:path,...] draws a game's own bodies too ([method GSHumanoidAssets.register_body]); name them in --bodies.
 ## [--top=RRGGBB] sets the clip sheets' top colour, the one a registered body is dyed towards (a team colour).
 ## Needs xvfb-run, not --headless (blank frame); add `--rendering-method gl_compatibility` for a browser's view.
 
@@ -10,8 +10,8 @@ const CELL := Vector2i(256, 320)
 const MOMENTS := 6
 
 var _out := "res://screenshots/people"
-var _bodies: Array = DotHumanoidLook.BODIES.duplicate()
-var _clips: Array = DotHumanoidClips.ALL.duplicate()
+var _bodies: Array = GSHumanoidLook.BODIES.duplicate()
+var _clips: Array = GSHumanoidClips.ALL.duplicate()
 var _looks := false
 var _ragdoll := false
 var _break := false
@@ -38,7 +38,7 @@ func _initialize() -> void:
 			_clips = Array(arg.trim_prefix("--clips=").split(","))
 		elif arg.begins_with("--register="):
 			for pair in arg.trim_prefix("--register=").split(","):
-				var _ok := DotHumanoidAssets.register_body(StringName(pair.get_slice(":", 0)), pair.substr(pair.find(":") + 1))
+				var _ok := GSHumanoidAssets.register_body(StringName(pair.get_slice(":", 0)), pair.substr(pair.find(":") + 1))
 		elif arg.begins_with("--top="):
 			_top = Color(arg.trim_prefix("--top="))
 		elif arg == "--looks":
@@ -56,7 +56,7 @@ func _initialize() -> void:
 		elif arg == "--aim":
 			_aim = true
 		elif arg == "--compare":
-			_compare = DotHumanoidFigure.real_clips_path()
+			_compare = GSHumanoidFigure.real_clips_path()
 		elif arg.begins_with("--compare="):
 			_compare = arg.trim_prefix("--compare=")
 		elif arg == "--carry":
@@ -152,8 +152,8 @@ func _run() -> void:
 	quit()
 
 
-func _figure(look: DotHumanoidLook) -> DotHumanoidFigure:
-	var f := DotHumanoidFigure.new()
+func _figure(look: GSHumanoidLook) -> GSHumanoidFigure:
+	var f := GSHumanoidFigure.new()
 	_root.add_child(f)
 	f.build(look, 1.8)
 	return f
@@ -161,7 +161,7 @@ func _figure(look: DotHumanoidLook) -> DotHumanoidFigure:
 
 ## One row per clip, MOMENTS columns across its length, side view (three-quarter).
 func _sheet_body(body: StringName) -> void:
-	var look := DotHumanoidLook.stock(7)
+	var look := GSHumanoidLook.stock(7)
 	look.body = body
 	if _top.a > 0.0:
 		look.top = _top
@@ -193,25 +193,25 @@ func _sheet_body(body: StringName) -> void:
 
 ## The made clip and the real one (a library from tools/ual_retarget.gd) side by side, for each
 ## clip in [param path]: four rows by MOMENTS columns on the clip body. `sit` uses a stand-in bench
-## at [method DotHumanoidFigure.seat_height].
+## at [method GSHumanoidFigure.seat_height].
 func _sheet_compare(path: String) -> void:
 	var real := load(path) as AnimationLibrary
 	if real == null:
 		print("NO library ", path)
 		return
-	var scene := load(DotHumanoidFigure.body_path(DotHumanoidFigure.CLIP_BODY)) as PackedScene
+	var scene := load(GSHumanoidFigure.body_path(GSHumanoidFigure.CLIP_BODY)) as PackedScene
 	var probe := scene.instantiate()
 	var clip_skeleton := probe.find_children("*", "Skeleton3D", true, false).front() as Skeleton3D
-	var made := DotHumanoidClips.synthesise(DotHumanoidClips.mirror(DotHumanoidClips.library_of(scene)), clip_skeleton)
-	var made_sit := DotHumanoidClips.sit_height(made, clip_skeleton)
-	var both := DotHumanoidClips.adopt(DotHumanoidClips.synthesise(DotHumanoidClips.mirror(DotHumanoidClips.library_of(scene)), clip_skeleton), real)
-	var real_sit := DotHumanoidClips.sit_height(both, clip_skeleton)
+	var made := GSHumanoidClips.synthesise(GSHumanoidClips.mirror(GSHumanoidClips.library_of(scene)), clip_skeleton)
+	var made_sit := GSHumanoidClips.sit_height(made, clip_skeleton)
+	var both := GSHumanoidClips.adopt(GSHumanoidClips.synthesise(GSHumanoidClips.mirror(GSHumanoidClips.library_of(scene)), clip_skeleton), real)
+	var real_sit := GSHumanoidClips.sit_height(both, clip_skeleton)
 	probe.free()
 	var clips := real.get_animation_list()
 	var views := [[Vector3(2.0, 1.2, -2.0), Vector3(0, 0.62, 0)], [Vector3(2.8, 0.8, 0.0), Vector3(0, 0.62, 0)]]
 	var sheet := Image.create(CELL.x * MOMENTS, CELL.y * clips.size() * 4, false, Image.FORMAT_RGBA8)
-	var look := DotHumanoidLook.stock(7)
-	look.body = DotHumanoidFigure.CLIP_BODY
+	var look := GSHumanoidLook.stock(7)
+	look.body = GSHumanoidFigure.CLIP_BODY
 	var f := _figure(look)
 	var anim := f.body_node().find_child("AnimationPlayer", true, false) as AnimationPlayer
 	var bench := MeshInstance3D.new()
@@ -226,8 +226,8 @@ func _sheet_compare(path: String) -> void:
 			_camera.look_at(view[1])
 			for which in ["made", "real"]:
 				# A real clip with no made one (a seated variant) is shown beside the made sit.
-				var shown: StringName = clip if which == "real" or made.has_animation(clip) else DotHumanoidClips.SIT
-				var seated := shown == DotHumanoidClips.SIT or not made.has_animation(clip)
+				var shown: StringName = clip if which == "real" or made.has_animation(clip) else GSHumanoidClips.SIT
+				var seated := shown == GSHumanoidClips.SIT or not made.has_animation(clip)
 				var library := AnimationLibrary.new()
 				var source: AnimationLibrary = made if which == "made" else both
 				for name in source.get_animation_list():
@@ -264,13 +264,13 @@ func _sheet_compare(path: String) -> void:
 
 ## Stock looks and site avatars side by side, each body.
 func _sheet_looks() -> void:
-	var looks: Array[DotHumanoidLook] = []
+	var looks: Array[GSHumanoidLook] = []
 	for seed in range(8):
-		looks.append(DotHumanoidLook.stock(seed * 7919 + 13))
+		looks.append(GSHumanoidLook.stock(seed * 7919 + 13))
 	for letter in ["a", "b", "d", "f", "i", "l", "n", "o"]:
 		var doc := _SiteDoc.new()
 		doc.parts = {&"face": "face.skin-%s" % letter, &"top": "top.skin-%s" % letter, &"legs": "legs.skin-%s" % letter}
-		looks.append(DotHumanoidLook.from_site(doc))
+		looks.append(GSHumanoidLook.from_site(doc))
 	var cols := 8
 	var rows := ceili(looks.size() / float(cols))
 	var sheet := Image.create(CELL.x * cols, CELL.y * rows, false, Image.FORMAT_RGBA8)
@@ -286,30 +286,30 @@ func _sheet_looks() -> void:
 		f.free()
 	var path := "%s/looks.png" % _out
 	sheet.save_png(ProjectSettings.globalize_path(path))
-	print("SHEET ", path, " materials ", DotHumanoidFigure.material_count())
+	print("SHEET ", path, " materials ", GSHumanoidFigure.material_count())
 
 
 ## A skinned body falling as a ragdoll with each stock reaction, at the moments docs/ragdolls.md
 ## names.
 func _sheet_ragdoll() -> void:
 	var moments := [0.0, 0.1, 0.2, 0.35, 0.5, 0.75, 1.0, 1.5, 2.5, 4.0]
-	var reactions := DotPlayerDeathReactions.stock()
+	var reactions := GSPlayerDeathReactions.stock()
 	var ids: Array[StringName] = [&"limp", &"headshot_launch", &"power_launch", &"face_plant", &"crumple"]
 	var sheet := Image.create(CELL.x * moments.size(), CELL.y * ids.size(), false, Image.FORMAT_RGBA8)
 	_camera.position = Vector3(4.2, 2.0, -4.2)
 	_camera.look_at(Vector3(0.6, 0.5, 0))
 	for row in ids.size():
-		var f := _figure(DotHumanoidLook.stock(row + 3))
+		var f := _figure(GSHumanoidLook.stock(row + 3))
 		f.animate(2.5, 0.4)
-		var death := DotPlayerDeath.new()
+		var death := GSPlayerDeath.new()
 		death.reaction = ids[row]
 		death.roll_seed = 1234 + row
 		death.direction = Vector3(1, 0, 0)
 		death.damage = 120.0
 		death.headshot = ids[row] == &"headshot_launch"
-		var rules := DotPlayerRagdollRules.new()
+		var rules := GSPlayerRagdollRules.new()
 		rules.collision_mask = 1
-		var doll := DotPlayerRagdoll.build(f, _root, rules, reactions.find(ids[row]), death)
+		var doll := GSPlayerRagdoll.build(f, _root, rules, reactions.find(ids[row]), death)
 		var t := 0.0
 		for col in moments.size():
 			var target: float = moments[col]
@@ -340,19 +340,19 @@ func _sheet_break() -> void:
 	var moments := [0.0, 0.15, 0.4, 0.8, 1.6]
 	var sheet := Image.create(CELL.x * moments.size(), CELL.y * 2, false, Image.FORMAT_RGBA8)
 	for row in 2:
-		var f := _figure(DotHumanoidLook.stock(11 + row))
+		var f := _figure(GSHumanoidLook.stock(11 + row))
 		f.animate(0.0, 0.3)
-		var rules := DotPlayerBreakRules.new()
-		rules.mode = DotPlayerBreakRules.Mode.LIMBS if row == 0 else DotPlayerBreakRules.Mode.EXPLODE
+		var rules := GSPlayerBreakRules.new()
+		rules.mode = GSPlayerBreakRules.Mode.LIMBS if row == 0 else GSPlayerBreakRules.Mode.EXPLODE
 		rules.limbs = 1
 		rules.collision_mask = 1
-		var broke := DotPlayerBodyBreak.break_apart(f, _root, rules, f.global_position, Vector3(1, 0, 0), 5 + row, true, true)
-		var death := DotPlayerDeath.new()
+		var broke := GSPlayerBodyBreak.break_apart(f, _root, rules, f.global_position, Vector3(1, 0, 0), 5 + row, true, true)
+		var death := GSPlayerDeath.new()
 		death.direction = Vector3(1, 0, 0)
 		death.damage = 100.0
-		var drules := DotPlayerRagdollRules.new()
+		var drules := GSPlayerRagdollRules.new()
 		drules.collision_mask = 1
-		var doll := DotPlayerRagdoll.build(f, _root, drules, DotPlayerDeathReactions.stock().find(&"limp"), death)
+		var doll := GSPlayerRagdoll.build(f, _root, drules, GSPlayerDeathReactions.stock().find(&"limp"), death)
 		_camera.position = Vector3(3.6, 2.2, -3.6)
 		_camera.look_at(Vector3(0.5, 0.6, 0))
 		var t := 0.0
@@ -382,8 +382,8 @@ func _sheet_aim() -> void:
 	var pitches := [-65.0, -35.0, 0.0, 35.0, 65.0]
 	var rows := 4
 	var sheet := Image.create(CELL.x * pitches.size(), CELL.y * rows, false, Image.FORMAT_RGBA8)
-	var f := _figure(DotHumanoidLook.stock(5))
-	f.set_hold(DotHumanoidFigure.Hold.GUN)
+	var f := _figure(GSHumanoidLook.stock(5))
+	f.set_hold(GSHumanoidFigure.Hold.GUN)
 	_stand_in_gun(f.attachment(&"right_hand"))
 	var crest := MeshInstance3D.new()
 	var cb := BoxMesh.new()
@@ -433,7 +433,7 @@ func _sheet_swim() -> void:
 		[Vector3(-0.8, 2.4, -2.6), Vector3(0, 0.9, 0.4)],
 	]
 	var sheet := Image.create(CELL.x * moments, CELL.y * views.size(), false, Image.FORMAT_RGBA8)
-	var f := _figure(DotHumanoidLook.stock(11))
+	var f := _figure(GSHumanoidLook.stock(11))
 	var water := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(6, 6)
@@ -445,7 +445,7 @@ func _sheet_swim() -> void:
 	water.position = Vector3(0, 1.8 * 0.55, 0)
 	_root.add_child(water)
 	f.set_motion({"swimming": true})
-	var step := DotHumanoidClips.SWIM_CYCLE / float(moments)
+	var step := GSHumanoidClips.SWIM_CYCLE / float(moments)
 	for row in views.size():
 		# Long enough for the lean to settle, then exactly one cycle per row.
 		for i in 12:
@@ -485,10 +485,10 @@ func _stand_in_gun(hand: Node3D) -> void:
 ## A stand-in gun (a long box down -Z, a red tip at the muzzle) in the hand through the gun
 ## clips, from the side and from the front: the barrel should point where the figure faces.
 func _sheet_hand() -> void:
-	var clips := [DotHumanoidClips.IDLE_GUN, DotHumanoidClips.WALK_GUN, DotHumanoidClips.RUN_GUN, DotHumanoidClips.CROUCH]
+	var clips := [GSHumanoidClips.IDLE_GUN, GSHumanoidClips.WALK_GUN, GSHumanoidClips.RUN_GUN, GSHumanoidClips.CROUCH]
 	var sheet := Image.create(CELL.x * clips.size(), CELL.y * 2, false, Image.FORMAT_RGBA8)
-	var f := _figure(DotHumanoidLook.stock(3))
-	f.set_hold(DotHumanoidFigure.Hold.GUN)
+	var f := _figure(GSHumanoidLook.stock(3))
+	f.set_hold(GSHumanoidFigure.Hold.GUN)
 	var gun := MeshInstance3D.new()
 	var box := BoxMesh.new()
 	box.size = Vector3(0.05, 0.1, 0.5)
@@ -504,9 +504,9 @@ func _sheet_hand() -> void:
 	tip.position = Vector3(0, 0, -0.47)
 	f.attachment(&"right_hand").add_child(gun)
 	f.attachment(&"right_hand").add_child(tip)
-	var speeds := {DotHumanoidClips.IDLE_GUN: 0.0, DotHumanoidClips.WALK_GUN: 1.8, DotHumanoidClips.RUN_GUN: 6.0, DotHumanoidClips.CROUCH: 0.0}
+	var speeds := {GSHumanoidClips.IDLE_GUN: 0.0, GSHumanoidClips.WALK_GUN: 1.8, GSHumanoidClips.RUN_GUN: 6.0, GSHumanoidClips.CROUCH: 0.0}
 	for col in clips.size():
-		f.set_motion({"crouched": clips[col] == DotHumanoidClips.CROUCH})
+		f.set_motion({"crouched": clips[col] == GSHumanoidClips.CROUCH})
 		for i in 6:
 			f.animate(speeds[clips[col]], 0.1)
 		for row in 2:
@@ -542,8 +542,8 @@ func _sheet_carry(kind: StringName) -> void:
 		sheets.append(Image.create(CELL.x * 8, CELL.y * rows.size(), false, Image.FORMAT_RGBA8))
 	for row in rows.size():
 		var r: Dictionary = rows[row]
-		var f := _figure(DotHumanoidLook.stock(3))
-		f.set_hold(DotHumanoidFigure.Hold.GUN)
+		var f := _figure(GSHumanoidLook.stock(3))
+		f.set_hold(GSHumanoidFigure.Hold.GUN)
 		f.carry.set_class(null if r.get("off", false) else kind)
 		f.set_motion({"sprinting": r.get("sprinting", false)})
 		_stand_in_gun(f.attachment(&"right_hand"))
@@ -576,13 +576,13 @@ func _sheet_carry(kind: StringName) -> void:
 ## numbers in docs/people.md came from this.
 func _measure_crowd(count: int) -> void:
 	_sub.size = Vector2i(1280, 720)
-	var people: Array[DotHumanoidFigure] = []
+	var people: Array[GSHumanoidFigure] = []
 	for i in count:
-		var f := _figure(DotHumanoidLook.stock(i * 31 + 7))
+		var f := _figure(GSHumanoidLook.stock(i * 31 + 7))
 		var ring := 6.0 + float(i % 5) * 6.0
 		var angle := float(i) * 0.6
 		f.position = Vector3(sin(angle) * ring * 0.6, 0, -ring)
-		f.set_hold(DotHumanoidFigure.Hold.GUN)
+		f.set_hold(GSHumanoidFigure.Hold.GUN)
 		if OS.get_environment("PEOPLE_LOD_BIAS") != "":
 			f.mesh().lod_bias = float(OS.get_environment("PEOPLE_LOD_BIAS"))
 		if OS.get_environment("PEOPLE_NO_SHADOW") != "":
@@ -611,7 +611,7 @@ func _measure_crowd(count: int) -> void:
 		prims += Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)
 	var total_ms := float(Time.get_ticks_usec() - start) / 1000.0 / frames
 	print("CROWD %d people: %.1f ms a frame, %.1f us script per person, %.0f draw calls, %.0f primitives, %d materials" % [
-		count, total_ms, float(script_us) / frames / count, draw / frames, prims / frames, DotHumanoidFigure.material_count()])
+		count, total_ms, float(script_us) / frames / count, draw / frames, prims / frames, GSHumanoidFigure.material_count()])
 	var img := await _frame()
 	img.save_png(ProjectSettings.globalize_path("%s/crowd_%d.png" % [_out, count]))
 
@@ -630,7 +630,7 @@ class _SiteDoc:
 func _sheet_actions() -> void:
 	var ids: Array = ["wave", "point", "thumbs_up", "nod", "shrug", "cheer", "dance", "clap", "bow", "sit", "salute", "arms_crossed", "hands_on_hips"]
 	var sheet := Image.create(CELL.x * ids.size(), CELL.y * 2, false, Image.FORMAT_RGBA8)
-	var f := _figure(DotHumanoidLook.stock(5))
+	var f := _figure(GSHumanoidLook.stock(5))
 	for col in ids.size():
 		for row in 2:
 			f.stop_action()
@@ -639,7 +639,7 @@ func _sheet_actions() -> void:
 			var ok := f.play_action(StringName(ids[col]), true)
 			if not ok:
 				print("MISSING ", ids[col])
-			var length := f._anim.get_animation(DotHumanoidActions.clip_name(StringName(ids[col]))).length
+			var length := f._anim.get_animation(GSHumanoidActions.clip_name(StringName(ids[col]))).length
 			var steps := int(length * 0.45 / 0.05) + 6
 			for i in steps:
 				f.animate(0.0, 0.05)

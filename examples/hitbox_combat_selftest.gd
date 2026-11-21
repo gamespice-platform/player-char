@@ -1,6 +1,6 @@
 extends Node
 
-## The real DotHitbox / DotHitboxSet path. Needs dot-combat linked (ln -s ../../dot-combat/addons/dot_combat addons/dot_combat).
+## The real GSHitbox / GSHitboxSet path. Needs dot-combat linked (ln -s ../../dot-combat/addons/dot_combat addons/dot_combat).
 ## Run: godot --headless --path . res://examples/hitbox_combat_selftest.tscn
 
 const CHECKS := 11
@@ -10,24 +10,24 @@ var _failed := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	print("dot-player-char hitbox + dot-combat self-test")
-	if DotPlayerHitboxes.class_script("DotHitboxSet") == null:
+	if GSPlayerHitboxes.class_script("GSHitboxSet") == null:
 		print("SKIP: dot-combat is not linked")
 		get_tree().quit(0)
 		return
 	var host := Node3D.new()
 	add_child(host)
-	host.add_child(DotPlayerChar.new())
-	var hb := DotPlayerHitboxes.new()
+	host.add_child(GSPlayerChar.new())
+	var hb := GSPlayerHitboxes.new()
 	host.add_child(hb)
 	var r := hb.build()
 	_check(r.ok, "build succeeds with the real classes")
 	var set_node: Node = hb.hitbox_set()
 	_check(set_node != null and set_node.get_class() != "", "a set exists")
-	_check(set_node != null and set_node.get_child_count() == 14, "one DotHitbox per zone")
+	_check(set_node != null and set_node.get_child_count() == 14, "one GSHitbox per zone")
 	var first: Node = set_node.get_child(0) if set_node != null and set_node.get_child_count() > 0 else null
-	_check(first != null and first.get_script() == DotPlayerHitboxes.class_script("DotHitbox"), "children are DotHitbox")
+	_check(first != null and first.get_script() == GSPlayerHitboxes.class_script("GSHitbox"), "children are GSHitbox")
 	_check(first != null and first.get("group") == &"head", "first zone is the head group")
 	_check(first != null and float(first.get("radius")) > 0.0, "radius carried over")
 	_wall_flush(host, set_node)

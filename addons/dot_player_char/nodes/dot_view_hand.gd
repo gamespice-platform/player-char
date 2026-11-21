@@ -1,9 +1,9 @@
-class_name DotViewHand
+class_name GSViewHand
 extends Node3D
 
 ## A first-person hand with five jointed fingers: one skinned mesh (palm, thumb and four fingers, three joints each) on
-## its own small skeleton, built from tapered capsules at life size. [DotPlayerViewArms] puts one on each wrist and
-## closes it on the weapon with a [DotViewHandPoses] grip. Made here, so it is free to use (CC0, like the people kit).
+## its own small skeleton, built from tapered capsules at life size. [GSPlayerViewArms] puts one on each wrist and
+## closes it on the weapon with a [GSViewHandPoses] grip. Made here, so it is free to use (CC0, like the people kit).
 ##
 ## The hand's frame: origin at the wrist, +Y toward the fingers, +Z out of the palm, +X toward the thumb (a left hand
 ## is the right one mirrored, so its thumb is at -X). A finger's curl turns each joint toward the palm.
@@ -32,7 +32,7 @@ const CAP_RINGS := 3
 
 ## Right hand (false mirrors it to a left one); set before the node enters the tree, or call [method build].
 var right: bool = true
-## Uniform size against life size: [DotPlayerViewArms] sets it to its held arms' scale.
+## Uniform size against life size: [GSPlayerViewArms] sets it to its held arms' scale.
 var size: float = 1.0:
 	set(value):
 		size = value
@@ -162,7 +162,7 @@ func _build_mesh() -> ArrayMesh:
 		rest.append_array([p.x, p.y, p.z, 1.0])
 	arrays[Mesh.ARRAY_CUSTOM0] = rest
 	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, DotViewArmsMaterial.REST_FORMAT)
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, GSViewArmsMaterial.REST_FORMAT)
 	return mesh
 
 
@@ -248,7 +248,7 @@ func _palm() -> void:
 	_close(first + (PALM.size() - 1) * AROUND, Vector3(0.0, high.x + 0.004, 0.0), Vector3.UP, 0, true)
 
 
-## Closes the fingers to [param curls] (a [DotViewHandPoses] hand: finger name to Vector3 joint degrees, `spread` in
+## Closes the fingers to [param curls] (a [GSViewHandPoses] hand: finger name to Vector3 joint degrees, `spread` in
 ## degrees), easing at [param rate] (1 = at once) so a new grip folds in rather than snaps.
 func pose(curls: Dictionary, rate: float = 1.0) -> void:
 	if _skeleton == null:

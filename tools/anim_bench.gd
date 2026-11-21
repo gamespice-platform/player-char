@@ -6,24 +6,24 @@ extends Node3D
 const COUNT := 32
 const DT := 1.0 / 60.0
 
-var _people: Array[DotHumanoidFigure] = []
+var _people: Array[GSHumanoidFigure] = []
 var _camera: Camera3D
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_camera = Camera3D.new()
 	add_child(_camera)
 	_camera.position = Vector3(0, 1.7, 0)
 	_camera.current = true
 	for i in COUNT:
-		var f := DotHumanoidFigure.new()
+		var f := GSHumanoidFigure.new()
 		add_child(f)
-		f.build(DotHumanoidLook.stock(i * 31 + 7), 1.8)
+		f.build(GSHumanoidLook.stock(i * 31 + 7), 1.8)
 		var ring := 4.0 + float(i % 8) * 6.5
 		var angle := float(i) * 0.7
 		f.position = Vector3(sin(angle) * ring, 0, -cos(angle) * ring)
-		f.set_hold(DotHumanoidFigure.Hold.GUN)
+		f.set_hold(GSHumanoidFigure.Hold.GUN)
 		_people.append(f)
 	_run.call_deferred()
 
@@ -48,7 +48,7 @@ func _step(frame: int) -> void:
 		f.set_motion({"on_floor": not air, "vertical": v.y, "crouched": (frame / 120 + i) % 7 == 0,
 			"sliding": false, "swimming": false, "climbing": false, "alive": true, "wall_running": false,
 			"velocity": v, "wall": Plane(), "aim": 0.4 * sin(t + float(i))})
-		f.set_hold(DotHumanoidFigure.Hold.GUN)
+		f.set_hold(GSHumanoidFigure.Hold.GUN)
 		f.set_support_grip(f.global_transform * Vector3(0.05, 1.25, -0.45))
 		f.animate(Vector2(v.x, v.z).length(), DT)
 
@@ -105,7 +105,7 @@ func _parts(frames: int) -> void:
 			t = _lap(sums, "clip_for", t)
 			f._play(w[0], w[1])
 			t = _lap(sums, "play", t)
-			DotHumanoidFrames.step_for_distance(f, f._mesh)
+			GSHumanoidFrames.step_for_distance(f, f._mesh)
 			t = _lap(sums, "step_for_distance", t)
 			f._anim.advance(DT)
 			t = _lap(sums, "anim.advance", t)

@@ -1,13 +1,13 @@
-class_name DotPlayerRagdoll
+class_name GSPlayerRagdoll
 extends "dot_player_ragdoll_state.gd"
 
 ## One dead body: the figure's meshes copied onto rigid bodies joined at hips, shoulders and neck,
 ## pushed per the death, settling and fading. Parts are named head, torso, arm, leg (left/right);
-## other meshes ride the nearest part. Built by [DotPlayerRagdolls]; seeded from the death, never randf().
+## other meshes ride the nearest part. Built by [GSPlayerRagdolls]; seeded from the death, never randf().
 
 ## GameSpice Sim's class that poses the bones natively (bit-identical to [method _pose_bones_script]),
 ## reached by name so this addon loads without the extension.
-const NATIVE_POSE_CLASS := &"DotSimRagdollPose"
+const NATIVE_POSE_CLASS := &"GSSimRagdollPose"
 ## Pose a skinned body's bones in [constant NATIVE_POSE_CLASS] when it is loaded; false keeps the
 ## script (the A/B baseline). The web never has it.
 static var native_pose := true
@@ -23,21 +23,21 @@ var _poser: Object = null
 static func build(
 	figure: Node3D,
 	world: Node,
-	p_rules: DotPlayerRagdollRules,
-	p_reaction: DotPlayerDeathReaction,
-	p_death: DotPlayerDeath,
+	p_rules: GSPlayerRagdollRules,
+	p_reaction: GSPlayerDeathReaction,
+	p_death: GSPlayerDeath,
 	velocity: Vector3 = Vector3.ZERO
-) -> DotPlayerRagdoll:
+) -> GSPlayerRagdoll:
 	if figure == null or world == null or p_rules == null or not figure.is_inside_tree():
 		return null
 	# NaN from a bad peer or bot body would break every wall ray from this body.
-	velocity = DotPlayerRagdollMath.finite_or(velocity)
+	velocity = GSPlayerRagdollMath.finite_or(velocity)
 	if p_death != null:
-		p_death.direction = DotPlayerRagdollMath.finite_or(p_death.direction)
+		p_death.direction = GSPlayerRagdollMath.finite_or(p_death.direction)
 		p_death.damage = p_death.damage if is_finite(p_death.damage) else 0.0
 
 	var chosen_style := p_rules.effective_style()
-	if chosen_style == DotPlayerRagdollRules.Style.HIDE:
+	if chosen_style == GSPlayerRagdollRules.Style.HIDE:
 		figure.visible = false
 		return null
 
@@ -46,14 +46,14 @@ static func build(
 	if meshes.is_empty():
 		return null
 
-	var made := DotPlayerRagdoll.new()
+	var made := GSPlayerRagdoll.new()
 	made.name = "Ragdoll"
 	made.rules = p_rules
-	made.reaction = p_reaction if p_reaction != null else DotPlayerDeathReactions.stock().find(DotPlayerDeathReactions.LIMP)
-	made.death = p_death if p_death != null else DotPlayerDeath.new()
+	made.reaction = p_reaction if p_reaction != null else GSPlayerDeathReactions.stock().find(GSPlayerDeathReactions.LIMP)
+	made.death = p_death if p_death != null else GSPlayerDeath.new()
 	# A NaN direction or damage from a game's kill message would normalise to NaN and freeze the body.
-	made.death.direction = DotPlayerRagdollMath.finite_or(made.death.direction)
-	made.death.damage = DotPlayerRagdollMath.finite_float(made.death.damage)
+	made.death.direction = GSPlayerRagdollMath.finite_or(made.death.direction)
+	made.death.damage = GSPlayerRagdollMath.finite_float(made.death.damage)
 
 	made._rng.seed = made.death.roll_seed
 	made._anchor = figure.global_position + Vector3.UP * 0.9
@@ -70,25 +70,25 @@ static func build(
 		made._source_roles[mesh] = role_of(figure, mesh)
 	var groups := group_by_role(figure, meshes)
 	var named_torso := made._skel != null or meshes.any(func(m: MeshInstance3D) -> bool: return role_of(figure, m) == Role.TORSO)
-	if chosen_style == DotPlayerRagdollRules.Style.RAGDOLL and not named_torso:
+	if chosen_style == GSPlayerRagdollRules.Style.RAGDOLL and not named_torso:
 		# Nothing to hang limbs off: one piece is the honest body.
-		chosen_style = DotPlayerRagdollRules.Style.STIFF
+		chosen_style = GSPlayerRagdollRules.Style.STIFF
 	made.style = chosen_style
 
 	var forward := -figure.global_basis.z
 	forward.y = 0.0
-	forward = DotPlayerRagdollMath.unit(forward, Vector3.FORWARD)
+	forward = GSPlayerRagdollMath.unit(forward, Vector3.FORWARD)
 
 	match chosen_style:
-		DotPlayerRagdollRules.Style.RAGDOLL:
-			if made.reaction.pose == DotPlayerDeathReaction.Pose.FACE_PLANT:
+		GSPlayerRagdollRules.Style.RAGDOLL:
+			if made.reaction.pose == GSPlayerDeathReaction.Pose.FACE_PLANT:
 				# A plank until the face lands, then jointed; tight joints on impact threw the figure away (docs/ragdolls.md).
 				made._build_one(meshes, figure, true)
 				made._jointed_on_land = true
 			else:
 				made._build_jointed(groups)
 			made._drive(forward, velocity)
-		DotPlayerRagdollRules.Style.STIFF:
+		GSPlayerRagdollRules.Style.STIFF:
 			made._build_one(meshes, figure, true)
 			made._drive(forward, velocity)
 		_:
@@ -102,8 +102,8 @@ static func build(
 		# Deferred: whoever built this connects to [signal sound] after build returns.
 		made.sound.emit.call_deferred(made.reaction.start_sound, figure.global_position + Vector3.UP, 1.0)
 
-	DotLog.debug(CHANNEL, "body down", {
-		"style": DotPlayerRagdollRules.style_name(chosen_style),
+	GSLog.debug(CHANNEL, "body down", {
+		"style": GSPlayerRagdollRules.style_name(chosen_style),
 		"reaction": String(made.reaction.id),
 		"parts": made._parts.size(),
 	})
@@ -112,27 +112,27 @@ static func build(
 
 ## The visible skinned meshes under [param figure] drawn by one skeleton, or none.
 static func skinned_meshes(figure: Node, hidden := false) -> Array[MeshInstance3D]:
-	return DotRagdollScan.skinned_meshes(figure, hidden)
+	return GSRagdollScan.skinned_meshes(figure, hidden)
 
 
 ## Every visible mesh under [param figure], minus top_level subtrees; [param hidden] keeps hidden ones.
 static func meshes_of(figure: Node, hidden := false) -> Array[MeshInstance3D]:
-	return DotRagdollScan.meshes_of(figure, hidden)
+	return GSRagdollScan.meshes_of(figure, hidden)
 
 
 ## The role a mesh plays, from its own name and its ancestors' up to [param figure].
 static func role_of(figure: Node, mesh: Node) -> int:
-	return DotRagdollScan.role_of(figure, mesh)
+	return GSRagdollScan.role_of(figure, mesh)
 
 
 ## The role one name says, or OTHER. Case and separators do not matter.
 static func role_of_name(text: String) -> int:
-	return DotRagdollScan.role_of_name(text)
+	return GSRagdollScan.role_of_name(text)
 
 
 ## Meshes by role. An OTHER mesh joins the role whose meshes' centre is nearest its own.
 static func group_by_role(figure: Node, meshes: Array[MeshInstance3D]) -> Dictionary:
-	return DotRagdollScan.group_by_role(figure, meshes)
+	return GSRagdollScan.group_by_role(figure, meshes)
 
 
 func _build_jointed(groups: Dictionary) -> void:
@@ -149,7 +149,7 @@ func _build_jointed(groups: Dictionary) -> void:
 		if not groups.has(role):
 			continue
 		var list: Array[MeshInstance3D] = groups[role]
-		var frame := Transform3D(DotPlayerRagdollMath.ortho(list[0].global_basis), list[0].global_position)
+		var frame := Transform3D(GSPlayerRagdollMath.ortho(list[0].global_basis), list[0].global_position)
 		var part := _make_body(role, list, frame, rules.mass * float(MASS_SHARE.get(role, 0.05)) / share_total)
 		if role == Role.TORSO:
 			torso = part
@@ -175,7 +175,7 @@ func _finish_joints(torso: Part) -> void:
 
 ## One piece holding every mesh: STIFF as a rigid body, TOPPLE as a plain node.
 func _build_one(meshes: Array[MeshInstance3D], figure: Node3D, physical: bool) -> void:
-	var frame := Transform3D(DotPlayerRagdollMath.ortho(figure.global_basis), figure.global_position)
+	var frame := Transform3D(GSPlayerRagdollMath.ortho(figure.global_basis), figure.global_position)
 	if physical:
 		var made := _make_body(Role.TORSO, meshes, frame, rules.mass)
 		if _skel != null:
@@ -448,7 +448,7 @@ func _skeletal_points() -> Dictionary:
 				bone = _skel.find_bone(skin.get_bind_name(b))
 			bind_bones.append(bone)
 		# Every third vertex, grouped by the bind that moves it most: one pose per bind, not per vertex.
-		for surface: Dictionary in DotSkinSurfaces.of(mesh.mesh):
+		for surface: Dictionary in GSSkinSurfaces.of(mesh.mesh):
 			var samples: Array[PackedVector3Array] = surface["samples"]
 			for bind in samples.size():
 				var picked: PackedVector3Array = samples[bind]
@@ -493,8 +493,8 @@ func _build_jointed_skeletal(mesh_groups: Dictionary) -> void:
 	var share_total := 0.0
 	for role: int in points:
 		share_total += float(MASS_SHARE.get(role, 0.05))
-	var torso_at := DotPlayerRagdollMath.mean(points.get(Role.TORSO, []), global_position)
-	var forward := DotPlayerRagdollMath.unit(-_skel_base.basis.z, Vector3.FORWARD)
+	var torso_at := GSPlayerRagdollMath.mean(points.get(Role.TORSO, []), global_position)
+	var forward := GSPlayerRagdollMath.unit(-_skel_base.basis.z, Vector3.FORWARD)
 
 	var torso: Part = null
 	for role: int in [Role.TORSO, Role.HEAD, Role.ARM_L, Role.ARM_R, Role.LEG_L, Role.LEG_R]:
@@ -504,14 +504,14 @@ func _build_jointed_skeletal(mesh_groups: Dictionary) -> void:
 		for i in _skel.get_bone_count():
 			if _bone_roles[i] == role:
 				bones.append(i)
-		var centre := DotPlayerRagdollMath.mean(points[role], torso_at)
+		var centre := GSPlayerRagdollMath.mean(points[role], torso_at)
 		var frame: Transform3D
 		if role == Role.TORSO:
 			var anchor: int = found["anchors"][role]
-			frame = Transform3D(DotPlayerRagdollMath.ortho(_bone_world(anchor).basis), centre)
+			frame = Transform3D(GSPlayerRagdollMath.ortho(_bone_world(anchor).basis), centre)
 		else:
 			var top := _top_of(bones, torso_at)
-			frame = Transform3D(DotPlayerRagdollMath.basis_along(centre - top, forward), top)
+			frame = Transform3D(GSPlayerRagdollMath.basis_along(centre - top, forward), top)
 		var part := _new_body(role, frame, rules.mass * float(MASS_SHARE.get(role, 0.05)) / maxf(share_total, 0.01))
 		if mesh_groups.has(role):
 			var _b := _copy_meshes(part, mesh_groups[role], frame)
@@ -570,8 +570,8 @@ func _carry_bones(part: Part, bones: Array, found: Dictionary, reshape: bool, co
 			zs.append(local.z)
 	var bounds := AABB()
 	if not xs.is_empty():
-		var lo := Vector3(DotPlayerRagdollMath.quantile(xs, 0.05), DotPlayerRagdollMath.quantile(ys, 0.03), DotPlayerRagdollMath.quantile(zs, 0.05))
-		var hi := Vector3(DotPlayerRagdollMath.quantile(xs, 0.95), DotPlayerRagdollMath.quantile(ys, 0.97), DotPlayerRagdollMath.quantile(zs, 0.95))
+		var lo := Vector3(GSPlayerRagdollMath.quantile(xs, 0.05), GSPlayerRagdollMath.quantile(ys, 0.03), GSPlayerRagdollMath.quantile(zs, 0.05))
+		var hi := Vector3(GSPlayerRagdollMath.quantile(xs, 0.95), GSPlayerRagdollMath.quantile(ys, 0.97), GSPlayerRagdollMath.quantile(zs, 0.95))
 		bounds = AABB(lo, hi - lo)
 	for copy in part.copies:
 		# With posed skin points the box is the body's alone; rest-pose bounds include arms, gun and hat.
@@ -655,7 +655,7 @@ func _drive(forward: Vector3, velocity: Vector3) -> void:
 	if not (flat.length() >= 0.1):
 		dir = Vector3.ZERO
 	else:
-		dir = DotPlayerRagdollMath.unit(DotPlayerRagdollMath.unit(flat, Vector3.FORWARD) + Vector3.UP * clampf(dir.y, -0.3, 0.3), Vector3.ZERO)
+		dir = GSPlayerRagdollMath.unit(GSPlayerRagdollMath.unit(flat, Vector3.FORWARD) + Vector3.UP * clampf(dir.y, -0.3, 0.3), Vector3.ZERO)
 	var strength := clampf(death.damage, 0.0, 300.0) / 100.0
 
 	var base := velocity
@@ -667,10 +667,10 @@ func _drive(forward: Vector3, velocity: Vector3) -> void:
 	var hit := _part(Role.HEAD) if death.headshot and _part(Role.HEAD) != null else torso
 
 	match reaction.pose:
-		DotPlayerDeathReaction.Pose.FACE_PLANT:
+		GSPlayerDeathReaction.Pose.FACE_PLANT:
 			_drive_plank(forward, velocity)
 			return
-		DotPlayerDeathReaction.Pose.CRUMPLE:
+		GSPlayerDeathReaction.Pose.CRUMPLE:
 			# The legs fold forward under the body, which drops and tips back or forward by
 			# the seed: a body sitting down hard and going over.
 			var axis := Vector3.UP.cross(forward).normalized()
@@ -688,7 +688,7 @@ func _drive(forward: Vector3, velocity: Vector3) -> void:
 				(part.body as RigidBody3D).linear_velocity = base
 
 	if hit != null and dir != Vector3.ZERO:
-		(hit.body as RigidBody3D).linear_velocity += dir * reaction.hit_push * k * (1.0 if rules.exaggerate or reaction.pose != DotPlayerDeathReaction.Pose.LAUNCH else 0.2)
+		(hit.body as RigidBody3D).linear_velocity += dir * reaction.hit_push * k * (1.0 if rules.exaggerate or reaction.pose != GSPlayerDeathReaction.Pose.LAUNCH else 0.2)
 
 	if torso != null:
 		var body := torso.body as RigidBody3D
@@ -769,8 +769,8 @@ func _part(role: int) -> Part:
 func _start_topple(figure: Node3D, forward: Vector3) -> void:
 	var dir := death.direction
 	dir.y = 0.0
-	var fall := DotPlayerRagdollMath.unit(dir, (forward if reaction.pose == DotPlayerDeathReaction.Pose.FACE_PLANT else -forward))
-	if reaction.pose == DotPlayerDeathReaction.Pose.FACE_PLANT:
+	var fall := GSPlayerRagdollMath.unit(dir, (forward if reaction.pose == GSPlayerDeathReaction.Pose.FACE_PLANT else -forward))
+	if reaction.pose == GSPlayerDeathReaction.Pose.FACE_PLANT:
 		fall = forward
 	var holder := _parts[0].body
 	# Pivot about the edge of the footprint on the side it falls to, so it lands lying ON the
@@ -820,7 +820,7 @@ func advance(delta: float) -> void:
 	age += delta
 
 	var was_settled := settled
-	if style == DotPlayerRagdollRules.Style.TOPPLE:
+	if style == GSPlayerRagdollRules.Style.TOPPLE:
 		_advance_topple(delta)
 	elif not settled:
 		_keep_tipping(delta)
@@ -934,9 +934,9 @@ func _watch_motion(delta: float) -> void:
 
 
 ## Lets a frozen body move again (a shot into it), simulating for up to another
-## [member DotPlayerRagdollRules.max_sim_time].
+## [member GSPlayerRagdollRules.max_sim_time].
 func wake() -> void:
-	if style == DotPlayerRagdollRules.Style.TOPPLE:
+	if style == GSPlayerRagdollRules.Style.TOPPLE:
 		return
 	for part in _parts:
 		var body := part.body as RigidBody3D
@@ -1010,7 +1010,7 @@ func _become_jointed() -> void:
 	var v := old_body.linear_velocity
 	var w := old_body.angular_velocity
 	var com := old_body.global_transform * old_body.center_of_mass
-	var groups := DotRagdollScan.group(old.copies, func(copy: MeshInstance3D) -> int: return int(copy.get_meta(&"dot_role", Role.OTHER)))
+	var groups := GSRagdollScan.group(old.copies, func(copy: MeshInstance3D) -> int: return int(copy.get_meta(&"dot_role", Role.OTHER)))
 	if not groups.has(Role.TORSO) and _skel == null:
 		return
 	_parts.clear()
@@ -1086,7 +1086,7 @@ func centre() -> Vector3:
 
 func describe() -> Dictionary:
 	return {
-		"style": DotPlayerRagdollRules.style_name(style),
+		"style": GSPlayerRagdollRules.style_name(style),
 		"reaction": String(reaction.id) if reaction != null else "",
 		"parts": _parts.size(),
 		"joints": joint_count(),

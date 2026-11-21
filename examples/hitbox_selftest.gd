@@ -12,7 +12,7 @@ var _section_count := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run()
 
 
@@ -50,40 +50,40 @@ func _groups(zs: Array[Dictionary]) -> Array:
 
 func _test_stock() -> void:
 	_section_count += 1
-	var zs := DotPlayerHitboxPlan.stock(1.8)
+	var zs := GSPlayerHitboxPlan.stock(1.8)
 	_check(zs.size() == 14, "fourteen stock zones")
 	_check(_groups(zs).has(&"stomach") and _groups(zs).has(&"knee"), "stomach and knee zones exist")
 	var g := _groups(zs)
 	for name in [&"head", &"neck", &"chest", &"arm", &"hand", &"leg", &"foot"]:
 		_check(name in g, "group %s present" % name)
 	_check(zs[0]["position"] == Vector3(0, 1.62, 0), "head at FC's height on a 1.8 body")
-	var tall := DotPlayerHitboxPlan.stock(3.6)
+	var tall := GSPlayerHitboxPlan.stock(3.6)
 	_check(is_equal_approx((tall[0]["position"] as Vector3).y, 3.24), "positions scale with height")
 	_check(is_equal_approx(float(tall[0]["radius"]), 0.3), "radii scale with height")
-	var big := DotPlayerHitboxPlan.stock(1.8, 1.1)
+	var big := GSPlayerHitboxPlan.stock(1.8, 1.1)
 	_check(float(big[0]["radius"]) > float(zs[0]["radius"]), "hitbox_scale grows radii")
 	_check((big[0]["position"] as Vector3) == (zs[0]["position"] as Vector3), "hitbox_scale leaves positions")
 	_check(int(zs[0]["precedence"]) > int(zs[2]["precedence"]), "head outranks torso")
-	_check(is_equal_approx(float(DotPlayerHitboxPlan.stock(0.0)[0]["radius"]), 0.15 * 0.1 / 1.8), "zero height is clamped")
+	_check(is_equal_approx(float(GSPlayerHitboxPlan.stock(0.0)[0]["radius"]), 0.15 * 0.1 / 1.8), "zero height is clamped")
 
 
 func _test_config() -> void:
 	_section_count += 1
-	var base := DotPlayerHitboxPlan.stock()
-	var r := DotPlayerHitboxPlan.from_config(base, {"disabled": ["hand_l", "hand_r"]})
+	var base := GSPlayerHitboxPlan.stock()
+	var r := GSPlayerHitboxPlan.from_config(base, {"disabled": ["hand_l", "hand_r"]})
 	_check(r.ok and (r.value as Array).size() == 12, "disabled drops zones")
 	_check(base.size() == 14, "base is not modified")
-	r = DotPlayerHitboxPlan.from_config(base, {"groups": {"torso": "stomach"}})
+	r = GSPlayerHitboxPlan.from_config(base, {"groups": {"torso": "stomach"}})
 	_check(r.ok and r.value[2]["group"] == &"stomach", "groups remaps a zone")
-	r = DotPlayerHitboxPlan.from_config(base, {"zones": {"core": {"group": "core", "shape": "sphere", "radius": 0.2, "position": [0, 1.0, 0]}}})
+	r = GSPlayerHitboxPlan.from_config(base, {"zones": {"core": {"group": "core", "shape": "sphere", "radius": 0.2, "position": [0, 1.0, 0]}}})
 	_check(r.ok and (r.value as Array).size() == 15 and r.value[14]["group"] == &"core", "a new zone is added")
-	r = DotPlayerHitboxPlan.from_config(base, {"zones": {"head": {"radius": 0.5}}})
+	r = GSPlayerHitboxPlan.from_config(base, {"zones": {"head": {"radius": 0.5}}})
 	_check(r.ok and is_equal_approx(float(r.value[0]["radius"]), 0.5) and r.value[0]["group"] == &"head", "a zone is overridden in part")
-	r = DotPlayerHitboxPlan.from_config(base, {"groups": {"nope": "head"}})
-	_check(not r.ok and r.code() == DotError.CODE_INVALID, "unknown zone in groups fails")
-	r = DotPlayerHitboxPlan.from_config(base, {"zones": {"x": {"radius": 0.2}}})
+	r = GSPlayerHitboxPlan.from_config(base, {"groups": {"nope": "head"}})
+	_check(not r.ok and r.code() == GSError.CODE_INVALID, "unknown zone in groups fails")
+	r = GSPlayerHitboxPlan.from_config(base, {"zones": {"x": {"radius": 0.2}}})
 	_check(not r.ok, "a new zone with no group fails")
-	r = DotPlayerHitboxPlan.from_config(base, {"disabled": "head"})
+	r = GSPlayerHitboxPlan.from_config(base, {"disabled": "head"})
 	_check(not r.ok, "disabled must be an array")
 
 
@@ -102,7 +102,7 @@ func _test_node() -> void:
 	_section_count += 1
 	var host := Node3D.new()
 	add_child(host)
-	var hb := DotPlayerHitboxes.new()
+	var hb := GSPlayerHitboxes.new()
 	hb.hitbox_factory = _stub_box
 	hb.set_factory = func() -> Node3D: return Node3D.new()
 	host.add_child(hb)
@@ -124,16 +124,16 @@ func _test_node() -> void:
 
 func _test_off_by_default() -> void:
 	_section_count += 1
-	var hb := DotPlayerHitboxes.new()
+	var hb := GSPlayerHitboxes.new()
 	_check(hb.enabled == false, "off by default")
 	add_child(hb)
 	_check(hb.hitbox_set() == null and hb.get_child_count() == 0, "adding it builds nothing")
-	if DotPlayerHitboxes.class_script("DotHitbox") == null:
+	if GSPlayerHitboxes.class_script("GSHitbox") == null:
 		var r := hb.build()
-		_check(not r.ok and r.code() == DotError.CODE_INVALID, "without dot-combat build fails cleanly")
+		_check(not r.ok and r.code() == GSError.CODE_INVALID, "without dot-combat build fails cleanly")
 	else:
 		_check(true, "dot-combat present, fallback exercised by the game")
-	_check(DotPlayerHitboxes.class_script("NoSuchClassAnywhere") == null, "unknown class is null")
+	_check(GSPlayerHitboxes.class_script("NoSuchClassAnywhere") == null, "unknown class is null")
 	hb.queue_free()
 
 
@@ -145,15 +145,15 @@ func _reach(z: Dictionary) -> float:
 func _test_wall_clamp() -> void:
 	_section_count += 1
 	var widest := 0.0
-	for z in DotPlayerHitboxPlan.stock(1.8):
+	for z in GSPlayerHitboxPlan.stock(1.8):
 		widest = maxf(widest, _reach(z))
 	_check(widest > 0.35, "unclamped stock reaches past the 0.35 m capsule (%.2f m)" % widest)
 	for hs in [0.92, 1.0, 1.1, 2.0]:
 		var worst := 0.0
-		for z in DotPlayerHitboxPlan.stock(1.8, hs, 0.35):
+		for z in GSPlayerHitboxPlan.stock(1.8, hs, 0.35):
 			worst = maxf(worst, _reach(z))
 		_check(worst <= 0.35 + 0.0001, "scale %.2f clamped within the capsule (%.3f m)" % [hs, worst])
-	var cl := DotPlayerHitboxPlan.stock(1.8, 1.0, 0.35)
+	var cl := GSPlayerHitboxPlan.stock(1.8, 1.0, 0.35)
 	_check(cl.size() == 14 and cl[3]["id"] == &"arm_l" and float((cl[3]["position"] as Vector3).x) < 0.0, "arm keeps its side")
 	_check(is_equal_approx(float(cl[0]["radius"]), 0.15), "a zone already inside is unchanged")
-	_check(DotPlayerHitboxPlan.stock(1.8)[3]["position"] == Vector3(-0.37, 1.12, 0), "no half_width leaves stock as it was")
+	_check(GSPlayerHitboxPlan.stock(1.8)[3]["position"] == Vector3(-0.37, 1.12, 0), "no half_width leaves stock as it was")

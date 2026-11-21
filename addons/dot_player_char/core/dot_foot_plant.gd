@@ -1,7 +1,7 @@
 ## Feet that stand still on the ground while a body walks: over a gait phase each foot is locked
 ## to a world point for its stance and swings in a clamped arc to where it lands next. Pure maths;
-## [method DotHumanoidIk.two_bone_to] bends a leg to a target. One instance per body.
-class_name DotFootPlant
+## [method GSHumanoidIk.two_bone_to] bends a leg to a target. One instance per body.
+class_name GSFootPlant
 extends RefCounted
 
 ## Share of a cycle each foot stands on the ground.

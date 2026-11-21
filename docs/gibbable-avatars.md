@@ -8,14 +8,14 @@ Two implementations exist and neither is complete for imported avatars.
 
 | | Player body (`nodes/dot_player_body_break.gd`) | NPC limbs (GameSpice NPC `view/dot_npc_gibs.gd`, `runtime/dot_npc_limbs.gd`) |
 | --- | --- | --- |
-| Who decides | the game's `DotPlayerBreakRules` (cvars `break_mode`, `break_limbs`, `break_criticals_only`), seeded from victim and tick | the server's `DotNpcLimbs` (per-limb health, `sever`, replicated mask); config yml names each limb's bones |
-| Limb = | every bone of one role (head, arm L/R, leg L/R) plus all bones below, role from bone **name** (`DotRagdollScan.role_of_name`) | the bones listed in the limb definition |
-| Cut | each triangle goes to the limb that owns its strongest-weighted vertex bone (`bake_bones`), baked as posed into a plain mesh and thrown as a `RigidBody3D` | same idea (`DotNpcGibs`, cut by vertex weight, cached per mesh) |
+| Who decides | the game's `GSPlayerBreakRules` (cvars `break_mode`, `break_limbs`, `break_criticals_only`), seeded from victim and tick | the server's `GSNpcLimbs` (per-limb health, `sever`, replicated mask); config yml names each limb's bones |
+| Limb = | every bone of one role (head, arm L/R, leg L/R) plus all bones below, role from bone **name** (`GSRagdollScan.role_of_name`) | the bones listed in the limb definition |
+| Cut | each triangle goes to the limb that owns its strongest-weighted vertex bone (`bake_bones`), baked as posed into a plain mesh and thrown as a `RigidBody3D` | same idea (`GSNpcGibs`, cut by vertex weight, cached per mesh) |
 | What is left | the top bones scaled to 0.001; **no cap**, so the torso shows an open hole and the piece is a hollow shell | bone collapsed, a drawn **stump** (flesh collar, muscle ring, bone disc, marrow dot), drip and wound marks, floor pools |
-| Blood and gore level | none | `DotNpcGore` level, with gib and wound caps (cvars, not hard numbers) |
-| Undo | `DotHumanoidFigure.mend()` on respawn | `DotNpcGibs.restore` |
+| Blood and gore level | none | `GSNpcGore` level, with gib and wound caps (cvars, not hard numbers) |
+| Undo | `GSHumanoidFigure.mend()` on respawn | `GSNpcGibs.restore` |
 
-Everything else a body needs on death already exists and works on any skinned figure: `DotPlayerRagdoll` builds six jointed parts from the skeleton's roles (skinned or rigid), with reactions and a fade (docs/ragdolls.md). The decal art (`gs-fx` `gibs.png`, `blood_splatter.png`) is shared.
+Everything else a body needs on death already exists and works on any skinned figure: `GSPlayerRagdoll` builds six jointed parts from the skeleton's roles (skinned or rigid), with reactions and a fade (docs/ragdolls.md). The decal art (`gs-fx` `gibs.png`, `blood_splatter.png`) is shared.
 
 ## What an avatar must supply
 
@@ -34,14 +34,14 @@ Splitting by bone weight needs only a skeleton and skin weights, which every ani
 
 **Auto-gib pipeline (run once per avatar at load, cached by mesh id):**
 
-1. **Role map.** Resolve each bone to HEAD, ARM_L/R, LEG_L/R, TORSO by (a) a `BoneMap` or Godot's `SkeletonProfileHumanoid` when the avatar carries one (`DotHumanoidActions.profile_bone_of` already guesses a humanoid map from names), then (b) the existing name rule, then (c) geometry as the last resort: the five largest subtrees by hanging off the pelvis/spine, classified by rest position (up = head, left/right of the spine axis = arm if above the hip height else leg). A rig that cannot be classified is a loud error naming the bones, never a silent "no gibs".
+1. **Role map.** Resolve each bone to HEAD, ARM_L/R, LEG_L/R, TORSO by (a) a `BoneMap` or Godot's `SkeletonProfileHumanoid` when the avatar carries one (`GSHumanoidActions.profile_bone_of` already guesses a humanoid map from names), then (b) the existing name rule, then (c) geometry as the last resort: the five largest subtrees by hanging off the pelvis/spine, classified by rest position (up = head, left/right of the spine axis = arm if above the hip height else leg). A rig that cannot be classified is a loud error naming the bones, never a silent "no gibs".
 2. **Cut levels.** Per role, a list of cut joints (head at neck; arm at shoulder, elbow, wrist; leg at hip, knee, ankle), all from data, so a game chooses a clean limb or a segment. Hand-held items and wearables ride the bone and go with the piece.
 3. **Weighted split.** Triangles assigned by dominant bone among the piece's bones (as `bake_bones`); a triangle straddling the cut is cut at the joint plane (clip and re-triangulate) instead of assigned whole, so the edge is straight and the cap can close it. Cached triangle-to-bone arrays per surface avoid re-reading weights per death.
-4. **Cap, generated.** Walk the boundary edges between the kept and cut triangles to get the cut loop, fill it with a fan around its centroid, with an inner muscle ring and a bone disc (the look `DotNpcGibs` already builds for stumps), UV-free flat materials. The same loop closes both the piece and the stump left on the body, so neither is hollow. For the body, hide the cut triangles with the collapsed bone as now (no stretched slivers) but draw the cap on the parent bone.
-5. **Effects.** Blood burst, wound marks and floor pool through the existing `DotNpcGore` levels and `gs-fx` decals; gib pieces fade with `DotPlayerBreakRules`. Gore off or headless: nothing is built.
+4. **Cap, generated.** Walk the boundary edges between the kept and cut triangles to get the cut loop, fill it with a fan around its centroid, with an inner muscle ring and a bone disc (the look `GSNpcGibs` already builds for stumps), UV-free flat materials. The same loop closes both the piece and the stump left on the body, so neither is hollow. For the body, hide the cut triangles with the collapsed bone as now (no stretched slivers) but draw the cap on the parent bone.
+5. **Effects.** Blood burst, wound marks and floor pool through the existing `GSNpcGore` levels and `gs-fx` decals; gib pieces fade with `GSPlayerBreakRules`. Gore off or headless: nothing is built.
 6. **Server and net.** Nothing new on the wire: the server already sends the death and the seed; the cut is presentation, identical for every viewer by the seed.
 
-**One implementation, not two.** `DotNpcGibs` and `DotPlayerBodyBreak._break_skinned` are the same algorithm with different decoration. Do not write a third: put the cut and the cap in one class both call (the implementer checks the dependency direction between GameSpice NPC and GameSpice Player Char; GameSpice Player Char requires only GameSpice Core and GameSpice Player), and let the NPC path keep its limb-health rules on top.
+**One implementation, not two.** `GSNpcGibs` and `GSPlayerBodyBreak._break_skinned` are the same algorithm with different decoration. Do not write a third: put the cut and the cap in one class both call (the implementer checks the dependency direction between GameSpice NPC and GameSpice Player Char; GameSpice Player Char requires only GameSpice Core and GameSpice Player), and let the NPC path keep its limb-health rules on top.
 
 ## Cost and limits
 

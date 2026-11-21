@@ -1,18 +1,18 @@
-class_name DotPlayerCharVisual
+class_name GSPlayerCharVisual
 extends Node
 
 ## The seam between "who this character is" and "what is drawn".
-## Implemented by [DotPlayerModelVisual] (3D) and [DotPlayerSpriteVisual] (2D); a game with its own art
+## Implemented by [GSPlayerModelVisual] (3D) and [GSPlayerSpriteVisual] (2D); a game with its own art
 ## writes a third, and a game with no art still gets the metrics, customisation and validation.
 
 ## Whether this visual is currently being drawn.
-## Set by [DotPlayerChar]: first-person self and third-person body are two visuals, and only one shows.
+## Set by [GSPlayerChar]: first-person self and third-person body are two visuals, and only one shows.
 @export var visual_enabled: bool = true
 
 ## Where the drawn node hangs. Unset, the nearest ancestor that can place it ([Node3D] or [Node2D]).
 ## The drawn node moves onto the anchor because a visual is a plain [Node]: a [Node3D] under it would
 ## sit at the world origin whatever its player did. This visual keeps the reference.
-@export var anchor_ref: DotNodeRef = null
+@export var anchor_ref: GSNodeRef = null
 
 ## Not [code]CHANNEL[/code]: the parent chain already has one.
 const SEAT_CHANNEL := "player.char"
@@ -23,7 +23,7 @@ var _seat_pending := false
 ## Called when the character, or the look, changes. Must be safe to call repeatedly.
 ## An editing menu calls it several times a second, so an implementation that appends rather than
 ## replaces grows a hat every frame.
-func apply_char(_def: DotPlayerCharDef, _look: DotPlayerCharLook) -> void:
+func apply_char(_def: GSPlayerCharDef, _look: GSPlayerCharLook) -> void:
 	pass
 
 
@@ -41,7 +41,7 @@ func set_shown(_shown: bool) -> void:
 
 
 ## Where this visual thinks the eyes are, if it knows better than the definition.
-## Negative (the default) means no opinion and [DotPlayerChar] uses the definition's number; a rig
+## Negative (the default) means no opinion and [GSPlayerChar] uses the definition's number; a rig
 ## with a head bone answers so a first-person camera lines up with the model.
 func eye_offset() -> float:
 	return -1.0
@@ -127,7 +127,7 @@ func seat() -> bool:
 	else:
 		drawn.reparent(anchor, false)
 
-	DotLog.debug(SEAT_CHANNEL, "the drawn node hangs off its anchor", {
+	GSLog.debug(SEAT_CHANNEL, "the drawn node hangs off its anchor", {
 		"visual": String(name), "anchor": String(anchor.name),
 	})
 	return true

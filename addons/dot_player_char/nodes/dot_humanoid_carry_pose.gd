@@ -1,7 +1,7 @@
-class_name DotHumanoidCarryPose
+class_name GSHumanoidCarryPose
 extends RefCounted
 
-## The gun arm of a [DotHumanoidFigure] as others see it: puts the gun hand where a [DotHumanoidCarry] stance
+## The gun arm of a [GSHumanoidFigure] as others see it: puts the gun hand where a [GSHumanoidCarry] stance
 ## says, eased between ready, sprint, aim, reload and swap, swaying with the gait, and gives the other hand the
 ## foregrip. Written over the clip after the legs; drawn only, so hit zones and the shot never follow it.
 
@@ -12,7 +12,7 @@ const CHEST_BONE := "Torso"
 ## Where the gun arm's elbow points, in the figure's frame: right, down, a little back.
 const POLE := Vector3(0.5, -1.0, 0.25)
 
-## The share of the view's pitch the waist and chest already bend ([constant DotHumanoidAim.AIM_BONES]).
+## The share of the view's pitch the waist and chest already bend ([constant GSHumanoidAim.AIM_BONES]).
 const CHEST_PITCH := 0.22
 
 ## Seconds to ease the whole carry in or out, a stance (sprint aside, which the figure eases), and the aim.
@@ -43,7 +43,7 @@ const GRIP_ARMS: Array[String] = ["LowerArm.R", "LowerArm.L"]
 const KICK_SECONDS := 0.1
 
 ## The style drawn, or null for none; until [method set_class] is called a gun is carried as a rifle.
-var style: DotHumanoidCarry = null
+var style: GSHumanoidCarry = null
 ## Whether a game chose the style: only then does the other hand take the foregrip on its own.
 var explicit := false
 
@@ -68,7 +68,7 @@ var _reload_time := 0.0
 var _turns: Array[Quaternion] = []
 var _bones: Dictionary = {}
 var _chest := -1
-## The bones from the root to [member _chest], for [method DotHumanoidIk.chain_pose] every frame.
+## The bones from the root to [member _chest], for [method GSHumanoidIk.chain_pose] every frame.
 var _chest_chain := PackedInt32Array()
 var _shoulder := -1
 var _hand_frame := Transform3D.IDENTITY
@@ -87,17 +87,17 @@ var _grip_bones := PackedInt32Array()
 var _grip_pose: Array[Quaternion] = []
 
 
-## How the gun is carried: a class ([constant DotHumanoidCarry.CLASSES]: &"rifle", &"pistol", &"sniper", ...), a
-## [DotHumanoidCarry], or null for the clip's arms alone.
+## How the gun is carried: a class ([constant GSHumanoidCarry.CLASSES]: &"rifle", &"pistol", &"sniper", ...), a
+## [GSHumanoidCarry], or null for the clip's arms alone.
 func set_class(kind: Variant) -> void:
 	explicit = true
 	if kind is StringName or kind is String:
-		_set_style(DotHumanoidCarry.for_class(StringName(kind)))
+		_set_style(GSHumanoidCarry.for_class(StringName(kind)))
 	else:
-		_set_style(kind as DotHumanoidCarry)
+		_set_style(kind as GSHumanoidCarry)
 
 
-func _set_style(p_style: DotHumanoidCarry) -> void:
+func _set_style(p_style: GSHumanoidCarry) -> void:
 	style = p_style
 	_turns.clear()
 	if style == null:
@@ -116,7 +116,7 @@ func fired() -> void:
 ## Eases the blends by [param delta]; [param active] says whether the carry is drawn at all. Every frame, LOD or not.
 func step(delta: float, active: bool) -> void:
 	if active and style == null and not explicit:
-		_set_style(DotHumanoidCarry.for_class(&"rifle"))
+		_set_style(GSHumanoidCarry.for_class(&"rifle"))
 	if not _stepped:
 		# A figure that appears already holding a gun is not seen raising it: the first frame is the held pose, not the bind
 		# pose the carry then eases out of (the judge's frame-0 snap).
@@ -144,7 +144,7 @@ func apply(skeleton: Skeleton3D, model: Node3D, anim: AnimationPlayer, to_figure
 	if skeleton.get_instance_id() != _skeleton_id:
 		_measure(skeleton, model, anim, to_figure)
 	if not _bones.has(animation):
-		_bones[animation] = DotHumanoidIk.keyed_bones(skeleton, model, animation, ARM_BONES)
+		_bones[animation] = GSHumanoidIk.keyed_bones(skeleton, model, animation, ARM_BONES)
 	var bones: Array[int] = _bones[animation]
 	if bones.is_empty() or _chest < 0:
 		return
@@ -160,7 +160,7 @@ func apply(skeleton: Skeleton3D, model: Node3D, anim: AnimationPlayer, to_figure
 	turn = turn.slerp(_turns[4], swap)
 	# Ride the chest as the clip moves it: all of its travel, part of its turn (less when aiming).
 	# One walk from the root: the arm hangs off the chest (Torso, Shoulder, UpperArm, LowerArm, hand).
-	var chest_global := DotHumanoidIk.chain_pose(skeleton, _chest_chain)
+	var chest_global := GSHumanoidIk.chain_pose(skeleton, _chest_chain)
 	var shoulder_global := chest_global * skeleton.get_bone_pose(_shoulder)
 	var chest := to_figure * chest_global
 	var chest_ref := to_figure * _chest_ref
@@ -188,7 +188,7 @@ func apply(skeleton: Skeleton3D, model: Node3D, anim: AnimationPlayer, to_figure
 		turn = turn * Quaternion(Vector3.RIGHT, deg_to_rad(s.kick_climb) * _kick)
 	# The hand bone that puts the gun's frame there, in skeleton space.
 	var hand := to_figure.affine_inverse() * Transform3D(Basis(turn), grip) * _hand_frame_inv
-	DotHumanoidIk.two_bone_under(skeleton, bones, shoulder_global, hand.origin, to_figure.basis.inverse() * POLE, w)
+	GSHumanoidIk.two_bone_under(skeleton, bones, shoulder_global, hand.origin, to_figure.basis.inverse() * POLE, w)
 	var upper_global := shoulder_global * skeleton.get_bone_pose(bones[0])
 	var lower_global := upper_global * skeleton.get_bone_pose(bones[1])
 	var lower := lower_global.basis.get_rotation_quaternion()
@@ -281,10 +281,10 @@ func _measure(skeleton: Skeleton3D, model: Node3D, anim: AnimationPlayer, to_fig
 			_fingers.append(child)
 			_finger_rest.append(skeleton.get_bone_rest(child).basis.get_rotation_quaternion())
 	_measure_grip(skeleton, model, anim)
-	_hand_frame = DotHumanoidFrames.hand_frame(skeleton, anim, model, to_figure)
+	_hand_frame = GSHumanoidFrames.hand_frame(skeleton, anim, model, to_figure)
 	_hand_frame_inv = _hand_frame.affine_inverse()
-	_chest_ref = DotHumanoidFrames.held_pose(skeleton, anim, model, _chest)
-	_chest_chain = DotHumanoidIk.chain_to(skeleton, _chest)
+	_chest_ref = GSHumanoidFrames.held_pose(skeleton, anim, model, _chest)
+	_chest_chain = GSHumanoidIk.chain_to(skeleton, _chest)
 
 
 ## The finger segments (each finger root's descendants, both hands) and their closed pose in [constant GRIP_CLIP].

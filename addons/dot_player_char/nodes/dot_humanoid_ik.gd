@@ -1,5 +1,5 @@
-## Pose maths for [DotHumanoidFigure]: a two-bone IK and skeleton-space bone transforms.
-class_name DotHumanoidIk
+## Pose maths for [GSHumanoidFigure]: a two-bone IK and skeleton-space bone transforms.
+class_name GSHumanoidIk
 extends RefCounted
 
 

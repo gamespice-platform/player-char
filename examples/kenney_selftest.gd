@@ -13,7 +13,7 @@ var _failed := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	print("dot-player-char kenney self-test")
 	_data()
 	await _packs()
@@ -32,26 +32,26 @@ func _check(ok: bool, what: String) -> void:
 func _data() -> void:
 	print("data")
 	var total := 0
-	for pack in DotKenneyCharacters.packs():
-		_check(DotKenneyCharacters.display_name(pack, &"nope") == "", "%s: an unknown skin has no name" % pack)
-		for skin in DotKenneyCharacters.skins(pack):
+	for pack in GSKenneyCharacters.packs():
+		_check(GSKenneyCharacters.display_name(pack, &"nope") == "", "%s: an unknown skin has no name" % pack)
+		for skin in GSKenneyCharacters.skins(pack):
 			total += 1
-			_check(DotKenneyCharacters.display_name(pack, skin).begins_with("GS - "), "%s/%s is named GS - <name>" % [pack, skin])
-			_check(FileAccess.file_exists(DotKenneyCharacters.texture_path(pack, skin)), "%s/%s has a texture file" % [pack, skin])
+			_check(GSKenneyCharacters.display_name(pack, skin).begins_with("GS - "), "%s/%s is named GS - <name>" % [pack, skin])
+			_check(FileAccess.file_exists(GSKenneyCharacters.texture_path(pack, skin)), "%s/%s has a texture file" % [pack, skin])
 	_check(total == SKIN_COUNT, "eight skins in two packs (%d)" % total)
-	_check(DotKenneyCharacters.packs().size() == 2, "two packs")
-	_check(DotKenneyCharacters.build(&"nope", &"x") == null, "an unknown pack builds nothing")
+	_check(GSKenneyCharacters.packs().size() == 2, "two packs")
+	_check(GSKenneyCharacters.build(&"nope", &"x") == null, "an unknown pack builds nothing")
 	var credits := FileAccess.get_file_as_string("res://addons/dot_player_char/people/CREDITS.md")
 	_check(credits.contains("Animated Characters Protagonists") and credits.contains("Animated Characters Retro") and credits.contains("CC0"), "CREDITS.md lists both packs as CC0")
-	for path in DotKenneyCharacters.content_paths():
+	for path in GSKenneyCharacters.content_paths():
 		_check(ResourceLoader.exists(path), "%s loads" % path.get_file())
 
 
 func _packs() -> void:
-	for pack in DotKenneyCharacters.packs():
+	for pack in GSKenneyCharacters.packs():
 		print(pack)
-		var skins := DotKenneyCharacters.skins(pack)
-		var person := DotKenneyCharacters.build(pack, skins[0])
+		var skins := GSKenneyCharacters.skins(pack)
+		var person := GSKenneyCharacters.build(pack, skins[0])
 		_check(person != null, "%s builds" % pack)
 		if person == null:
 			continue
@@ -62,18 +62,18 @@ func _packs() -> void:
 		var skeleton := model.find_children("*", "Skeleton3D", true, false).front() as Skeleton3D
 		var meshes := model.find_children("*", "MeshInstance3D", true, false)
 		_check(not meshes.is_empty() and (meshes[0] as MeshInstance3D).material_override != null, "%s: the skin is on the body" % pack)
-		_check(absf(person.scale.y - DotKenneyCharacters.SCALE) < 0.0001, "%s: scaled to the family's height" % pack)
+		_check(absf(person.scale.y - GSKenneyCharacters.SCALE) < 0.0001, "%s: scaled to the family's height" % pack)
 		var height := _height(skeleton) * person.scale.y
 		_check(absf(height - 1.8) < 0.25, "%s: stands about 1.8 m (%.2f)" % [pack, height])
 		var clips: Array[StringName] = []
-		clips.append_array(DotKenneyCharacters.REQUIRED)
-		clips.append_array(DotKenneyCharacters.OPTIONAL)
+		clips.append_array(GSKenneyCharacters.REQUIRED)
+		clips.append_array(GSKenneyCharacters.OPTIONAL)
 		for clip in clips:
 			_check(player.has_animation(clip), "%s plays %s" % [pack, clip])
 			if player.has_animation(clip):
 				_play(pack, clip, player, skeleton, model)
 		for skin in skins:
-			var other := DotKenneyCharacters.build(pack, skin)
+			var other := GSKenneyCharacters.build(pack, skin)
 			_check(other != null and other.get_node("AnimationPlayer").has_animation(&"walk"), "%s/%s builds with its clips" % [pack, skin])
 			if other != null:
 				other.free()

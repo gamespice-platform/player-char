@@ -1,4 +1,4 @@
-class_name DotPlayerDeathReactions
+class_name GSPlayerDeathReactions
 extends RefCounted
 
 ## The set of ways a body may go down, and the one rule that picks among them.
@@ -13,7 +13,7 @@ const POWER_LAUNCH := &"power_launch"
 const FACE_PLANT := &"face_plant"
 const CRUMPLE := &"crumple"
 
-## The stock sound ids, which [DotPlayerDeathSounds] gives files for.
+## The stock sound ids, which [GSPlayerDeathSounds] gives files for.
 const SOUND_WHOOSH := &"ragdoll.whoosh"
 const SOUND_FACE_PLANT := &"ragdoll.face_plant"
 const SOUND_THUD := &"ragdoll.thud"
@@ -23,27 +23,27 @@ const SOUND_SLUMP := &"ragdoll.slump"
 const PARAM_REACTION := &"death_reaction"
 const PARAM_POWER := &"death_power"
 
-var _list: Array[DotPlayerDeathReaction] = []
+var _list: Array[GSPlayerDeathReaction] = []
 
 
 ## The stock set: limp, headshot launch, power launch, face plant, crumple.
-static func stock() -> DotPlayerDeathReactions:
-	var out := DotPlayerDeathReactions.new()
+static func stock() -> GSPlayerDeathReactions:
+	var out := GSPlayerDeathReactions.new()
 
-	var limp := DotPlayerDeathReaction.new()
+	var limp := GSPlayerDeathReaction.new()
 	limp.id = LIMP
 	limp.display_name = "Limp"
 	limp.weight = 4.0
-	limp.pose = DotPlayerDeathReaction.Pose.LIMP
+	limp.pose = GSPlayerDeathReaction.Pose.LIMP
 	limp.land_sound = SOUND_THUD
 	out.add(limp)
 
 	# A headshot throws the head back and the body up after it: the reward the shooter sees.
-	var head := DotPlayerDeathReaction.new()
+	var head := GSPlayerDeathReaction.new()
 	head.id = HEADSHOT_LAUNCH
 	head.display_name = "Headshot launch"
 	head.weight = 6.0
-	head.pose = DotPlayerDeathReaction.Pose.LAUNCH
+	head.pose = GSPlayerDeathReaction.Pose.LAUNCH
 	head.needs_headshot = true
 	head.push = 1.0
 	head.hit_push = 7.0
@@ -56,11 +56,11 @@ static func stock() -> DotPlayerDeathReactions:
 	out.add(head)
 
 	# A heavy weapon carries the whole body along the shot.
-	var power := DotPlayerDeathReaction.new()
+	var power := GSPlayerDeathReaction.new()
 	power.id = POWER_LAUNCH
 	power.display_name = "Power launch"
 	power.weight = 8.0
-	power.pose = DotPlayerDeathReaction.Pose.LAUNCH
+	power.pose = GSPlayerDeathReaction.Pose.LAUNCH
 	power.needs_power = true
 	power.min_power = 0.5
 	power.push = 2.0
@@ -74,11 +74,11 @@ static func stock() -> DotPlayerDeathReactions:
 	out.add(power)
 
 	# Straight down on the face, stiff, and a smack when it lands.
-	var plant := DotPlayerDeathReaction.new()
+	var plant := GSPlayerDeathReaction.new()
 	plant.id = FACE_PLANT
 	plant.display_name = "Face plant"
 	plant.weight = 1.5
-	plant.pose = DotPlayerDeathReaction.Pose.FACE_PLANT
+	plant.pose = GSPlayerDeathReaction.Pose.FACE_PLANT
 	plant.push = 0.0
 	plant.hit_push = 0.0
 	plant.land_sound = SOUND_FACE_PLANT
@@ -86,11 +86,11 @@ static func stock() -> DotPlayerDeathReactions:
 	out.add(plant)
 
 	# The legs go: down where they stood.
-	var crumple := DotPlayerDeathReaction.new()
+	var crumple := GSPlayerDeathReaction.new()
 	crumple.id = CRUMPLE
 	crumple.display_name = "Crumple"
 	crumple.weight = 2.5
-	crumple.pose = DotPlayerDeathReaction.Pose.CRUMPLE
+	crumple.pose = GSPlayerDeathReaction.Pose.CRUMPLE
 	crumple.push = 0.3
 	crumple.hit_push = 0.8
 	crumple.land_sound = SOUND_SLUMP
@@ -101,7 +101,7 @@ static func stock() -> DotPlayerDeathReactions:
 
 
 ## Adds [param reaction], replacing one with the same id. False for an empty id.
-func add(reaction: DotPlayerDeathReaction) -> bool:
+func add(reaction: GSPlayerDeathReaction) -> bool:
 	if reaction == null or reaction.id == &"":
 		return false
 	for i in range(_list.size()):
@@ -112,7 +112,7 @@ func add(reaction: DotPlayerDeathReaction) -> bool:
 	return true
 
 
-func find(id: StringName) -> DotPlayerDeathReaction:
+func find(id: StringName) -> GSPlayerDeathReaction:
 	for reaction in _list:
 		if reaction.id == id:
 			return reaction
@@ -145,12 +145,12 @@ func apply_weights(text: String) -> int:
 		if pair.size() != 2:
 			pair = item.strip_edges().split(":", false)
 		if pair.size() != 2:
-			DotLog.warn(CHANNEL, "a reaction weight is not id=number; skipped", {"item": item})
+			GSLog.warn(CHANNEL, "a reaction weight is not id=number; skipped", {"item": item})
 			continue
 		var reaction := find(StringName(pair[0].strip_edges()))
 		var value := pair[1].strip_edges()
 		if reaction == null or not value.is_valid_float():
-			DotLog.warn(CHANNEL, "unknown reaction or bad weight; skipped", {"item": item})
+			GSLog.warn(CHANNEL, "unknown reaction or bad weight; skipped", {"item": item})
 			continue
 		reaction.weight = clampf(value.to_float(), 0.0, 100.0)
 		set_count += 1
@@ -160,7 +160,7 @@ func apply_weights(text: String) -> int:
 ## Gives every launch reaction weight 0: the default, a drop with no throw.
 func silence_launches() -> void:
 	for reaction in _list:
-		if reaction.pose == DotPlayerDeathReaction.Pose.LAUNCH:
+		if reaction.pose == GSPlayerDeathReaction.Pose.LAUNCH:
 			reaction.weight = 0.0
 
 
@@ -183,7 +183,7 @@ func pick(
 		if asked != null and asked.weight > 0.0 and asked.qualifies(headshot, power, damage, true):
 			return asked.id
 
-	var candidates: Array[DotPlayerDeathReaction] = []
+	var candidates: Array[GSPlayerDeathReaction] = []
 	var total := 0.0
 	for reaction in _list:
 		if reaction.weight <= 0.0 or not reaction.qualifies(headshot, power, damage, false):
@@ -206,14 +206,14 @@ func pick(
 
 
 ## The reaction a weapon definition names, or empty. Duck-typed over anything with a
-## [code]params[/code] dictionary (GameSpice Weapon's [code]DotWeaponDef[/code]), so this addon names
+## [code]params[/code] dictionary (GameSpice Weapon's [code]GSWeaponDef[/code]), so this addon names
 ## no weapon class.
 static func weapon_reaction(weapon_def: Object) -> StringName:
 	var params := _params_of(weapon_def)
 	return StringName(str(params.get(PARAM_REACTION, ""))) if params.has(PARAM_REACTION) else &""
 
 
-## How powerful a weapon is, 0 to 1, for [member DotPlayerDeathReaction.needs_power]: its def's
+## How powerful a weapon is, 0 to 1, for [member GSPlayerDeathReaction.needs_power]: its def's
 ## [code]params.death_power[/code] when it has one, else 0. A game with no such field can pass
 ## its own number (damage over a threshold, say) to [method pick] instead.
 static func weapon_power(weapon_def: Object) -> float:

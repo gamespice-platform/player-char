@@ -1,5 +1,5 @@
 @tool
-class_name DotPlayerAnimClip
+class_name GSPlayerAnimClip
 extends Resource
 
 ## One animation, described in a way both a rig and a sprite sheet can honour.
@@ -24,7 +24,7 @@ extends Resource
 
 @export_group("For a sprite sheet")
 
-## Which row of the sheet. See [code]DotPlayerSpriteDef.frame_index[/code].
+## Which row of the sheet. See [code]GSPlayerSpriteDef.frame_index[/code].
 @export_range(0, 512, 1) var row: int = 0
 
 ## How many frames the animation has.
@@ -48,8 +48,8 @@ static func make(
 	p_loops: bool = true,
 	p_row: int = 0,
 	p_frames: int = 1
-) -> DotPlayerAnimClip:
-	var c := DotPlayerAnimClip.new()
+) -> GSPlayerAnimClip:
+	var c := GSPlayerAnimClip.new()
 	c.id = p_id
 	c.loops = p_loops
 	c.row = p_row
@@ -133,4 +133,4 @@ func describe() -> String:
 
 
 func _to_string() -> String:
-	return "DotPlayerAnimClip(%s)" % describe()
+	return "GSPlayerAnimClip(%s)" % describe()

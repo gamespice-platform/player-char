@@ -1,7 +1,7 @@
-class_name DotHumanoidCarry
+class_name GSHumanoidCarry
 extends Resource
 
-## How a person seen by others carries a gun of one class: where the gun hand holds it and which way the muzzle points in each stance, how the gun sways with the gait, and where the other hand takes the foregrip. [DotHumanoidFigure] draws it ([member DotHumanoidFigure.carry], [method DotHumanoidCarryPose.set_class]); see docs/people.md, "Carrying a gun".
+## How a person seen by others carries a gun of one class: where the gun hand holds it and which way the muzzle points in each stance, how the gun sways with the gait, and where the other hand takes the foregrip. [GSHumanoidFigure] draws it ([member GSHumanoidFigure.carry], [method GSHumanoidCarryPose.set_class]); see docs/people.md, "Carrying a gun".
 ## Cosmetic only: the gun is drawn where the arms put it; hit zones and the shot never follow it. A grip is where the gun hand's grip sits on a 1.8 m figure standing in the held-gun pose, in the figure's frame (metres; +X right, +Y up, -Z forward, feet at 0). A turn is the muzzle's pitch, yaw and roll in degrees
 ## (pitch up positive, yaw to the left positive, roll clockwise as the holder sees it negative).
 
@@ -50,8 +50,8 @@ const CLASSES: Array[StringName] = [&"rifle", &"smg", &"shotgun", &"sniper", &"h
 
 ## A new carry for [param kind] (one of [constant CLASSES]; "smg", "carbine", "assault" and the like read as
 ## the nearest), or null for a class held in one hand without a stance (melee, thrown). Each call builds its own.
-static func for_class(kind: StringName) -> DotHumanoidCarry:
-	var c: DotHumanoidCarry = new()
+static func for_class(kind: StringName) -> GSHumanoidCarry:
+	var c: GSHumanoidCarry = new()
 	match String(kind).to_lower():
 		"rifle", "assault", "carbine", "ar", "lmg":
 			c.id = &"rifle"

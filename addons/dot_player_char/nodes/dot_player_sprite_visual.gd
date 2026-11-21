@@ -1,9 +1,9 @@
-class_name DotPlayerSpriteVisual
-extends DotPlayerCharVisual
+class_name GSPlayerSpriteVisual
+extends GSPlayerCharVisual
 
 ## The 2D implementation of GameSpice Player Char's visual seam: one [Sprite2D] per layer, all indexed by
-## one frame number, which is why [DotPlayerSpriteDef] cuts every overlay on the base's grid.
-## It does not animate; [DotPlayerAnimDriver] (or a game) calls [method set_frame] and [method set_facing_angle].
+## one frame number, which is why [GSPlayerSpriteDef] cuts every overlay on the base's grid.
+## It does not animate; [GSPlayerAnimDriver] (or a game) calls [method set_frame] and [method set_facing_angle].
 
 ## Not [code]CHANNEL[/code]: the parent chain already has one.
 const SPRITE_CHANNEL := "player.sprite"
@@ -11,17 +11,17 @@ const SPRITE_CHANNEL := "player.sprite"
 ## The layers were rebuilt. Carries how many.
 signal rebuilt(layers: int)
 
-@export var catalogue: DotPlayerSpriteCatalogue = null
+@export var catalogue: GSPlayerSpriteCatalogue = null
 
 ## Material applied to every layer, for a game with a tint shader.
 ## No shader ships (a shader is art); above one tint channel, supply one whose parameters match
-## [member DotPlayerSpriteDef.tint_parameter].
+## [member GSPlayerSpriteDef.tint_parameter].
 @export var layer_material: Material = null
 
 @export var hide_when_not_shown: bool = true
 
-var _def: DotPlayerSpriteDef = null
-var _look: DotPlayerCharLook = null
+var _def: GSPlayerSpriteDef = null
+var _look: GSPlayerCharLook = null
 var _root: Node2D = null
 var _base: Sprite2D = null
 var _layers: Dictionary = {}
@@ -29,7 +29,7 @@ var _mounts: Dictionary = {}
 
 var _row: int = 0
 var _frame: int = 0
-var _facing: DotPlayerSpriteFacing.Facing = null
+var _facing: GSPlayerSpriteFacing.Facing = null
 
 
 func _ready() -> void:
@@ -38,10 +38,10 @@ func _ready() -> void:
 		_root.name = "Sprite"
 		add_child(_root)
 
-	_facing = DotPlayerSpriteFacing.Facing.new(0, false)
+	_facing = GSPlayerSpriteFacing.Facing.new(0, false)
 
 	# Onto the player body, not left here: a Node2D under a plain Node is placed on the
-	# canvas, not on the player. See [member DotPlayerCharVisual.anchor_ref].
+	# canvas, not on the player. See [member GSPlayerCharVisual.anchor_ref].
 	var _seated := seat()
 
 
@@ -53,12 +53,12 @@ func _anchor_class() -> StringName:
 	return &"Node2D"
 
 
-func apply_char(def: DotPlayerCharDef, look: DotPlayerCharLook) -> void:
+func apply_char(def: GSPlayerCharDef, look: GSPlayerCharLook) -> void:
 	if catalogue == null:
 		return
 
 	var wanted := def.sprite_id if def != null else &""
-	var sprite: DotPlayerSpriteDef = null
+	var sprite: GSPlayerSpriteDef = null
 
 	if wanted != &"" and catalogue.has_sprite(wanted):
 		sprite = catalogue.get_sprite(wanted)
@@ -66,7 +66,7 @@ func apply_char(def: DotPlayerCharDef, look: DotPlayerCharLook) -> void:
 		sprite = catalogue.fallback()
 
 	if sprite == null:
-		DotLog.warn(SPRITE_CHANNEL, "no sprite to build", {"wanted": String(wanted)})
+		GSLog.warn(SPRITE_CHANNEL, "no sprite to build", {"wanted": String(wanted)})
 		return
 
 	_look = look
@@ -125,12 +125,12 @@ func set_frame(frame: int) -> void:
 
 ## Which way the character is pointing, in radians.
 ## Takes an angle so callers never need to know how the sheet was cut; the mirror flag from
-## [method DotPlayerSpriteFacing.resolve] is applied here.
+## [method GSPlayerSpriteFacing.resolve] is applied here.
 func set_facing_angle(angle: float) -> void:
 	if _def == null:
 		return
 
-	var facing := DotPlayerSpriteFacing.resolve(
+	var facing := GSPlayerSpriteFacing.resolve(
 		angle, _def.direction_count(), _def.mirror_left, _def.first_direction
 	)
 
@@ -149,11 +149,11 @@ func frame() -> int:
 	return _frame
 
 
-func facing() -> DotPlayerSpriteFacing.Facing:
+func facing() -> GSPlayerSpriteFacing.Facing:
 	return _facing
 
 
-func def() -> DotPlayerSpriteDef:
+func def() -> GSPlayerSpriteDef:
 	return _def
 
 
@@ -202,7 +202,7 @@ func _make_sprite(path: String, z: int) -> Sprite2D:
 	elif path != "":
 		# Named, not silent: a sheet that is not there draws nothing, and "the character
 		# is invisible" is otherwise debugged in the renderer.
-		DotLog.warn(SPRITE_CHANNEL, "sheet not found", {"path": path})
+		GSLog.warn(SPRITE_CHANNEL, "sheet not found", {"path": path})
 
 	return s
 

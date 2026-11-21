@@ -1,4 +1,4 @@
-class_name DotHumanoidStride
+class_name GSHumanoidStride
 extends RefCounted
 
 ## Reads a stride clip's tracks: how far the lower foot travels back through it, and which moment

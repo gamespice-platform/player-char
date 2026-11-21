@@ -1,4 +1,4 @@
-class_name DotPlayerFirstPersonBody
+class_name GSPlayerFirstPersonBody
 extends RefCounted
 
 ## Lets a first-person player see their own body when they look down. Local player only; presentation only.
@@ -6,7 +6,7 @@ extends RefCounted
 ## sits [member back_offset] behind the eye, else the camera is in the chest.
 
 ## Name fragments that make a mesh part of the head, matched like
-## [member DotPlayerBreakRules.limb_names] against the mesh and its ancestors. Hats and
+## [member GSPlayerBreakRules.limb_names] against the mesh and its ancestors. Hats and
 ## faces hang off the head mount, so they go with it.
 var head_names: PackedStringArray = PackedStringArray(["head", "face", "hat", "hair", "eye"])
 
@@ -18,7 +18,7 @@ var shown_names: PackedStringArray = PackedStringArray()
 ## Metres the body is pulled back behind the eye, along the body's own facing.
 var back_offset: float = 0.22
 
-## False (the `cl_legs` setting, see [DotOwnBodySetting]): nothing of the body is drawn, only its shadow, and it is not pulled back.
+## False (the `cl_legs` setting, see [GSOwnBodySetting]): nothing of the body is drawn, only its shadow, and it is not pulled back.
 var own_body_shown: bool = true:
 	set(value):
 		if value == own_body_shown:
@@ -46,7 +46,7 @@ func apply(body: Node3D) -> void:
 	restore()
 	_body = body
 
-	for mesh in DotPlayerBodyBreak.visible_meshes(body):
+	for mesh in GSPlayerBodyBreak.visible_meshes(body):
 		if not own_body_shown or _is_head(body, mesh) or not _is_shown(body, mesh):
 			_hidden.append(mesh)
 			_was.append(mesh.cast_shadow)

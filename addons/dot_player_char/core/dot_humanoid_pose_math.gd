@@ -1,7 +1,7 @@
-class_name DotHumanoidPoseMath
+class_name GSHumanoidPoseMath
 extends RefCounted
 
-## Skeleton-space pose arithmetic the synthesised clips of [DotHumanoidClips] are built from: local and global bone transforms, subtree moves, leg placement.
+## Skeleton-space pose arithmetic the synthesised clips of [GSHumanoidClips] are built from: local and global bone transforms, subtree moves, leg placement.
 
 
 ## Lays one leg along [param thigh_dir] from the hip and [param shin_dir] from the knee (both in

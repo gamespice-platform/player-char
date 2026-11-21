@@ -1,4 +1,4 @@
-class_name DotPlayerSpriteFacing
+class_name GSPlayerSpriteFacing
 extends RefCounted
 
 ## Which way a 2D character is drawn, from which way it is actually pointing.

@@ -7,11 +7,11 @@ extends Node3D
 const COUNT := 8
 
 var _bodies: Array[Node3D] = []
-var _people: Array[DotHumanoidFigure] = []
+var _people: Array[GSHumanoidFigure] = []
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	var camera := Camera3D.new()
 	add_child(camera)
 	camera.position = Vector3(0, 1.7, 0)
@@ -20,9 +20,9 @@ func _ready() -> void:
 		var body := Node3D.new()
 		add_child(body)
 		body.position = Vector3((floorf(i / 4.0) - 1.0) * 3.0, 0.0, -(4.0 + float(i % 4) * 2.0))
-		var f := DotHumanoidFigure.new()
+		var f := GSHumanoidFigure.new()
 		body.add_child(f)
-		f.build(DotHumanoidLook.stock(i * 31 + 7), 1.8)
+		f.build(GSHumanoidLook.stock(i * 31 + 7), 1.8)
 		f.auto_animate = true
 		f.set_process(false)
 		_bodies.append(body)

@@ -9,14 +9,14 @@ const _ICON := "res://addons/dot_player_char/icon_placeholder.svg"
 const _NODES := "res://addons/dot_player_char/nodes/"
 
 const _TYPES := [
-	["DotPlayerChar", "Node", _NODES + "dot_player_char.gd"],
-	["DotPlayerCharVisual", "Node", _NODES + "dot_player_char_visual.gd"],
-	["DotPlayerModelVisual", "Node", _NODES + "dot_player_model_visual.gd"],
-	["DotPlayerModelRig", "Node3D", _NODES + "dot_player_model_rig.gd"],
-	["DotPlayerSpriteVisual", "Node", _NODES + "dot_player_sprite_visual.gd"],
-	["DotPlayerAnimDriver", "Node", _NODES + "dot_player_anim_driver.gd"],
-	["DotPlayerAnimPlayerSink", "Node", _NODES + "dot_player_anim_player_sink.gd"],
-	["DotPlayerAnimSpriteSink", "Node", _NODES + "dot_player_anim_sprite_sink.gd"],
+	["GSPlayerChar", "Node", _NODES + "dot_player_char.gd"],
+	["GSPlayerCharVisual", "Node", _NODES + "dot_player_char_visual.gd"],
+	["GSPlayerModelVisual", "Node", _NODES + "dot_player_model_visual.gd"],
+	["GSPlayerModelRig", "Node3D", _NODES + "dot_player_model_rig.gd"],
+	["GSPlayerSpriteVisual", "Node", _NODES + "dot_player_sprite_visual.gd"],
+	["GSPlayerAnimDriver", "Node", _NODES + "dot_player_anim_driver.gd"],
+	["GSPlayerAnimPlayerSink", "Node", _NODES + "dot_player_anim_player_sink.gd"],
+	["GSPlayerAnimSpriteSink", "Node", _NODES + "dot_player_anim_sprite_sink.gd"],
 ]
 
 

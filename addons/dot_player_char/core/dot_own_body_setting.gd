@@ -1,4 +1,4 @@
-class_name DotOwnBodySetting
+class_name GSOwnBodySetting
 extends RefCounted
 ## The client-only `cl_legs` option: whether you see your own legs and body when you look down.
 ## Never server-enforced; a game lists [method def] in its settings schema and calls [method follow].
@@ -8,10 +8,10 @@ const DEFAULT := true
 const META := &"dot_own_body_follow"
 
 
-## The setting's definition (a DotSettingsDef, device scope), or null when GameSpice Settings is not in the project: this addon does not require it.
+## The setting's definition (a GSSettingsDef, device scope), or null when GameSpice Settings is not in the project: this addon does not require it.
 static func def() -> Variant:
 	for entry: Dictionary in ProjectSettings.get_global_class_list():
-		if entry.get("class") == &"DotSettingsDef":
+		if entry.get("class") == &"GSSettingsDef":
 			var script: GDScript = load(entry["path"])
 			var d: Object = script.call("boolean", KEY, DEFAULT, &"video")
 			d.call("with_description", "Show your own legs and body when you look down.")
@@ -19,7 +19,7 @@ static func def() -> Variant:
 	return null
 
 
-## Puts the setting's value on [param target]: a [DotHumanoidFigure] or a [DotPlayerFirstPersonBody] (anything with `own_body_shown`). [param settings] is a DotSettingsManager or anything with `get_bool(key, fallback)`.
+## Puts the setting's value on [param target]: a [GSHumanoidFigure] or a [GSPlayerFirstPersonBody] (anything with `own_body_shown`). [param settings] is a GSSettingsManager or anything with `get_bool(key, fallback)`.
 static func apply(target: Object, settings: Object) -> void:
 	if target != null:
 		target.set("own_body_shown", settings == null or bool(settings.call("get_bool", KEY, DEFAULT)))

@@ -1,5 +1,5 @@
 """Measures the site avatar's colours: per Kenney Blocky Characters skin (a..r), the colour under
-the most area of the head (skin, hair), the torso and the legs. DotHumanoidLook.SITE_SKINS is its
+the most area of the head (skin, hair), the torso and the legs. GSHumanoidLook.SITE_SKINS is its
 output, read by hand (the head's two colours are skin and hair; which is which is a look at the
 kit's Preview.png).
 

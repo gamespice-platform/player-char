@@ -53,13 +53,13 @@ func _initialize() -> void:
 	var matt := (load(MATT) as PackedScene).instantiate()
 	var from := matt.find_children("*", "Skeleton3D", true, false).front() as Skeleton3D
 	# The kit's clips as the game builds them: mirrored so the gun is in the right hand, then the crouch and the rest made.
-	var library := DotHumanoidClips.synthesise(DotHumanoidClips.mirror(DotHumanoidClips.library_from(DotHumanoidClips.clips_of(matt))), from)
+	var library := GSHumanoidClips.synthesise(GSHumanoidClips.mirror(GSHumanoidClips.library_from(GSHumanoidClips.clips_of(matt))), from)
 
 	var result := AnimationLibrary.new()
 	var native := kenney.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	for clip in native.get_animation_list():
 		var kept := native.get_animation(clip).duplicate(true) as Animation
-		kept.loop_mode = Animation.LOOP_LINEAR if DotHumanoidClips.LOOPING.has(StringName(clip)) else Animation.LOOP_NONE
+		kept.loop_mode = Animation.LOOP_LINEAR if GSHumanoidClips.LOOPING.has(StringName(clip)) else Animation.LOOP_NONE
 		var _n := result.add_animation(clip, kept)
 		print("NATIVE ", clip, " ", kept.length, " s, ", kept.get_track_count(), " tracks")
 	var failed := false
@@ -69,7 +69,7 @@ func _initialize() -> void:
 			failed = true
 			continue
 		var made := _bake_kenney(library.get_animation(name), from, to, prefix, String(FAMILY[name]))
-		made.loop_mode = Animation.LOOP_LINEAR if DotHumanoidClips.LOOPING.has(name) else Animation.LOOP_NONE
+		made.loop_mode = Animation.LOOP_LINEAR if GSHumanoidClips.LOOPING.has(name) else Animation.LOOP_NONE
 		var _a := result.add_animation(name, made)
 		print("BAKED %s: %.2f s, %d tracks, mode %s" % [name, made.length, made.get_track_count(), FAMILY[name]])
 	var err := ResourceSaver.save(result, out, ResourceSaver.FLAG_COMPRESS)

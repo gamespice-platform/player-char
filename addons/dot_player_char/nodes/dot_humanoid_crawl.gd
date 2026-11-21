@@ -1,4 +1,4 @@
-class_name DotHumanoidCrawl
+class_name GSHumanoidCrawl
 extends RefCounted
 
 ## A crawling body's feet: planted until the leg is stretched to [constant FAR] of its length,
@@ -18,7 +18,7 @@ var weight: float = 0.0
 
 ## The clip's feet scrape the ground at a pace of their own, so a crawling body's feet are held
 ## still in the world and stepped by IK when the leg runs out of reach. A phase-timed plant
-## ([DotFootPlant]) overreaches here: the legs are short and the clip surges the hips.
+## ([GSFootPlant]) overreaches here: the legs are short and the clip surges the hips.
 func step(figure: Node3D, skeleton: Skeleton3D, active: bool, speed: float, dt: float) -> void:
 	weight = move_toward(weight, 1.0 if speed >= 0.1 else 0.0, dt / BLEND_S)
 	if not active or weight <= 0.0:
@@ -42,11 +42,11 @@ func step(figure: Node3D, skeleton: Skeleton3D, active: bool, speed: float, dt: 
 	var lands: Array[Vector3] = []
 	var reach: Array[float] = []
 	for leg: Array in legs:
-		var knee := DotHumanoidIk.global_pose(skeleton, leg[1])
+		var knee := GSHumanoidIk.global_pose(skeleton, leg[1])
 		var end_local := skeleton.get_bone_global_rest(leg[1]).affine_inverse() * skeleton.get_bone_global_rest(leg[2]).origin
-		var hip := to_world * DotHumanoidIk.global_pose(skeleton, leg[0]).origin
+		var hip := to_world * GSHumanoidIk.global_pose(skeleton, leg[0]).origin
 		var ankle := to_world * (knee * end_local)
-		var length := (DotHumanoidIk.global_pose(skeleton, leg[0]).origin.distance_to(knee.origin) + end_local.length()) * sized
+		var length := (GSHumanoidIk.global_pose(skeleton, leg[0]).origin.distance_to(knee.origin) + end_local.length()) * sized
 		# On the floor at the standing ankle's height, beside the hip as the clip has it, bent to NEAR.
 		var floor_y := figure.global_position.y + skeleton.get_bone_global_rest(leg[2]).origin.y * sized
 		var side := (ankle - hip).dot(right)
@@ -83,8 +83,8 @@ func step(figure: Node3D, skeleton: Skeleton3D, active: bool, speed: float, dt: 
 		var end_local := skeleton.get_bone_global_rest(leg[1]).affine_inverse() * skeleton.get_bone_global_rest(leg[2]).origin
 		# Knees out to the side, as a body crawling flat pushes: the clip's leg is too straight to steer
 		# by (its bend flips from frame to frame), and a knee pointed at the floor would go through it.
-		var hip_x := DotHumanoidIk.global_pose(skeleton, leg[0]).origin.x
+		var hip_x := GSHumanoidIk.global_pose(skeleton, leg[0]).origin.x
 		var pole := Vector3(signf(hip_x) if hip_x != 0.0 else 1.0, -0.3, 0.0)
-		var ankle := DotHumanoidIk.two_bone_to(skeleton, leg[0], leg[1], end_local, to_skel * ankles[k].lerp(target, w), pole, 1.0)
+		var ankle := GSHumanoidIk.two_bone_to(skeleton, leg[0], leg[1], end_local, to_skel * ankles[k].lerp(target, w), pole, 1.0)
 		var parent := skeleton.get_bone_parent(leg[2])
-		skeleton.set_bone_pose_position(leg[2], ankle if parent < 0 else DotHumanoidIk.global_pose(skeleton, parent).affine_inverse() * ankle)
+		skeleton.set_bone_pose_position(leg[2], ankle if parent < 0 else GSHumanoidIk.global_pose(skeleton, parent).affine_inverse() * ankle)

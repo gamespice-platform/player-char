@@ -1,5 +1,5 @@
 @tool
-class_name DotPlayerSpriteDef
+class_name GSPlayerSpriteDef
 extends Resource
 
 ## A 2D character: which sheets, how they are cut, and how many ways it can face.
@@ -14,7 +14,7 @@ extends Resource
 @export_group("The sheet")
 
 ## The base sheet. A path rather than a [Texture2D] export, for the same reason
-## [DotPlayerModelDef]'s rig is: a catalogue of forty would load forty textures.
+## [GSPlayerModelDef]'s rig is: a catalogue of forty would load forty textures.
 @export_file("*.png", "*.webp", "*.svg") var sheet: String = ""
 
 ## One frame's size in pixels.
@@ -35,7 +35,7 @@ extends Resource
 @export_enum("1", "2", "4", "8") var directions: int = 2
 
 ## Whether the left-facing frames are the right-facing ones, flipped.
-## Saves drawing three directions on a four- or eight-way sheet; [method DotPlayerSpriteFacing.resolve]
+## Saves drawing three directions on a four- or eight-way sheet; [method GSPlayerSpriteFacing.resolve]
 ## returns the flip so nothing downstream knows which were drawn.
 @export var mirror_left: bool = true
 
@@ -81,46 +81,46 @@ extends Resource
 @export var attributes: Dictionary = {}
 
 
-static func make(p_id: StringName, p_sheet: String = "") -> DotPlayerSpriteDef:
-	var s := DotPlayerSpriteDef.new()
+static func make(p_id: StringName, p_sheet: String = "") -> GSPlayerSpriteDef:
+	var s := GSPlayerSpriteDef.new()
 	s.id = p_id
 	s.display_name = String(p_id).capitalize()
 	s.sheet = p_sheet
 	return s
 
 
-func validate() -> DotResult:
+func validate() -> GSResult:
 	if id == &"":
-		return DotResult.fail(DotError.CODE_INVALID, "A sprite with no id.")
+		return GSResult.fail(GSError.CODE_INVALID, "A sprite with no id.")
 
 	if frame_size.x <= 0 or frame_size.y <= 0:
-		return DotResult.fail(
-			DotError.CODE_INVALID, "'%s' has a frame of no size." % String(id)
+		return GSResult.fail(
+			GSError.CODE_INVALID, "'%s' has a frame of no size." % String(id)
 		)
 
 	if not [1, 2, 4, 8].has(direction_count()):
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"'%s' draws %d directions." % [String(id), direction_count()],
 			"A sheet is cut for 1, 2, 4 or 8; anything else lands the facing "
 			+ "calculation between two rows."
 		)
 
 	if direction_count() > columns * rows:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"'%s' has %d directions and only %d cells."
 			% [String(id), direction_count(), columns * rows]
 		)
 
 	for slot: Variant in layers.keys():
 		if str(layers[slot]) == "":
-			return DotResult.fail(
-				DotError.CODE_INVALID,
+			return GSResult.fail(
+				GSError.CODE_INVALID,
 				"Layer '%s' on '%s' names no sheet." % [str(slot), String(id)]
 			)
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## The number this definition's [member directions] enum stands for.
@@ -210,4 +210,4 @@ func describe() -> String:
 
 
 func _to_string() -> String:
-	return "DotPlayerSpriteDef(%s)" % describe()
+	return "GSPlayerSpriteDef(%s)" % describe()

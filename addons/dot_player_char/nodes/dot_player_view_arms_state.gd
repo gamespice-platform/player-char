@@ -1,6 +1,6 @@
 extends Node3D
 
-## [DotPlayerViewArms]'s constants, settings and state, split out to keep each file small.
+## [GSPlayerViewArms]'s constants, settings and state, split out to keep each file small.
 
 ## Bones shrunk to nothing; the arms hang off the chest, so they stay.
 const HIDDEN_BONES: Array[String] = ["Head", "Neck", "UpperLeg.L", "UpperLeg.R"]
@@ -15,8 +15,8 @@ const LEFT_ARM_BONES: Array[String] = ["Shoulder.L"]
 ## A vertex carrying more than this weight on a dropped bone takes its triangles with it.
 const TOUCH_WEIGHT := 0.01
 
-## Extension point: `func(look: DotHumanoidLook, height: float) -> Node3D`. The node it returns is parented here and
-## drawn as is, in place of the person; if it has `set_motion` and `animate` (a [DotHumanoidFigure]) they are driven.
+## Extension point: `func(look: GSHumanoidLook, height: float) -> Node3D`. The node it returns is parented here and
+## drawn as is, in place of the person; if it has `set_motion` and `animate` (a [GSHumanoidFigure]) they are driven.
 ## Fraction of the arm the lean aims to need, so the slide to reach never trims a hand the lean just brought in.
 const LEAN_SLACK := 0.97
 ## How fast the drawn forearm scale follows a new [member forearm_scale], per second.
@@ -27,9 +27,9 @@ const FORE_RATE := 2.0
 const LEAN_RATE := 1.2
 ## Elbow turns tried about the shoulder-to-hand line (degrees) to take an arm out of the weapon's box, and how much
 ## of the forearm next to the hand may stay inside it (the hand is on the gun).
-## The scan itself is [DotViewArmsClear], native when GameSpice Sim's "arms" module is loaded.
-const CLEAR_ANGLES: Array[float] = DotViewArmsClear.ANGLES
-const CLEAR_HAND_FREE := DotViewArmsClear.HAND_FREE
+## The scan itself is [GSViewArmsClear], native when GameSpice Sim's "arms" module is loaded.
+const CLEAR_ANGLES: Array[float] = GSViewArmsClear.ANGLES
+const CLEAR_HAND_FREE := GSViewArmsClear.HAND_FREE
 
 var arms_factory: Callable = Callable()
 ## Extension point: `func(bone: StringName, rest_position: Vector3) -> bool`, true for a vertex that is carried gear
@@ -39,19 +39,19 @@ var hide_vertex_fn: Callable = Callable()
 ## person along Z; the eye is measured from the posed head, not assumed, so a game's own figure fits too).
 var eye_from_head: Vector3 = Vector3(0.0, 0.3, -0.4)
 ## The look drawn: [member own_look], or the server's [method set_look_override] while one is set.
-var look: DotHumanoidLook = null
+var look: GSHumanoidLook = null
 ## The look [method build] was given: the player's own avatar, so each player's arms are their own.
-var own_look: DotHumanoidLook = null
-## The arms' close-up material ([DotViewArmsMaterial]: skin and cloth detail). Off: the crowd's flat palette.
+var own_look: GSHumanoidLook = null
+## The arms' close-up material ([GSViewArmsMaterial]: skin and cloth detail). Off: the crowd's flat palette.
 var detailed: bool = true
-## Turn the elbows so the arms do not pass through the weapon ([member DotViewGrip.bounds]); its radius in metres.
+## Turn the elbows so the arms do not pass through the weapon ([member GSViewGrip.bounds]); its radius in metres.
 var keep_arms_clear: bool = true
 var arm_radius: float = 0.03
 ## How deep each arm (firing, support) sat inside the weapon's box after the last solve, metres; 0 is clear.
 var arm_depth_right: float = 0.0
 var arm_depth_left: float = 0.0
-## Run the elbow clearance scan in GameSpice Sim's native [code]DotSimViewArms[/code] when it is loaded (bit-identical to
-## [DotViewArmsClear]); false keeps the script (the A/B baseline). Read once, on the first scan.
+## Run the elbow clearance scan in GameSpice Sim's native [code]GSSimViewArms[/code] when it is loaded (bit-identical to
+## [GSViewArmsClear]); false keeps the script (the A/B baseline). Read once, on the first scan.
 var native_clear: bool = true
 var height: float = 1.8
 var shown: bool = false
@@ -92,15 +92,15 @@ var forearm_scale: float = 1.0
 var palm_offset: Vector3 = Vector3(0.015, -0.01, 0.02)
 ## How far the shoulders may lean toward a firing-hand target out of the arm's reach, metres; past it the hand stays short.
 var max_lean: float = 0.4
-## Draw [DotViewHand]s, five jointed fingers closed on the weapon with a [DotViewHandPoses] grip, in place of the
+## Draw [GSViewHand]s, five jointed fingers closed on the weapon with a [GSViewHandPoses] grip, in place of the
 ## kit's mitts while a weapon is held (false: the mitts and [member palm_offset], as before). Read by [method build].
 var real_hands: bool = true
-## The grips the real hands close into, by [member DotViewGrip.kind] ([method DotViewHandPoses.table]; edit or add kinds).
-var hand_poses: Dictionary = DotViewHandPoses.table()
+## The grips the real hands close into, by [member GSViewGrip.kind] ([method GSViewHandPoses.table]; edit or add kinds).
+var hand_poses: Dictionary = GSViewHandPoses.table()
 ## The real hands' size against life size on the held arms (it follows [member held_scale] and [member hand_scale]
 ## over the kit's 0.5, so a game's per-weapon hand size still applies).
 var hand_size: float = 1.0
-## How far a knife hand has gone from its fist toward the throw's pinch ([constant DotViewHandPoses.KNIFE_THROW]),
+## How far a knife hand has gone from its fist toward the throw's pinch ([constant GSViewHandPoses.KNIFE_THROW]),
 ## 0 to 1; the host sets it each frame from the throw's wind-back.
 var throw_grip: float = 0.0
 ## How fast the fingers close into a new grip, per second; 0 closes them at once.
@@ -119,28 +119,28 @@ var hand_gap_left: float = 0.0
 var hand_min_depth: float = 0.0:
 	set(value):
 		if value < 0.0 or not is_finite(value):
-			push_error("DotPlayerViewArms.hand_min_depth must be 0 or more, got %s" % value)
+			push_error("GSPlayerViewArms.hand_min_depth must be 0 or more, got %s" % value)
 			return
 		hand_min_depth = value
 ## How many times further off than the arms the held weapon is drawn: a game that draws its gun beyond life size and
 ## brings it to life size about the eye for the arms (a hands frame) sets it, and the arms' close-up material
-## ([DotViewArmsMaterial]) writes their depth as if grown by it about the eye. The pixels stay put, but the depth test
+## ([GSViewArmsMaterial]) writes their depth as if grown by it about the eye. The pixels stay put, but the depth test
 ## then sees the arms where the gun is: fingers wrap behind a grip, the gun covers the forearm under it, instead of the
 ## whole arm drawing over the gun from a third of its distance. 1 is off; below 1 or non-finite is refused with an error.
 var draw_depth: float = 1.0:
 	set(value):
 		if value < 1.0 or not is_finite(value):
-			push_error("DotPlayerViewArms.draw_depth must be 1 or more, got %s" % value)
+			push_error("GSPlayerViewArms.draw_depth must be 1 or more, got %s" % value)
 			return
 		draw_depth = value
-## Draws the grip sockets, hand targets and arm bone axes over the view ([DotViewArmsPoseDebug]).
+## Draws the grip sockets, hand targets and arm bone axes over the view ([GSViewArmsPoseDebug]).
 var debug_pose: bool = false:
 	set(value):
 		debug_pose = value
 		if not value and _pose_debug != null:
 			_pose_debug.queue_free()
 			_pose_debug = null
-var _pose_debug: DotViewArmsPoseDebug = null
+var _pose_debug: GSViewArmsPoseDebug = null
 ## Idle breathing and walk bob, metres: [method sway] is what the host adds to its weapon mount.
 var breath_amplitude: float = 0.003
 var bob_amplitude: float = 0.012
@@ -152,17 +152,17 @@ var _fitted := false
 var _ticks := 0
 var _head: int = -1
 var _downed := false
-var _grip: DotViewGrip = null
+var _grip: GSViewGrip = null
 var _phase := 0.0
 var _sway := Vector3.ZERO
 var _base := Vector3.ZERO
 var _right: Array[int] = []
 var _left: Array[int] = []
-var _override: DotHumanoidLook = null
+var _override: GSHumanoidLook = null
 var _detail_on := false
 ## [method _grip_hands] read once per tick ([member _hands_tick] while one runs).
 var _hands_tick := false
-var _hands_for: DotViewGrip = null
+var _hands_for: GSViewGrip = null
 var _hands_memo: Array = []
 ## Bone indices of the arm scale pass, looked up once per skeleton (find_bone by name is a string search per call).
 var _arm_skeleton: Skeleton3D = null
@@ -174,7 +174,7 @@ var _depth_sent := Vector4(NAN, 0.0, 0.0, 0.0)
 var _depth_meshes: Array[GeometryInstance3D] = []
 var _turn_right := 0.0
 var _turn_left := 0.0
-## GameSpice Sim's DotSimViewArms, made on the first scan when [member native_clear] and the class exists; reached by name
+## GameSpice Sim's GSSimViewArms, made on the first scan when [member native_clear] and the class exists; reached by name
 ## (never typed) so this addon loads without the extension. [member _native_tried] keeps it to one probe.
 var _native: Object = null
 var _native_tried := false
@@ -185,7 +185,7 @@ var _leaned := Vector3.ZERO
 var _delta := 1.0 / 60.0
 var _was_holding := false
 ## The real hands, firing (right) then support (left); empty with [member real_hands] off or a factory's arms.
-var _hands: Array[DotViewHand] = []
+var _hands: Array[GSViewHand] = []
 ## Upper-arm bones [method _extend] moved this tick, put back to their rest the next.
 var _extended: Array[int] = []
 ## How far each shoulder was moved out last tick (firing, support), figure metres.

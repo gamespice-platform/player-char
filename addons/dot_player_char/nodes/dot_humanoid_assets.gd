@@ -1,5 +1,5 @@
-## The people's shared files and caches (scenes, clip libraries, materials); [DotHumanoidFigure] forwards its public statics here.
-class_name DotHumanoidAssets
+## The people's shared files and caches (scenes, clip libraries, materials); [GSHumanoidFigure] forwards its public statics here.
+class_name GSHumanoidAssets
 extends RefCounted
 
 const CHANNEL := "player.humanoid"
@@ -55,7 +55,7 @@ void fragment() {
 }
 """
 
-## A registered body's material ([method DotHumanoidAssets.register_body]): its own texture, with cloth and
+## A registered body's material ([method GSHumanoidAssets.register_body]): its own texture, with cloth and
 ## gear (not skin) moved toward the look's top colour by [member team_tint] at the same brightness.
 const TEAM_SHADER := """
 shader_type spatial;
@@ -100,29 +100,29 @@ static var _queued: Dictionary = {}
 ## The directory the people's files are in, found from this script so a pack mounted under
 ## another root still finds them.
 static func directory() -> String:
-	var here: String = (DotHumanoidAssets as Script).resource_path
+	var here: String = (GSHumanoidAssets as Script).resource_path
 	return here.get_base_dir().get_base_dir().path_join("people")
 
 
 ## Every file a figure may load, for a preloader or a pack manifest.
 static func content_paths() -> PackedStringArray:
 	var out := PackedStringArray()
-	for id in DotHumanoidLook.BODIES:
+	for id in GSHumanoidLook.BODIES:
 		out.append(body_path(id))
 	out.append(directory().path_join("atlas_people.png"))
 	out.append(real_clips_path())
 	return out
 
 
-## The clips baked from the Universal Animation Library ([method DotHumanoidClips.adopt]); a
+## The clips baked from the Universal Animation Library ([method GSHumanoidClips.adopt]); a
 ## figure without the file plays the made ones.
 static func real_clips_path() -> String:
 	return directory().path_join("people_ual.res")
 
 
 static func body_path(id: StringName) -> String:
-	if DotHumanoidLook.registered.has(id):
-		return DotHumanoidLook.registered[id]
+	if GSHumanoidLook.registered.has(id):
+		return GSHumanoidLook.registered[id]
 	return directory().path_join("people_%s.glb" % id)
 
 
@@ -132,12 +132,12 @@ static func body_path(id: StringName) -> String:
 ## False and an error for a missing file or a stock id; nothing is registered then.
 static func register_body(id: StringName, path: String) -> bool:
 	if path == "":
-		var _gone := DotHumanoidLook.registered.erase(id)
+		var _gone := GSHumanoidLook.registered.erase(id)
 		return true
-	if DotHumanoidLook.BODIES.has(id) or not (ResourceLoader.exists(path) or FileAccess.file_exists(path)):
-		DotLog.error(CHANNEL, "body not registered: stock id or no file", {"id": String(id), "path": path})
+	if GSHumanoidLook.BODIES.has(id) or not (ResourceLoader.exists(path) or FileAccess.file_exists(path)):
+		GSLog.error(CHANNEL, "body not registered: stock id or no file", {"id": String(id), "path": path})
 		return false
-	DotHumanoidLook.registered[id] = path
+	GSHumanoidLook.registered[id] = path
 	return true
 
 
@@ -173,7 +173,7 @@ static func load_model(path: String) -> PackedScene:
 	var err := doc.append_from_file(path, state)
 	var root := doc.generate_scene(state, 30.0, false, true) if err == OK else null
 	if root == null:
-		DotLog.error(CHANNEL, "model is neither imported nor readable", {"path": path, "error": error_string(err)})
+		GSLog.error(CHANNEL, "model is neither imported nor readable", {"path": path, "error": error_string(err)})
 		return null
 	var packed := PackedScene.new()
 	var packed_err := packed.pack(root)
@@ -182,7 +182,7 @@ static func load_model(path: String) -> PackedScene:
 		return null
 	# A registered body outside the project is never imported, and that is expected.
 	if path.begins_with("res://"):
-		DotLog.warn(CHANNEL, "model was never imported; read from the source file instead (run the project's import once)", {"path": path})
+		GSLog.warn(CHANNEL, "model was never imported; read from the source file instead (run the project's import once)", {"path": path})
 	return packed
 
 
@@ -202,7 +202,7 @@ static func load_texture(path: String) -> Texture2D:
 	return ImageTexture.create_from_image(image)
 
 
-## The clip set for [param id]'s body, retargeted by [method DotHumanoidClips.retarget] once per body and shared. Mirrored first (the kit is left-handed; [constant HAND_BONE]), then the made
+## The clip set for [param id]'s body, retargeted by [method GSHumanoidClips.retarget] once per body and shared. Mirrored first (the kit is left-handed; [constant HAND_BONE]), then the made
 ## clips, then the real ones from [method real_clips_path] over the ones they replace. Takes what a [method prepare_libraries] build finished; one still running is not waited for (the
 ## set is built here as well), since a worker can need a main-thread step that a wait would block.
 static func library_for(id: StringName, skeleton: Skeleton3D) -> AnimationLibrary:
@@ -212,7 +212,7 @@ static func library_for(id: StringName, skeleton: Skeleton3D) -> AnimationLibrar
 	if id == CLIP_BODY or skeleton == null:
 		return _libraries[BASE]
 	if not _libraries.has(id):
-		_libraries[id] = DotHumanoidClips.retarget(_libraries[BASE], _libraries[&"rests"], skeleton)
+		_libraries[id] = GSHumanoidClips.retarget(_libraries[BASE], _libraries[&"rests"], skeleton)
 	return _libraries[id]
 
 
@@ -232,13 +232,13 @@ static func prepare_libraries(bodies: Array[StringName] = []) -> void:
 			scenes[id] = scene(body_path(id))
 	if scenes.is_empty():
 		return
-	if not DotPlatform.has_threads():
+	if not GSPlatform.has_threads():
 		_queued.merge(scenes)
 		return
 	# The worker reads only what is passed and writes only its own dictionary, read here once it is done.
 	# Models are instanced here, not there: a mesh instance made off the main thread waits for the main thread.
 	var out := {}
-	var task := WorkerThreadPool.add_task(_build.bind(_inputs(scenes), out, _libraries.duplicate()), false, "DotHumanoidAssets clips")
+	var task := WorkerThreadPool.add_task(_build.bind(_inputs(scenes), out, _libraries.duplicate()), false, "GSHumanoidAssets clips")
 	_tasks.append([task, out, _generation])
 
 
@@ -298,7 +298,7 @@ static func _inputs(scenes: Dictionary) -> Dictionary:
 			for i in from.get_bone_count():
 				bones.set_bone_parent(i, from.get_bone_parent(i))
 				bones.set_bone_rest(i, from.get_bone_rest(i))
-		out[id] = [bones, DotHumanoidClips.clips_of(probe) if id == CLIP_BODY else null]
+		out[id] = [bones, GSHumanoidClips.clips_of(probe) if id == CLIP_BODY else null]
 		if probe != null:
 			probe.free()
 	return out
@@ -311,23 +311,23 @@ static func _build(inputs: Dictionary, out: Dictionary, from: Dictionary) -> voi
 	for id: StringName in inputs:
 		var skeleton: Skeleton3D = inputs[id][0]
 		if id == CLIP_BODY:
-			var library := DotHumanoidClips.mirror(DotHumanoidClips.library_from(inputs[id][1]))
-			out[BASE] = DotHumanoidClips.synthesise(library, skeleton)
+			var library := GSHumanoidClips.mirror(GSHumanoidClips.library_from(inputs[id][1]))
+			out[BASE] = GSHumanoidClips.synthesise(library, skeleton)
 			var real_path := real_clips_path()
 			var real: AnimationLibrary = load(real_path) as AnimationLibrary if ResourceLoader.exists(real_path) else null
-			var _adopted := DotHumanoidClips.adopt(library, real)
-			out[&"rests"] = DotHumanoidClips.rests_of(skeleton)
-			out[&"sit_height"] = DotHumanoidClips.sit_height(library, skeleton)
+			var _adopted := GSHumanoidClips.adopt(library, real)
+			out[&"rests"] = GSHumanoidClips.rests_of(skeleton)
+			out[&"sit_height"] = GSHumanoidClips.sit_height(library, skeleton)
 		elif skeleton != null:
 			var base: AnimationLibrary = out.get(BASE, from.get(BASE))
-			out[id] = DotHumanoidClips.retarget(base, out.get(&"rests", from.get(&"rests", {})), skeleton)
+			out[id] = GSHumanoidClips.retarget(base, out.get(&"rests", from.get(&"rests", {})), skeleton)
 		if skeleton != null:
 			skeleton.free()
 
 
 ## One material per look: people with the same colours share it.
-static func material_for(p_look: DotHumanoidLook) -> ShaderMaterial:
-	if DotHumanoidLook.registered.has(p_look.body):
+static func material_for(p_look: GSHumanoidLook) -> ShaderMaterial:
+	if GSHumanoidLook.registered.has(p_look.body):
 		return _team_material(p_look)
 	var key := p_look.key()
 	if _materials.has(key):
@@ -379,7 +379,7 @@ static func material_for(p_look: DotHumanoidLook) -> ShaderMaterial:
 
 
 # Keyed by body and top only: a registered body has no swatches for skin, hair or bottom.
-static func _team_material(p_look: DotHumanoidLook) -> ShaderMaterial:
+static func _team_material(p_look: GSHumanoidLook) -> ShaderMaterial:
 	var key := "%s|%s|%s" % [p_look.body, p_look.top.to_html(false), team_tint]
 	if _materials.has(key):
 		return _materials[key]
@@ -410,7 +410,7 @@ static func _albedo_of(id: StringName) -> Texture2D:
 	if probe != null:
 		probe.free()
 	if texture == null:
-		DotLog.error(CHANNEL, "registered body has no albedo texture", {"id": String(id)})
+		GSLog.error(CHANNEL, "registered body has no albedo texture", {"id": String(id)})
 	_albedos[id] = texture
 	return texture
 

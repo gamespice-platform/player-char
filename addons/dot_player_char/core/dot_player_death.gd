@@ -1,12 +1,12 @@
-class_name DotPlayerDeath
+class_name GSPlayerDeath
 extends RefCounted
 
 ## One death as the server decided it: which reaction, the seed, which way the shot went and how hard.
 ## Small on purpose: a client already draws the victim, so only what the server rolled travels with a kill.
 ## A game puts [method to_dict]'s keys in its kill message, optional at the end so an older client still reads it.
 
-## The reaction's id in a [DotPlayerDeathReactions].
-var reaction: StringName = DotPlayerDeathReactions.LIMP
+## The reaction's id in a [GSPlayerDeathReactions].
+var reaction: StringName = GSPlayerDeathReactions.LIMP
 
 ## Seeds the ragdoll's small variations (the tumble, which way the knees go).
 var roll_seed: int = 0
@@ -25,7 +25,7 @@ var headshot: bool = false
 ## [param power] overrides its [code]death_power[/code] when not negative, and [param named] its
 ## [code]death_reaction[/code] when not empty (a bus or a trap says what it wants directly).
 static func decide(
-	reactions: DotPlayerDeathReactions,
+	reactions: GSPlayerDeathReactions,
 	p_headshot: bool,
 	p_damage: float,
 	p_direction: Vector3,
@@ -33,17 +33,17 @@ static func decide(
 	weapon_def: Object = null,
 	power: float = -1.0,
 	named: StringName = &""
-) -> DotPlayerDeath:
-	var out := DotPlayerDeath.new()
+) -> GSPlayerDeath:
+	var out := GSPlayerDeath.new()
 	out.roll_seed = p_seed & 0x7fffffff
 	out.headshot = p_headshot
-	out.damage = maxf(DotPlayerRagdollMath.finite_float(p_damage), 0.0)
-	var dir := DotPlayerRagdollMath.finite_or(p_direction)
+	out.damage = maxf(GSPlayerRagdollMath.finite_float(p_damage), 0.0)
+	var dir := GSPlayerRagdollMath.finite_or(p_direction)
 	out.direction = dir.normalized() if dir.length_squared() > 0.0001 else Vector3.ZERO
 
 
-	var weapon_power := power if power >= 0.0 else DotPlayerDeathReactions.weapon_power(weapon_def)
-	var asked := named if named != &"" else DotPlayerDeathReactions.weapon_reaction(weapon_def)
+	var weapon_power := power if power >= 0.0 else GSPlayerDeathReactions.weapon_power(weapon_def)
+	var asked := named if named != &"" else GSPlayerDeathReactions.weapon_reaction(weapon_def)
 
 	if reactions != null:
 		out.reaction = reactions.pick(p_headshot, weapon_power, out.damage, asked, out.roll_seed)
@@ -71,10 +71,10 @@ func to_dict() -> Dictionary:
 
 ## Reads [method to_dict]'s keys out of a kill message; missing keys keep the defaults, so a
 ## kill from an older server is a plain limp fall pushed by nothing.
-static func from_dict(data: Dictionary) -> DotPlayerDeath:
-	var out := DotPlayerDeath.new()
+static func from_dict(data: Dictionary) -> GSPlayerDeath:
+	var out := GSPlayerDeath.new()
 	var r := str(data.get("death_reaction", ""))
-	out.reaction = StringName(r) if r != "" else DotPlayerDeathReactions.LIMP
+	out.reaction = StringName(r) if r != "" else GSPlayerDeathReactions.LIMP
 	out.roll_seed = int(data.get("death_seed", 0))
 	var dir: Variant = data.get("death_dir", Vector3.ZERO)
 	out.direction = (dir as Vector3) if dir is Vector3 else Vector3.ZERO
@@ -87,7 +87,7 @@ static func from_dict(data: Dictionary) -> DotPlayerDeath:
 const REACTION_BYTES := 24
 
 
-## Writes this death onto a GameSpice Net [code]DotNetWriter[/code] (duck-typed: no GameSpice Net dependency), about seven bytes.
+## Writes this death onto a GameSpice Net [code]GSNetWriter[/code] (duck-typed: no GameSpice Net dependency), about seven bytes.
 ## The reaction goes as a short string because a game may add its own. Put it LAST in a message and read it
 ## only when bytes remain, so an older client reads the rest.
 func write_to(writer: Object) -> void:
@@ -101,11 +101,11 @@ func write_to(writer: Object) -> void:
 	writer.call(&"write_bool", headshot)
 
 
-## Reads [method write_to]'s fields off a GameSpice Net [code]DotNetReader[/code].
-static func read_from(reader: Object) -> DotPlayerDeath:
-	var out := DotPlayerDeath.new()
+## Reads [method write_to]'s fields off a GameSpice Net [code]GSNetReader[/code].
+static func read_from(reader: Object) -> GSPlayerDeath:
+	var out := GSPlayerDeath.new()
 	var r := String(reader.call(&"read_string", REACTION_BYTES))
-	out.reaction = StringName(r) if r != "" else DotPlayerDeathReactions.LIMP
+	out.reaction = StringName(r) if r != "" else GSPlayerDeathReactions.LIMP
 	out.roll_seed = int(reader.call(&"read_varint"))
 	out.damage = float(int(reader.call(&"read_varint")))
 	out.direction = reader.call(&"read_direction", 10) if bool(reader.call(&"read_bool")) else Vector3.ZERO

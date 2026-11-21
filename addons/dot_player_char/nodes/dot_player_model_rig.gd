@@ -1,15 +1,15 @@
 @tool
-class_name DotPlayerModelRig
+class_name GSPlayerModelRig
 extends Node3D
 
 ## A built character rig: named mounts, a stance, and where the eyes are.
-## A thin node over an authored scene: [DotPlayerModelBuilder] builds, this adds a cached
+## A thin node over an authored scene: [GSPlayerModelBuilder] builds, this adds a cached
 ## mount lookup that warns once when the rig and definition disagree.
 
 const CHANNEL := "player.model"
 
 ## The definition this rig was built for.
-var def: DotPlayerModelDef = null
+var def: GSPlayerModelDef = null
 
 ## The instantiated rig scene, if one was loaded.
 var instance: Node3D = null
@@ -20,7 +20,7 @@ var _warned: Dictionary = {}
 
 ## Loads the rig scene and takes it as a child. Idempotent.
 ## Fails rather than leaving a rig with no mounts, which reads as an invisible character.
-func build_from(p_def: DotPlayerModelDef) -> DotResult:
+func build_from(p_def: GSPlayerModelDef) -> GSResult:
 	def = p_def
 	_mounts.clear()
 	_warned.clear()
@@ -30,42 +30,42 @@ func build_from(p_def: DotPlayerModelDef) -> DotResult:
 		instance = null
 
 	if def == null:
-		return DotResult.fail(DotError.CODE_INVALID, "No model definition.")
+		return GSResult.fail(GSError.CODE_INVALID, "No model definition.")
 
 	scale = Vector3.ONE * def.scale
 
 	if def.rig_scene == "":
 		# Legal: a game whose rig is already in the scene beside this node passes
 		# nothing and uses adopt() instead.
-		return DotResult.success(null)
+		return GSResult.success(null)
 
 	if not ResourceLoader.exists(def.rig_scene):
-		return DotResult.fail(
-			DotError.CODE_IO,
+		return GSResult.fail(
+			GSError.CODE_IO,
 			"The rig scene for '%s' is not there: %s" % [String(def.id), def.rig_scene]
 		)
 
 	var packed := load(def.rig_scene) as PackedScene
 
 	if packed == null:
-		return DotResult.fail(
-			DotError.CODE_PARSE, "%s is not a PackedScene." % def.rig_scene
+		return GSResult.fail(
+			GSError.CODE_PARSE, "%s is not a PackedScene." % def.rig_scene
 		)
 
 	instance = packed.instantiate() as Node3D
 
 	if instance == null:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"%s does not instantiate to a Node3D." % def.rig_scene
 		)
 
 	add_child(instance)
-	return DotResult.success(instance)
+	return GSResult.success(instance)
 
 
 ## Uses a rig that is already in the scene rather than loading one.
-func adopt(existing: Node3D, p_def: DotPlayerModelDef) -> void:
+func adopt(existing: Node3D, p_def: GSPlayerModelDef) -> void:
 	def = p_def
 	instance = existing
 	_mounts.clear()
@@ -94,7 +94,7 @@ func mount(slot: StringName) -> Node3D:
 
 	if found == null and not _warned.has(slot):
 		_warned[slot] = true
-		DotLog.warn(CHANNEL, "the rig has no mount", {
+		GSLog.warn(CHANNEL, "the rig has no mount", {
 			"slot": String(slot), "expected": node_name, "model": String(def.id),
 		})
 

@@ -15,9 +15,9 @@ What this does:
 - Takes the three clips (one pose track set each) and names them `idle`, `run`, `jump`, the family's
   names; the "Targeting Pose" action each animation file carries is dropped.
 - Leaves the body at the FBX's size (3.77 units tall: the glTF exporter drops an armature's object scale, and a
-  scaled-in-place skeleton would invalidate the clips' translations). `DotKenneyCharacters.SCALE` takes it to 1.8 m.
+  scaled-in-place skeleton would invalidate the clips' translations). `GSKenneyCharacters.SCALE` takes it to 1.8 m.
 - Exports without images: the skins are separate PNGs a game puts on the one material
-  (`DotKenneyCharacters.build`), so one body serves four skins.
+  (`GSKenneyCharacters.build`), so one body serves four skins.
 """
 import sys, os
 sys.path.insert(0, os.environ.get("KENNEY_NUMPY", "/tmp/kn-np"))

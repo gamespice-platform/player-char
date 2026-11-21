@@ -13,14 +13,14 @@ func _init(host: Node) -> void:
 	suite = host
 
 
-func _head(g: DotHumanoidFigure) -> Vector3:
+func _head(g: GSHumanoidFigure) -> Vector3:
 	var sk := g.skeleton()
 	sk.force_update_all_bone_transforms()
 	return (g.global_transform.affine_inverse() * sk.global_transform) * sk.get_bone_global_pose(sk.find_bone("Head")).origin
 
 
 ## Settles on `a`, switches to `b`, returns {steps (head moves per frame), end (head), amounts (crouch_amount per frame)}.
-func _run_seq(g: DotHumanoidFigure, a: Dictionary, b: Dictionary) -> Dictionary:
+func _run_seq(g: GSHumanoidFigure, a: Dictionary, b: Dictionary) -> Dictionary:
 	var out := {"steps": [], "end": Vector3.ZERO, "amounts": []}
 	var last := Vector3.INF
 	for phase in 2:
@@ -42,10 +42,10 @@ func _run_seq(g: DotHumanoidFigure, a: Dictionary, b: Dictionary) -> Dictionary:
 
 func run() -> void:
 	suite._section("crouch and slide blend on a remote figure")
-	var g := DotHumanoidFigure.new()
+	var g := GSHumanoidFigure.new()
 	suite.add_child(g)
-	g.build(DotHumanoidLook.stock(9), 1.372)
-	g.set_hold(DotHumanoidFigure.Hold.GUN)
+	g.build(GSHumanoidLook.stock(9), 1.372)
+	g.set_hold(GSHumanoidFigure.Hold.GUN)
 	var stand := _run_seq(g, {}, {})
 	var crouch := _run_seq(g, {}, {"crouched": true})
 	var slide := _run_seq(g, {"velocity": RUN}, {"crouched": true, "sliding": true, "velocity": RUN})

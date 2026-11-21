@@ -1,7 +1,7 @@
-class_name DotHumanoidAim
+class_name GSHumanoidAim
 extends RefCounted
 
-## The figure's tuning base, by path: naming DotHumanoidFigure here closed a parser cycle Godot 4.7 never frees.
+## The figure's tuning base, by path: naming GSHumanoidFigure here closed a parser cycle Godot 4.7 never frees.
 const Tuning := preload("dot_humanoid_figure_tuning.gd")
 
 ## The view pitch bent into a figure's waist and chest, and its arms when it holds a gun.
@@ -16,18 +16,18 @@ static func apply(skeleton: Skeleton3D, model: Node3D, animation: Animation, to_
 
 ## The bones [method apply] bends for [param animation]: per keyed bone its index, its parent, its
 ## share and whether it is the arm, flat. Depends only on the rig and the clip, so a figure keeps one
-## per clip ([method DotHumanoidFigure._apply_aim]) instead of a path format and a track search per bone per frame.
+## per clip ([method GSHumanoidFigure._apply_aim]) instead of a path format and a track search per bone per frame.
 static func plan(skeleton: Skeleton3D, model: Node3D, animation: Animation, arm: bool) -> Array:
 	var out := []
 	var prefix := String(model.get_path_to(skeleton))
-	var shares: Dictionary = DotHumanoidClips.AIM_BONES
+	var shares: Dictionary = GSHumanoidClips.AIM_BONES
 	if arm:
-		shares = shares.merged(DotHumanoidClips.AIM_ARM)
+		shares = shares.merged(GSHumanoidClips.AIM_ARM)
 	for bone: String in shares:
 		var i := skeleton.find_bone(bone)
 		if i < 0 or animation.find_track(NodePath("%s:%s" % [prefix, bone]), Animation.TYPE_ROTATION_3D) < 0:
 			continue
-		out.append_array([i, skeleton.get_bone_parent(i), float(shares[bone]), DotHumanoidClips.AIM_ARM.has(bone)])
+		out.append_array([i, skeleton.get_bone_parent(i), float(shares[bone]), GSHumanoidClips.AIM_ARM.has(bone)])
 	return out
 
 
@@ -45,7 +45,7 @@ static func apply_plan(skeleton: Skeleton3D, bones: Array, to_figure: Transform3
 	# chain, not get_bone_global_pose, which is last frame's (with last frame's bend in it).
 	var parents: Array[Quaternion] = []
 	for k in range(0, bones.size(), 4):
-		parents.append(DotHumanoidIk.chain_rotation(skeleton, bones[k + 1]))
+		parents.append(GSHumanoidIk.chain_rotation(skeleton, bones[k + 1]))
 	for n in parents.size():
 		var k := n * 4
 		var i: int = bones[k]

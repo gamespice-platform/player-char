@@ -1,83 +1,83 @@
 extends "dot_humanoid_figure_state.gd"
 
-## [DotHumanoidFigure]'s clip choice, overlays, aim, support hand and swim lean, split out to keep each file small.
+## [GSHumanoidFigure]'s clip choice, overlays, aim, support hand and swim lean, split out to keep each file small.
 
 func _clip_for(p_state: StringName, speed: float) -> Array:
 	var gun := hold == Hold.GUN
 	if downed and propped:
 		var named := StringName(downed_clips.get(&"propped", &""))
 		if named == &"":
-			named = DotHumanoidClips.IDLE_GUN if gun else DotHumanoidClips.IDLE
+			named = GSHumanoidClips.IDLE_GUN if gun else GSHumanoidClips.IDLE
 		return [named, 1.0]
 	if downed:
-		return [StringName(downed_clips.get(&"crawl", DotHumanoidClips.CRAWL)), clampf(speed / 1.2, 0.0, 1.6)]
+		return [StringName(downed_clips.get(&"crawl", GSHumanoidClips.CRAWL)), clampf(speed / 1.2, 0.0, 1.6)]
 	if _action_full != &"":
 		return [_action_full, 1.0]
 	# A rider is carried: whatever speed the seat moves at, the legs stay sat.
-	if seated and p_state != DotPlayerAnimState.DEAD:
-		if driving and _anim != null and _anim.has_animation(DotHumanoidClips.DRIVE):
-			return [DotHumanoidClips.DRIVE, 1.0]
-		return [DotHumanoidClips.SIT, 1.0]
+	if seated and p_state != GSPlayerAnimState.DEAD:
+		if driving and _anim != null and _anim.has_animation(GSHumanoidClips.DRIVE):
+			return [GSHumanoidClips.DRIVE, 1.0]
+		return [GSHumanoidClips.SIT, 1.0]
 	# Running along a wall: the legs run in the air (the body is rolled onto the wall by the game).
 	if bool(_motion.get("wall_running", false)) and p_state in [
-			DotPlayerAnimState.JUMP, DotPlayerAnimState.FALL, DotPlayerAnimState.LAND]:
-		return [DotHumanoidClips.RUN_GUN if gun else DotHumanoidClips.RUN, clampf(speed / 5.0, 0.7, 1.5)]
+			GSPlayerAnimState.JUMP, GSPlayerAnimState.FALL, GSPlayerAnimState.LAND]:
+		return [GSHumanoidClips.RUN_GUN if gun else GSHumanoidClips.RUN, clampf(speed / 5.0, 0.7, 1.5)]
 	# A slide on the ground: leant back, legs forward. The game's `sliding` key; in the air it is a fall.
 	if bool(_motion.get("sliding", false)) and p_state in [
-			DotPlayerAnimState.CROUCH_IDLE, DotPlayerAnimState.CROUCH_WALK, DotPlayerAnimState.RUN,
-			DotPlayerAnimState.WALK, DotPlayerAnimState.IDLE] and _anim != null and _anim.has_animation(DotHumanoidClips.SLIDE):
-		return [DotHumanoidClips.SLIDE, 1.0]
+			GSPlayerAnimState.CROUCH_IDLE, GSPlayerAnimState.CROUCH_WALK, GSPlayerAnimState.RUN,
+			GSPlayerAnimState.WALK, GSPlayerAnimState.IDLE] and _anim != null and _anim.has_animation(GSHumanoidClips.SLIDE):
+		return [GSHumanoidClips.SLIDE, 1.0]
 	if zombie_gait and not gun and _anim != null:
 		var zombie := _zombie_clip_for(p_state, speed)
 		if not zombie.is_empty():
 			return zombie
 	match p_state:
-		DotPlayerAnimState.DEAD:
-			return [DotHumanoidClips.DEATH, 1.0]
-		DotPlayerAnimState.SWIM:
-			return [DotHumanoidClips.SWIM, clampf(speed / 2.5, 0.45, 1.3)]
-		DotPlayerAnimState.JUMP:
-			return [DotHumanoidClips.JUMP, 1.0]
-		DotPlayerAnimState.FALL:
-			return [DotHumanoidClips.FALL, 1.0]
-		DotPlayerAnimState.LAND:
-			return [DotHumanoidClips.LAND, 1.4]
-		DotPlayerAnimState.CROUCH_IDLE:
-			return [DotHumanoidClips.CROUCH, 1.0]
-		DotPlayerAnimState.CROUCH_WALK:
-			return [DotHumanoidClips.CROUCH_WALK, clampf(speed / 1.6, 0.5, 1.6)]
-		DotPlayerAnimState.WALK:
+		GSPlayerAnimState.DEAD:
+			return [GSHumanoidClips.DEATH, 1.0]
+		GSPlayerAnimState.SWIM:
+			return [GSHumanoidClips.SWIM, clampf(speed / 2.5, 0.45, 1.3)]
+		GSPlayerAnimState.JUMP:
+			return [GSHumanoidClips.JUMP, 1.0]
+		GSPlayerAnimState.FALL:
+			return [GSHumanoidClips.FALL, 1.0]
+		GSPlayerAnimState.LAND:
+			return [GSHumanoidClips.LAND, 1.4]
+		GSPlayerAnimState.CROUCH_IDLE:
+			return [GSHumanoidClips.CROUCH, 1.0]
+		GSPlayerAnimState.CROUCH_WALK:
+			return [GSHumanoidClips.CROUCH_WALK, clampf(speed / 1.6, 0.5, 1.6)]
+		GSPlayerAnimState.WALK:
 			# A game whose run threshold sits above its sprint speed would walk at a sprinter's pace.
 			if sprint_speed > 0.0 and speed >= sprint_speed and _sprint_clip_for(speed):
-				return [DotHumanoidClips.SPRINT, 1.0]
-			return [DotHumanoidClips.WALK_GUN if gun else DotHumanoidClips.WALK, clampf(speed / 1.9, 0.6, 1.6)]
-		DotPlayerAnimState.RUN:
+				return [GSHumanoidClips.SPRINT, 1.0]
+			return [GSHumanoidClips.WALK_GUN if gun else GSHumanoidClips.WALK, clampf(speed / 1.9, 0.6, 1.6)]
+		GSPlayerAnimState.RUN:
 			if _sprint_clip_for(speed):
-				return [DotHumanoidClips.SPRINT, 1.0]
-			return [DotHumanoidClips.RUN_GUN if gun else DotHumanoidClips.RUN, clampf(speed / 5.0, 0.7, 1.5)]
-		DotPlayerAnimState.CLIMB:
-			return [DotHumanoidClips.CLIMB, clampf(absf(float(_motion.get("vertical", 0.0))) / 2.5, 0.0, 1.2)]
-	return [DotHumanoidClips.IDLE_GUN if gun else DotHumanoidClips.IDLE, 1.0]
+				return [GSHumanoidClips.SPRINT, 1.0]
+			return [GSHumanoidClips.RUN_GUN if gun else GSHumanoidClips.RUN, clampf(speed / 5.0, 0.7, 1.5)]
+		GSPlayerAnimState.CLIMB:
+			return [GSHumanoidClips.CLIMB, clampf(absf(float(_motion.get("vertical", 0.0))) / 2.5, 0.0, 1.2)]
+	return [GSHumanoidClips.IDLE_GUN if gun else GSHumanoidClips.IDLE, 1.0]
 
 
 ## The zombie gait's clip and rate for a ground state, or empty. The rates are the clips' own ground speeds (metres a second).
 func _zombie_clip_for(p_state: StringName, speed: float) -> Array:
 	match p_state:
-		DotPlayerAnimState.IDLE:
-			if _anim.has_animation(DotHumanoidClips.ZOMBIE_IDLE):
-				return [DotHumanoidClips.ZOMBIE_IDLE, 1.0]
-		DotPlayerAnimState.WALK:
-			if _anim.has_animation(DotHumanoidClips.ZOMBIE_WALK):
-				return [DotHumanoidClips.ZOMBIE_WALK, clampf(speed / ZOMBIE_WALK_NATURAL, 0.6, 1.8)]
-		DotPlayerAnimState.RUN:
-			if _anim.has_animation(DotHumanoidClips.SPRINT):
-				return [DotHumanoidClips.SPRINT, clampf(speed / ZOMBIE_SPRINT_NATURAL, 0.7, 1.5)]
+		GSPlayerAnimState.IDLE:
+			if _anim.has_animation(GSHumanoidClips.ZOMBIE_IDLE):
+				return [GSHumanoidClips.ZOMBIE_IDLE, 1.0]
+		GSPlayerAnimState.WALK:
+			if _anim.has_animation(GSHumanoidClips.ZOMBIE_WALK):
+				return [GSHumanoidClips.ZOMBIE_WALK, clampf(speed / ZOMBIE_WALK_NATURAL, 0.6, 1.8)]
+		GSPlayerAnimState.RUN:
+			if _anim.has_animation(GSHumanoidClips.SPRINT):
+				return [GSHumanoidClips.SPRINT, clampf(speed / ZOMBIE_SPRINT_NATURAL, 0.7, 1.5)]
 	return []
 
 
 ## Whether a runner at [param speed] plays the sprint clip: the game's `sprinting` key when it sends one, else the speed, with a gap so it does not flicker.
 func _sprint_clip_for(speed: float) -> bool:
-	if _anim == null or not _anim.has_animation(DotHumanoidClips.SPRINT):
+	if _anim == null or not _anim.has_animation(GSHumanoidClips.SPRINT):
 		return false
 	var from := sprint_speed if sprint_speed > 0.0 else _machine.run_speed * 1.6
 	# The run clip hovers (both feet up) above its own pace, whoever says sprinting; the sprint clip stays grounded.
@@ -101,9 +101,9 @@ func _matched_rate(speed: float, dt: float) -> float:
 	var length := _anim.current_animation_length
 	var phase := fposmod(_anim.current_animation_position, length) / length
 	var back := -1.0 if legs.backward else 1.0
-	var want := DotHumanoidStride.distance_at(table, phase) + back * speed * dt
+	var want := GSHumanoidStride.distance_at(table, phase) + back * speed * dt
 	var laps := floorf(want / table[-1])
-	var to := DotHumanoidStride.phase_at(table, want - laps * table[-1]) + laps
+	var to := GSHumanoidStride.phase_at(table, want - laps * table[-1]) + laps
 	var most := stride_max_rate if stride_max_rate > 0.0 else INF
 	# Where the table says the foot hardly moves the matched rate races the clip, and a leg swings through in a frame or two.
 	if stride_rate_span > 0.0:
@@ -113,7 +113,7 @@ func _matched_rate(speed: float, dt: float) -> float:
 
 func _stride_for(clip_id: StringName) -> PackedFloat32Array:
 	if not _strides.has(clip_id):
-		_strides[clip_id] = DotHumanoidStride.table_for(_anim.get_animation(clip_id), _skeleton, _model, _to_figure())
+		_strides[clip_id] = GSHumanoidStride.table_for(_anim.get_animation(clip_id), _skeleton, _model, _to_figure())
 	return _strides[clip_id]
 
 
@@ -121,27 +121,27 @@ func _play(wanted: StringName, rate: float) -> void:
 	if _anim == null:
 		return
 	if not _anim.has_animation(wanted):
-		wanted = DotHumanoidClips.IDLE
+		wanted = GSHumanoidClips.IDLE
 		if not _anim.has_animation(wanted):
 			return
 	_anim.speed_scale = rate
 	if clip == wanted:
 		return
 	var from := _stride_fraction()
-	var low_from := clip == DotHumanoidClips.SLIDE or clip == DotHumanoidClips.CROUCH or clip == DotHumanoidClips.CROUCH_WALK
-	var low_to := wanted == DotHumanoidClips.SLIDE or wanted == DotHumanoidClips.CROUCH or wanted == DotHumanoidClips.CROUCH_WALK
+	var low_from := clip == GSHumanoidClips.SLIDE or clip == GSHumanoidClips.CROUCH or clip == GSHumanoidClips.CROUCH_WALK
+	var low_to := wanted == GSHumanoidClips.SLIDE or wanted == GSHumanoidClips.CROUCH or wanted == GSHumanoidClips.CROUCH_WALK
 	# Into or out of a crouched or sliding clip: the stance's own time, not a stride's, so the head does not pop up or down.
 	var stance := low_from != low_to
-	var blend := SLIDE_BLEND if wanted == DotHumanoidClips.SLIDE or clip == DotHumanoidClips.SLIDE else (CROUCH_BLEND if stance else 0.15)
+	var blend := SLIDE_BLEND if wanted == GSHumanoidClips.SLIDE or clip == GSHumanoidClips.SLIDE else (CROUCH_BLEND if stance else 0.15)
 	clip = wanted
 	var cross := from >= 0.0 and wanted in STRIDE_CLIPS
 	# A stride cut keeps the feet planted but would snap the arms, and the gun in the hand with them.
 	if cross:
-		_ease.begin(_skeleton, _upper, HAND_BONE, blend if stance else DotHumanoidBlend.SECONDS)
-	var feet := DotHumanoidStride.feet_now(_skeleton, _to_figure()) if cross else PackedVector3Array()
+		_ease.begin(_skeleton, _upper, HAND_BONE, blend if stance else GSHumanoidBlend.SECONDS)
+	var feet := GSHumanoidStride.feet_now(_skeleton, _to_figure()) if cross else PackedVector3Array()
 	_anim.play(wanted, 0.0 if cross else blend)
 	if cross and not feet.is_empty():
-		_anim.seek(DotHumanoidStride.matching_time(_anim.get_animation(wanted), _skeleton, _model, _to_figure(), feet), true)
+		_anim.seek(GSHumanoidStride.matching_time(_anim.get_animation(wanted), _skeleton, _model, _to_figure(), feet), true)
 
 
 ## How far through its stride the playing clip's planted foot is, 0 to 1, or -1 when it is not a stride clip. A clip entered at this fraction keeps the foot it stands on travelling with the ground.
@@ -152,18 +152,18 @@ func _stride_fraction() -> float:
 	if table.size() < 2 or table[-1] <= 0.0:
 		return -1.0
 	var length := _anim.current_animation_length
-	return DotHumanoidStride.distance_at(table, fposmod(_anim.current_animation_position, length) / length) / table[-1]
+	return GSHumanoidStride.distance_at(table, fposmod(_anim.current_animation_position, length) / length) / table[-1]
 
 
 ## Ends a looping or full-body action when the player leaves the spot: a pose is for standing.
 func _end_action_if_moved() -> void:
 	if action == &"" and not _overlay_loop:
 		return
-	var still := state == DotPlayerAnimState.IDLE or state == DotPlayerAnimState.CROUCH_IDLE
+	var still := state == GSPlayerAnimState.IDLE or state == GSPlayerAnimState.CROUCH_IDLE
 	if _action_full != &"" and not still:
 		stop_action()
-	elif _overlay_loop and (downed or state in [DotPlayerAnimState.DEAD, DotPlayerAnimState.SWIM,
-			DotPlayerAnimState.CLIMB, DotPlayerAnimState.JUMP, DotPlayerAnimState.FALL, DotPlayerAnimState.RUN]):
+	elif _overlay_loop and (downed or state in [GSPlayerAnimState.DEAD, GSPlayerAnimState.SWIM,
+			GSPlayerAnimState.CLIMB, GSPlayerAnimState.JUMP, GSPlayerAnimState.FALL, GSPlayerAnimState.RUN]):
 		stop_action()
 
 
@@ -183,11 +183,11 @@ func _start_overlay(which: StringName, rate: float) -> void:
 
 ## Bends the waist and chest by [member aim_pitch] after the clip and the overlays, so what the arms
 ## do points up or down with the view; not while down, dead, swimming or climbing, and only on a
-## bone the playing clip keys (see [DotHumanoidAim]).
+## bone the playing clip keys (see [GSHumanoidAim]).
 func _apply_aim() -> void:
 	if _skeleton == null or (is_zero_approx(aim_pitch) and sprint_blend <= 0.0) or downed:
 		return
-	if state == DotPlayerAnimState.DEAD or state == DotPlayerAnimState.SWIM or state == DotPlayerAnimState.CLIMB:
+	if state == GSPlayerAnimState.DEAD or state == GSPlayerAnimState.SWIM or state == GSPlayerAnimState.CLIMB:
 		return
 	var animation := _anim.get_animation(clip)
 	if animation == null:
@@ -197,9 +197,9 @@ func _apply_aim() -> void:
 	if plans == null:
 		plans = [null, null]
 	if plans[arm] == null:
-		plans[arm] = DotHumanoidAim.plan(_skeleton, _model, animation, arm == 1)
+		plans[arm] = GSHumanoidAim.plan(_skeleton, _model, animation, arm == 1)
 		_aim_plans[animation] = plans
-	DotHumanoidAim.apply_plan(_skeleton, plans[arm], _to_figure(), aim_pitch, sprint_blend)
+	GSHumanoidAim.apply_plan(_skeleton, plans[arm], _to_figure(), aim_pitch, sprint_blend)
 
 
 ## Where the support hand goes: the weapon's foregrip, [constant Vector3.INF] when the gun is held with one
@@ -224,14 +224,14 @@ func _apply_support() -> void:
 		return
 	var chain: Variant = _support_chains.get(bones[0])
 	if chain == null:
-		chain = DotHumanoidIk.chain_to(_skeleton, _skeleton.get_bone_parent(bones[0]))
+		chain = GSHumanoidIk.chain_to(_skeleton, _skeleton.get_bone_parent(bones[0]))
 		_support_chains[bones[0]] = chain
-	DotHumanoidIk.two_bone_under(_skeleton, bones, DotHumanoidIk.chain_pose(_skeleton, chain), target,
+	GSHumanoidIk.two_bone_under(_skeleton, bones, GSHumanoidIk.chain_pose(_skeleton, chain), target,
 		_to_figure().basis.inverse() * SUPPORT_POLE, _support_weight)
 
 
 func _apply_carry() -> void:
-	if _skeleton == null or clip == DotHumanoidClips.DEATH or clip == DotHumanoidClips.SWIM:
+	if _skeleton == null or clip == GSHumanoidClips.DEATH or clip == GSHumanoidClips.SWIM:
 		carry.support_grip = Vector3.INF
 		return
 	carry.apply(_skeleton, _model, _anim, _to_figure(), _anim.get_animation(clip), _stride_fraction(), aim_pitch,
@@ -242,19 +242,19 @@ func _apply_carry() -> void:
 func _support_bones_for(clip_id: StringName) -> Array[int]:
 	if _support_cache.has(clip_id):
 		return _support_cache[clip_id]
-	var bones := DotHumanoidIk.keyed_bones(_skeleton, _model, _anim.get_animation(clip_id), SUPPORT_BONES)
+	var bones := GSHumanoidIk.keyed_bones(_skeleton, _model, _anim.get_animation(clip_id), SUPPORT_BONES)
 	_support_cache[clip_id] = bones
 	return bones
 
 
 ## Swimming lays the whole body forward, about the hips, and eases back out of it. The swim clip
-## is drawn upright ([method DotHumanoidClips._swimming]); this is what makes it horizontal.
+## is drawn upright ([method GSHumanoidClips._swimming]); this is what makes it horizontal.
 func _apply_swim(delta: float) -> void:
 	if _model == null:
 		return
-	var wanted := SWIM_LEAN if state == DotPlayerAnimState.SWIM and not downed else 0.0
+	var wanted := SWIM_LEAN if state == GSPlayerAnimState.SWIM and not downed else 0.0
 	var before := _swim_pitch + _prop_pitch + _slide_lift + _own_back
-	var sliding := state != DotPlayerAnimState.SWIM and clip == DotHumanoidClips.SLIDE
+	var sliding := state != GSPlayerAnimState.SWIM and clip == GSHumanoidClips.SLIDE
 	_slide_lift = move_toward(_slide_lift, SLIDE_LIFT * height / 1.8 if sliding else 0.0, delta * 0.6)
 	_swim_pitch = move_toward(_swim_pitch, wanted, delta * 3.0)
 	_prop_pitch = move_toward(_prop_pitch, -PROP_LEAN if downed and propped else 0.0, delta * 3.0)

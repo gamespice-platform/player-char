@@ -20,11 +20,11 @@ Needs Godot 4.7 or newer.
 
 ## Body metrics
 
-One `DotPlayerCharDef` holds the numbers that must agree: height (collision capsule), eye height (camera and muzzle), crouch height and radius. `DotPlayerChar` sizes the body from it.
+One `GSPlayerCharDef` holds the numbers that must agree: height (collision capsule), eye height (camera and muzzle), crouch height and radius. `GSPlayerChar` sizes the body from it.
 
 ```gdscript
-var ch := DotPlayerChar.new()
-ch.catalogue = DotPlayerCharCatalogue.three_builds()
+var ch := GSPlayerChar.new()
+ch.catalogue = GSPlayerCharCatalogue.three_builds()
 player.add_child(ch)
 
 ch.set_char(&"heavy")     # the capsule resizes with the model
@@ -36,44 +36,44 @@ ch.eye_height()           # used by the camera, the muzzle and the trace
 
 ## Customisation
 
-`DotPlayerCharLook` is slot choices plus tint colours. `look.validate(def)` checks that slots and options exist and that there are no more colours than channels, and it loads no art. Use it at the trust boundary. `conform()` instead drops illegal parts and keeps the rest, for loading a saved character after an item was retired. `fill_defaults()` completes a look.
+`GSPlayerCharLook` is slot choices plus tint colours. `look.validate(def)` checks that slots and options exist and that there are no more colours than channels, and it loads no art. Use it at the trust boundary. `conform()` instead drops illegal parts and keeps the rest, for loading a saved character after an item was retired. `fill_defaults()` completes a look.
 
 ## 3D model
 
 ```gdscript
-var plan := DotPlayerModelBuilder.plan(model_def, look)
-DotPlayerModelBuilder.apply(plan, rig, placeholder)
+var plan := GSPlayerModelBuilder.plan(model_def, look)
+GSPlayerModelBuilder.apply(plan, rig, placeholder)
 ```
 
-Planning works from ids only, so a dedicated server can plan without holding any content. `DotPlayerModelVisual` only rebuilds when the chosen scenes change, not on a tint or stance change. Tints are per-instance shader parameters, so two players wearing the same part do not recolour each other. `DotPlayerModelCatalogue.humanoid()` defines nine mount names: `head`, `face`, `chest`, `back`, `waist`, `left_hand`, `right_hand`, `left_foot`, `right_foot`.
+Planning works from ids only, so a dedicated server can plan without holding any content. `GSPlayerModelVisual` only rebuilds when the chosen scenes change, not on a tint or stance change. Tints are per-instance shader parameters, so two players wearing the same part do not recolour each other. `GSPlayerModelCatalogue.humanoid()` defines nine mount names: `head`, `face`, `chest`, `back`, `waist`, `left_hand`, `right_hand`, `left_foot`, `right_foot`.
 
 ## 2D sprite
 
-A sheet is a grid: a row is a state, a direction offsets the row, a column is a frame. Overlays must be cut on the base's grid. `DotPlayerSpriteFacing.resolve(angle, count, mirror)` returns the row offset and whether to flip.
+A sheet is a grid: a row is a state, a direction offsets the row, a column is a frame. Overlays must be cut on the base's grid. `GSPlayerSpriteFacing.resolve(angle, count, mirror)` returns the row offset and whether to flip.
 
 ## Animation
 
 ```
-DotPlayerAnimDriver           anim_set = DotPlayerAnimSet.locomotion()
-  DotPlayerAnimPlayerSink     3D: drives an AnimationPlayer
-  DotPlayerAnimSpriteSink     2D: calls set_row / set_frame
+GSPlayerAnimDriver           anim_set = GSPlayerAnimSet.locomotion()
+  GSPlayerAnimPlayerSink     3D: drives an AnimationPlayer
+  GSPlayerAnimSpriteSink     2D: calls set_row / set_frame
 ```
 
-`DotPlayerAnimState.advance(motion, delta)` reads no node, clock or input, so a server can run the same state machine as a client. It uses two speed thresholds (hysteresis) so walk and run do not flicker, and a short air grace time so stairs do not trigger jump animations. Clip events come from the clip's own timeline, as fractions, so one clip serves a rig and a sheet.
+`GSPlayerAnimState.advance(motion, delta)` reads no node, clock or input, so a server can run the same state machine as a client. It uses two speed thresholds (hysteresis) so walk and run do not flicker, and a short air grace time so stairs do not trigger jump animations. Clip events come from the clip's own timeline, as fractions, so one clip serves a rig and a sheet.
 
 ## Ragdolls and deaths
 
 ```gdscript
-var yard := DotPlayerRagdolls.new()     # one per world, on a client
+var yard := GSPlayerRagdolls.new()     # one per world, on a client
 yard.rules.follow_cvars(link)
 world.add_child(yard)
 
 # server, on a kill:
-var death := DotPlayerDeath.decide(reactions, headshot, damage, direction, seed, weapon_def)
+var death := GSPlayerDeath.decide(reactions, headshot, damage, direction, seed, weapon_def)
 kill_message.merge(death.to_dict())
 
 # every client, on that message:
-yard.spawn(victim_figure, DotPlayerDeath.from_dict(kill_message), victim_velocity)
+yard.spawn(victim_figure, GSPlayerDeath.from_dict(kill_message), victim_velocity)
 ```
 
 The server picks the reaction and sends it with the kill, so every screen shows the same fall. Stock reactions: plain fall, headshot throw, powerful-weapon carry (`params.death_reaction` or `params.death_power` in a weapon def), face plant and crumple. A game can add more.
@@ -92,14 +92,14 @@ See [docs/ragdolls.md](docs/ragdolls.md).
 ## People
 
 ```gdscript
-var look := DotHumanoidLook.from_site(site_avatar)   # or DotHumanoidLook.stock(hash(player_id))
-var person := DotHumanoidFigure.new()
+var look := GSHumanoidLook.from_site(site_avatar)   # or GSHumanoidLook.stock(hash(player_id))
+var person := GSHumanoidFigure.new()
 world.add_child(person)
 person.build(look.with_side(team_colour, 0.6), 1.8)
 
 # every frame:
 person.set_motion({"on_floor": on_floor, "vertical": velocity.y, "crouched": crouched})
-person.set_hold(DotHumanoidFigure.Hold.GUN)
+person.set_hold(GSHumanoidFigure.Hold.GUN)
 person.pose(drawn_position, yaw, ground_speed)
 ```
 

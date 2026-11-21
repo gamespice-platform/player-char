@@ -1,4 +1,4 @@
-class_name DotRagdollWeaponChecks
+class_name GSRagdollWeaponChecks
 extends RefCounted
 
 ## The ragdoll suite's heavy-drop, cvar-default and dropped-weapon section, split out to keep
@@ -13,7 +13,7 @@ func _init(host: Node) -> void:
 
 func run() -> void:
 	suite._section("the heavy drop, the cvar defaults and the dropped weapon")
-	var r := DotPlayerRagdollRules.new()
+	var r := GSPlayerRagdollRules.new()
 	suite._check(not r.exaggerate and not r.shootable, "exaggerate and shootable are off by default")
 	suite._check(is_equal_approx(r.torque_scale, 1.0) and r.weapon_drop, "torque 1, weapon drop on by default")
 	suite._check(r.reactions().find(&"headshot_launch").weight == 0.0, "launch reactions are not drawn by default")
@@ -30,7 +30,7 @@ func run() -> void:
 	suite._check(not r.set_cvar("sv_ragdoll_weapon_time", "0.1") and r.set_cvar("sv_ragdoll_weapon_time", "600") and r.weapon_lifetime == 600.0,
 		"a dropped weapon's time is refused below 0.5 s and open above")
 	suite._check(r.set_cvar("sv_ragdoll_force", "1") and r.set_cvar("sv_ragdoll_time", "10") and r.set_cvar("sv_ragdoll_weapon_time", "8"), "(restored)")
-	var unl := DotPlayerRagdolls.new()
+	var unl := GSPlayerRagdolls.new()
 	unl.rules.max_count = 0
 	unl.local_cap = 0
 	suite._check(unl.cap() == 0, "max 0 and local 0: no cap at all (0 = unlimited)")
@@ -41,11 +41,11 @@ func run() -> void:
 	suite._check(unl.cap() == 3, "max 3 with an unlimited machine: three")
 	unl.free()
 
-	var yard := DotPlayerRagdolls.new()
+	var yard := GSPlayerRagdolls.new()
 	yard.local_cap = 64
 	suite._world.add_child(yard)
-	var launch := DotPlayerDeathReactions.stock().find(&"headshot_launch")
-	var made := DotPlayerRagdoll.build(suite._figure(Vector3(0, 0, 40)), yard, yard.rules, launch, suite._death(&"headshot_launch", Vector3(0, 0, 1), true), Vector3.ZERO)
+	var launch := GSPlayerDeathReactions.stock().find(&"headshot_launch")
+	var made := GSPlayerRagdoll.build(suite._figure(Vector3(0, 0, 40)), yard, yard.rules, launch, suite._death(&"headshot_launch", Vector3(0, 0, 1), true), Vector3.ZERO)
 	var top := 0.0
 	for node in made.part_nodes():
 		top = maxf(top, (node as RigidBody3D).linear_velocity.y)
@@ -56,7 +56,7 @@ func run() -> void:
 
 
 ## The dropped weapon prop: its mesh, what it leaves out, and shooting a lying body.
-func _check_weapon_drop(yard: DotPlayerRagdolls) -> void:
+func _check_weapon_drop(yard: GSPlayerRagdolls) -> void:
 	var gun := Node3D.new()
 	var gun_mesh := MeshInstance3D.new()
 	gun_mesh.mesh = BoxMesh.new()
@@ -99,7 +99,7 @@ func _check_weapon_drop(yard: DotPlayerRagdolls) -> void:
 	stray.top_level = true
 	person.add_child(stray)
 	stray.global_position = Vector3(-6, 9, 40)
-	suite._check(not DotPlayerRagdoll.meshes_of(person).has(stray), "a body copies no world-space effect hung under its figure")
+	suite._check(not GSPlayerRagdoll.meshes_of(person).has(stray), "a body copies no world-space effect hung under its figure")
 	person.queue_free()
 	fx_root.queue_free()
 	yard.rules.weapon_drop = false

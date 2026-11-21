@@ -1,4 +1,4 @@
-class_name DotPeopleViewChecks
+class_name GSPeopleViewChecks
 extends RefCounted
 
 ## The suite's view-arms section, split out to keep people_selftest under the file-size gate.
@@ -13,43 +13,43 @@ func _init(host: Node) -> void:
 
 func run() -> void:
 	suite._section("your own arms while downed")
-	var arms := DotPlayerViewArms.new()
+	var arms := GSPlayerViewArms.new()
 	suite.add_child(arms)
-	arms.build(DotHumanoidLook.stock(3), 1.8)
-	suite._check(arms.arms() is DotHumanoidFigure and not arms.arms().visible, "built hidden, as a figure")
+	arms.build(GSHumanoidLook.stock(3), 1.8)
+	suite._check(arms.arms() is GSHumanoidFigure and not arms.arms().visible, "built hidden, as a figure")
 	suite._check(arms.describe()["hidden_bones"] == 4, "head, neck and both legs are shrunk away")
 	arms.set_downed(true)
 	for i in 4:
 		arms.tick(1.0, 1.0 / 30.0)
 		await suite.get_tree().process_frame
 	suite._check(arms.arms().visible, "shown while downed")
-	var sk: Skeleton3D = (arms.arms() as DotHumanoidFigure).skeleton()
+	var sk: Skeleton3D = (arms.arms() as GSHumanoidFigure).skeleton()
 	suite._check(sk.get_bone_pose_scale(sk.find_bone("Head")).x < 0.01 and sk.get_bone_pose_scale(sk.find_bone("LowerArm.L")).x > 0.5, "the head is gone and the arms are not")
 	var head := (sk.global_transform * sk.get_bone_global_pose(sk.find_bone("Head"))).origin
 	var hand := (sk.global_transform * sk.get_bone_global_pose(sk.find_bone("Middle1.L"))).origin
 	suite._check(hand.z < head.z - 0.2 and hand.y < head.y, "the hand reaches ahead of the eye (-Z) and below it")
-	var pack := _gear_triangles(arms.arms() as DotHumanoidFigure)
+	var pack := _gear_triangles(arms.arms() as GSHumanoidFigure)
 	suite._check(pack == 0, "the view figure has no backpack surface (%d triangles)" % pack)
-	var bare := DotPlayerViewArms.new()
+	var bare := GSPlayerViewArms.new()
 	suite.add_child(bare)
 	bare.hide_vertex_fn = func(_b, _p): return false
-	bare.build(DotHumanoidLook.stock(7), 1.8)
-	suite._check(_gear_triangles(bare.arms() as DotHumanoidFigure) > 0, "without the hide the stock figure does carry a pack (the check can fail)")
+	bare.build(GSHumanoidLook.stock(7), 1.8)
+	suite._check(_gear_triangles(bare.arms() as GSHumanoidFigure) > 0, "without the hide the stock figure does carry a pack (the check can fail)")
 	bare.queue_free()
-	var wrapped := DotHumanoidLook.stock(7)
+	var wrapped := GSHumanoidLook.stock(7)
 	wrapped.body = &"shaun"
 	var sides := []
 	for mirror in [true, false]:
-		var held := DotPlayerViewArms.new()
+		var held := GSPlayerViewArms.new()
 		suite.add_child(held)
 		held.mirror_support_forearm = mirror
 		held.build(wrapped, 1.8)
-		sides.append(_forearm_triangles(held.arms() as DotHumanoidFigure))
+		sides.append(_forearm_triangles(held.arms() as GSHumanoidFigure))
 		held.queue_free()
 	suite._check(sides[0][0] == sides[0][1] and sides[1][0] != sides[1][1], "the support forearm is the firing one mirrored, so a one-sided bandage is not drawn (%s, unmirrored %s)" % [sides[0], sides[1]])
 	arms.set_downed(false)
 	suite._check(not arms.arms().visible, "hidden once up")
-	var custom := DotPlayerViewArms.new()
+	var custom := GSPlayerViewArms.new()
 	suite.add_child(custom)
 	custom.arms_factory = func(_l, _h): return Node3D.new()
 	custom.build()
@@ -59,7 +59,7 @@ func run() -> void:
 
 
 ## Triangles with a vertex on the hips more than 0.3 behind the body: the stock kit's backpack.
-func _gear_triangles(figure: DotHumanoidFigure) -> int:
+func _gear_triangles(figure: GSHumanoidFigure) -> int:
 	var sk := figure.skeleton()
 	var arrays := figure.mesh().mesh.surface_get_arrays(0)
 	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
@@ -82,7 +82,7 @@ func _gear_triangles(figure: DotHumanoidFigure) -> int:
 
 
 ## Triangles wholly on each forearm and hand (support, firing), bones read through the skin's binds.
-func _forearm_triangles(figure: DotHumanoidFigure) -> Array:
+func _forearm_triangles(figure: GSHumanoidFigure) -> Array:
 	var sk := figure.skeleton()
 	var skin := figure.mesh().skin
 	var arrays := figure.mesh().mesh.surface_get_arrays(0)

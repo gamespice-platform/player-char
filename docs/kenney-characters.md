@@ -1,6 +1,6 @@
 # Kenney's animated characters
 
-`DotKenneyCharacters` draws Kenney's **Animated Characters Protagonists** and **Animated Characters Retro** (both CC0, kenney.nl) beside the Quaternius people ([people.md](people.md)). Licence and file manifest: `addons/dot_player_char/people/CREDITS.md`.
+`GSKenneyCharacters` draws Kenney's **Animated Characters Protagonists** and **Animated Characters Retro** (both CC0, kenney.nl) beside the Quaternius people ([people.md](people.md)). Licence and file manifest: `addons/dot_player_char/people/CREDITS.md`.
 
 ## What the packs are
 
@@ -23,11 +23,11 @@ The rig is humanoid-compatible with the family's: both rest in a T-pose facing +
 | `fall` | the kit's | the kit's body travel, scaled by leg length |
 | `death`, `crawl` | the kit's | moved once so the lowest bone of the clip rests just above the floor |
 
-`jump` is Kenney's own and is nearly a still pose; the family's `fall` and `land` carry the air. `tools/kenney_retarget.gd` bakes them (30 keys a second, 145 KB for ten clips); a rebuilt body needs it run again. `DotKenneyCharacters.REQUIRED` (idle, walk, run, jump, fall, land, death) must all exist or `build` returns null with an error; `OPTIONAL` is the gun, crouch and crawl set.
+`jump` is Kenney's own and is nearly a still pose; the family's `fall` and `land` carry the air. `tools/kenney_retarget.gd` bakes them (30 keys a second, 145 KB for ten clips); a rebuilt body needs it run again. `GSKenneyCharacters.REQUIRED` (idle, walk, run, jump, fall, land, death) must all exist or `build` returns null with an error; `OPTIONAL` is the gun, crouch and crawl set.
 
 ## Using one
 
-`DotKenneyCharacters.build(&"retro", &"zombieMaleA")` returns a `Node3D` named "GS - Zombie Man", scaled to 1.8 m (`SCALE`: the glTF exporter drops the armature's own scale, so the wrapper carries it), holding the model with its skin and an `AnimationPlayer` with every clip. It does not use `DotHumanoidFigure`: no aim, overlays or ragdoll yet (left on the nightly board).
+`GSKenneyCharacters.build(&"retro", &"zombieMaleA")` returns a `Node3D` named "GS - Zombie Man", scaled to 1.8 m (`SCALE`: the glTF exporter drops the armature's own scale, so the wrapper carries it), holding the model with its skin and an `AnimationPlayer` with every clip. It does not use `GSHumanoidFigure`: no aim, overlays or ragdoll yet (left on the nightly board).
 
 ## Rebuilding
 

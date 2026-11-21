@@ -12,7 +12,7 @@ var _section_count := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run()
 
 
@@ -46,8 +46,8 @@ func _run() -> void:
 	get_tree().quit(1 if _failed > 0 else 0)
 
 
-func _def() -> DotPlayerSpriteDef:
-	var s := DotPlayerSpriteDef.make(&"hero")
+func _def() -> GSPlayerSpriteDef:
+	var s := GSPlayerSpriteDef.make(&"hero")
 	s.frame_size = Vector2i(32, 48)
 	s.columns = 8
 	s.rows = 16
@@ -100,7 +100,7 @@ func _test_def() -> void:
 	var blank_layer := _def()
 	blank_layer.layers["hat"] = ""
 	_check(not blank_layer.validate().ok, "and a layer naming no sheet")
-	_check(not DotPlayerSpriteDef.new().validate().ok, "and a sprite with no id")
+	_check(not GSPlayerSpriteDef.new().validate().ok, "and a sprite with no id")
 	_check(s.describe().contains("hero"), "and it describes itself")
 
 
@@ -133,7 +133,7 @@ func _test_frames() -> void:
 	_check(rect.size == Vector2i(32, 48), "and is one frame in size")
 	_check(s.frame_rect(99999).size == Vector2i(32, 48), "an impossible cell still gives a rect")
 
-	var single := DotPlayerSpriteDef.make(&"one")
+	var single := GSPlayerSpriteDef.make(&"one")
 	single.directions = 0
 	single.columns = 4
 	single.rows = 4
@@ -148,45 +148,45 @@ func _test_facing() -> void:
 	_section("facing")
 
 	# Two directions, mirrored: one drawn row, the flip does the work.
-	var right := DotPlayerSpriteFacing.resolve(0.0, 2, true)
+	var right := GSPlayerSpriteFacing.resolve(0.0, 2, true)
 	_check(right.index == 0 and not right.flip_h, "facing right is the drawn direction")
 
-	var left := DotPlayerSpriteFacing.resolve(PI, 2, true)
+	var left := GSPlayerSpriteFacing.resolve(PI, 2, true)
 	_check(
 		left.index == 0 and left.flip_h,
 		"and facing left is the same row, flipped — which is why the flag comes back "
 		+ "with the index rather than the caller working it out"
 	)
 
-	var unmirrored := DotPlayerSpriteFacing.resolve(PI, 2, false)
+	var unmirrored := GSPlayerSpriteFacing.resolve(PI, 2, false)
 	_check(
 		unmirrored.index == 1 and not unmirrored.flip_h,
 		"a sheet that draws both gets the second row instead"
 	)
 
 	# Four directions.
-	_check(DotPlayerSpriteFacing.resolve(0.0, 4, false).index == 0, "four-way: east is 0")
+	_check(GSPlayerSpriteFacing.resolve(0.0, 4, false).index == 0, "four-way: east is 0")
 	_check(
-		DotPlayerSpriteFacing.resolve(PI * 0.5, 4, false).index == 1,
+		GSPlayerSpriteFacing.resolve(PI * 0.5, 4, false).index == 1,
 		"a quarter turn is the next sector"
 	)
 	_check(
-		DotPlayerSpriteFacing.resolve(PI * 0.49, 4, false).index == 1,
+		GSPlayerSpriteFacing.resolve(PI * 0.49, 4, false).index == 1,
 		"and a sector is centred on its cardinal, so an angle just short of it does "
 		+ "not flicker between two rows"
 	)
 	_check(
-		DotPlayerSpriteFacing.resolve(PI * 0.51, 4, false).index == 1,
+		GSPlayerSpriteFacing.resolve(PI * 0.51, 4, false).index == 1,
 		"nor an angle just past it"
 	)
 
 	# Eight, mirrored: five drawn, three derived.
-	var east := DotPlayerSpriteFacing.resolve(0.0, 8, true)
+	var east := GSPlayerSpriteFacing.resolve(0.0, 8, true)
 	_check(east.index == 0 and not east.flip_h, "eight-way mirrored: east is drawn")
-	var west := DotPlayerSpriteFacing.resolve(PI, 8, true)
+	var west := GSPlayerSpriteFacing.resolve(PI, 8, true)
 	_check(west.index == 4 and not west.flip_h, "so is west, at the halfway row")
 
-	var south_west := DotPlayerSpriteFacing.resolve(PI * 1.25, 8, true)
+	var south_west := GSPlayerSpriteFacing.resolve(PI * 1.25, 8, true)
 	_check(
 		south_west.flip_h,
 		"and the far half is mirrored, which is the standard saving on a directional "
@@ -194,25 +194,25 @@ func _test_facing() -> void:
 	)
 
 	_check(
-		DotPlayerSpriteFacing.drawn_directions(8, true) == 5,
+		GSPlayerSpriteFacing.drawn_directions(8, true) == 5,
 		"an eight-way mirrored sheet only has to draw five rows"
 	)
-	_check(DotPlayerSpriteFacing.drawn_directions(8, false) == 8, "and an unmirrored one, eight")
-	_check(DotPlayerSpriteFacing.drawn_directions(2, true) == 1, "a side-on one draws one")
-	_check(DotPlayerSpriteFacing.drawn_directions(1, true) == 1, "and a fixed one, one")
+	_check(GSPlayerSpriteFacing.drawn_directions(8, false) == 8, "and an unmirrored one, eight")
+	_check(GSPlayerSpriteFacing.drawn_directions(2, true) == 1, "a side-on one draws one")
+	_check(GSPlayerSpriteFacing.drawn_directions(1, true) == 1, "and a fixed one, one")
 
 	_check(
-		DotPlayerSpriteFacing.resolve(1.234, 1, true).index == 0,
+		GSPlayerSpriteFacing.resolve(1.234, 1, true).index == 0,
 		"a one-direction sheet ignores the angle entirely"
 	)
 
 	_check(
-		is_equal_approx(DotPlayerSpriteFacing.angle_of(Vector2.ZERO, 1.5), 1.5),
+		is_equal_approx(GSPlayerSpriteFacing.angle_of(Vector2.ZERO, 1.5), 1.5),
 		"a character that stopped keeps facing where it was — snapping to a default "
 		+ "makes it turn south every time it stands still"
 	)
 	_check(
-		is_equal_approx(DotPlayerSpriteFacing.angle_of(Vector2(1, 0), 1.5), 0.0),
+		is_equal_approx(GSPlayerSpriteFacing.angle_of(Vector2(1, 0), 1.5), 0.0),
 		"and one that is moving faces where it is going"
 	)
 
@@ -220,7 +220,7 @@ func _test_facing() -> void:
 func _test_catalogue() -> void:
 	_section("a catalogue")
 
-	var cat := DotPlayerSpriteCatalogue.new()
+	var cat := GSPlayerSpriteCatalogue.new()
 	cat.id = &"test"
 	cat.sprites = [_def()]
 	cat.default_sprite = &"hero"
@@ -229,12 +229,12 @@ func _test_catalogue() -> void:
 	_check(cat.fallback().id == &"hero", "and a fallback")
 	_check(cat.content_paths().size() == 2, "and lists every texture")
 
-	var dup := DotPlayerSpriteCatalogue.new()
+	var dup := GSPlayerSpriteCatalogue.new()
 	dup.sprites = [_def(), _def()]
 	_check(not dup.build().ok, "two sprites with one name are refused")
-	_check(not DotPlayerSpriteCatalogue.new().build().ok, "and an empty catalogue")
+	_check(not GSPlayerSpriteCatalogue.new().build().ok, "and an empty catalogue")
 
-	var side := DotPlayerSpriteCatalogue.side_on()
+	var side := GSPlayerSpriteCatalogue.side_on()
 	_check(side.build().ok, "the side-on preset builds")
 	_check(side.get_sprite(&"side").direction_count() == 2, "with two directions")
 	_check(
@@ -242,7 +242,7 @@ func _test_catalogue() -> void:
 		"anchored at the feet, which is what a character standing on the ground wants"
 	)
 
-	var top := DotPlayerSpriteCatalogue.top_down()
+	var top := GSPlayerSpriteCatalogue.top_down()
 	_check(top.build().ok, "the top-down preset builds")
 	_check(top.get_sprite(&"top_down").direction_count() == 8, "with eight directions")
 	_check(
@@ -255,17 +255,17 @@ func _test_catalogue() -> void:
 func _test_visual() -> void:
 	_section("the visual")
 
-	var cat := DotPlayerSpriteCatalogue.new()
+	var cat := GSPlayerSpriteCatalogue.new()
 	cat.id = &"test"
 	cat.sprites = [_def()]
 	cat.default_sprite = &"hero"
 	var _built := cat.build()
 
-	var player := DotPlayer.new()
+	var player := GSPlayer.new()
 	add_child(player)
 
-	var ch := DotPlayerChar.new()
-	ch.catalogue = DotPlayerCharCatalogue.sprite_2d(48.0)
+	var ch := GSPlayerChar.new()
+	ch.catalogue = GSPlayerCharCatalogue.sprite_2d(48.0)
 	ch.catalogue.get_char(&"sprite").sprite_id = &"hero"
 	ch.catalogue.get_char(&"sprite").slots = {"head": ["none", "cap"], "weapon": ["none", "axe"]}
 	ch.catalogue.get_char(&"sprite").colour_channels = 1
@@ -273,7 +273,7 @@ func _test_visual() -> void:
 	ch.report_to_roster = false
 	player.add_child(ch)
 
-	var visual := DotPlayerSpriteVisual.new()
+	var visual := GSPlayerSpriteVisual.new()
 	visual.catalogue = cat
 	ch.add_child(visual)
 
@@ -324,7 +324,7 @@ func _test_visual() -> void:
 		+ "reversible than rebuilding without it"
 	)
 
-	var bare := DotPlayerSpriteVisual.new()
+	var bare := GSPlayerSpriteVisual.new()
 	ch.add_child(bare)
 	await get_tree().process_frame
 	bare.apply_char(ch.def(), ch.look)
@@ -346,7 +346,7 @@ func _test_visual() -> void:
 func _test_placement() -> void:
 	_section("where the sheet is drawn")
 
-	var cat := DotPlayerSpriteCatalogue.new()
+	var cat := GSPlayerSpriteCatalogue.new()
 	cat.id = &"placed"
 	cat.sprites = [_def()]
 	cat.default_sprite = &"hero"
@@ -361,7 +361,7 @@ func _test_placement() -> void:
 	holder.name = "Components"
 	body.add_child(holder)
 
-	var visual := DotPlayerSpriteVisual.new()
+	var visual := GSPlayerSpriteVisual.new()
 	visual.catalogue = cat
 	holder.add_child(visual)
 
@@ -379,7 +379,7 @@ func _test_placement() -> void:
 
 	var loose_parent := Node.new()
 	add_child(loose_parent)
-	var loose := DotPlayerSpriteVisual.new()
+	var loose := GSPlayerSpriteVisual.new()
 	loose.catalogue = cat
 	loose_parent.add_child(loose)
 	await get_tree().process_frame

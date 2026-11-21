@@ -1,7 +1,7 @@
-class_name DotViewArmsClear
+class_name GSViewArmsClear
 extends RefCounted
 
-## The view arms' elbow clearance scan, free of nodes: which turn of the elbow pole about the shoulder-to-hand line keeps the arm out of the weapon. [DotPlayerViewArms] runs it per arm per frame; GameSpice Sim's [code]DotSimViewArms[/code]
+## The view arms' elbow clearance scan, free of nodes: which turn of the elbow pole about the shoulder-to-hand line keeps the arm out of the weapon. [GSPlayerViewArms] runs it per arm per frame; GameSpice Sim's [code]GSSimViewArms[/code]
 ## ("arms" module) is the native twin, bit-identical (GameSpice Sim's selftest compares the two on seeded inputs), and this script is the fallback where the extension is not loaded (web, a build without it).
 
 ## Turns tried, degrees; ties go to the earlier (smaller) one.
@@ -32,7 +32,7 @@ static func scan(shoulder: Vector3, target: Vector3, lengths: Vector2, pole: Vec
 	return PackedFloat64Array([turned.x, turned.y, turned.z, turn, depth])
 
 
-## Where [method DotHumanoidIk.two_bone] puts the elbow for this target and pole, without posing anything.
+## Where [method GSHumanoidIk.two_bone] puts the elbow for this target and pole, without posing anything.
 static func elbow_for(shoulder: Vector3, target: Vector3, lengths: Vector2, pole: Vector3) -> Vector3:
 	var la := lengths.x
 	var lb := lengths.y

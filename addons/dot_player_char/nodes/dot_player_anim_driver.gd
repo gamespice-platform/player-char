@@ -1,11 +1,11 @@
-class_name DotPlayerAnimDriver
-extends DotPlayerComponent
+class_name GSPlayerAnimDriver
+extends GSPlayerComponent
 
 ## Decides what should be playing, and tells every sink under it.
-## The decision is pure ([DotPlayerAnimState] then [DotPlayerAnimSet]) and a sink plays it, so a
+## The decision is pure ([GSPlayerAnimState] then [GSPlayerAnimSet]) and a sink plays it, so a
 ## headless server runs the same state machine as a client and a suite needs no rig.
 
-## Not [code]CHANNEL[/code]: [DotPlayerComponent] already declares one.
+## Not [code]CHANNEL[/code]: [GSPlayerComponent] already declares one.
 const ANIM_CHANNEL := "player.anim"
 
 ## The locomotion state changed.
@@ -21,26 +21,26 @@ signal action_finished(action: StringName, interrupted: bool)
 ## Emitted from the clip's own timeline, not a [Timer], which drifts when the frame rate changes.
 signal clip_event(event: StringName, elapsed: float)
 
-@export var anim_set: DotPlayerAnimSet = null
+@export var anim_set: GSPlayerAnimSet = null
 
 ## Whether to run the state machine from the player's body every frame.
 ## Off for a game that computes its own motion and calls [method drive], as a replaying server does.
 @export var auto_drive: bool = true
 
 ## The state machine. Exposed so a game can retune the thresholds.
-var states: DotPlayerAnimState = null
+var states: GSPlayerAnimState = null
 
-var _clip: DotPlayerAnimClip = null
+var _clip: GSPlayerAnimClip = null
 var _elapsed: float = 0.0
 var _action: StringName = &""
-var _action_clip: DotPlayerAnimClip = null
+var _action_clip: GSPlayerAnimClip = null
 var _action_elapsed: float = 0.0
 var _facing: float = 0.0
 
 
 func _ready() -> void:
 	if states == null:
-		states = DotPlayerAnimState.new()
+		states = GSPlayerAnimState.new()
 
 	super()
 
@@ -52,15 +52,15 @@ func _process(delta: float) -> void:
 	drive(_motion_from_body(), delta)
 
 
-## One frame. [param motion] is whatever the caller knows; see [DotPlayerAnimState].
+## One frame. [param motion] is whatever the caller knows; see [GSPlayerAnimState].
 ##
 ## Returns the clip that is playing, which a caller can ignore.
-func drive(motion: Dictionary, delta: float) -> DotPlayerAnimClip:
+func drive(motion: Dictionary, delta: float) -> GSPlayerAnimClip:
 	if anim_set == null:
 		return null
 
 	if states == null:
-		states = DotPlayerAnimState.new()
+		states = GSPlayerAnimState.new()
 
 	var before := states.state()
 	var after := states.advance(motion, delta)
@@ -94,10 +94,10 @@ func drive(motion: Dictionary, delta: float) -> DotPlayerAnimClip:
 
 ## Starts a one-shot: an attack, a reload, a gesture.
 ## Fails for an action the set has no clip for, because a clip that never plays is invisible.
-func play_action(action: StringName) -> DotResult:
+func play_action(action: StringName) -> GSResult:
 	if anim_set == null or not anim_set.has_clip(action):
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"No animation clip called '%s'." % String(action),
 			"Known: %s" % ", ".join(_ids())
 		)
@@ -114,7 +114,7 @@ func play_action(action: StringName) -> DotResult:
 			sink.play(_action_clip, 0.0)
 
 	action_started.emit(action)
-	return DotResult.success(action)
+	return GSResult.success(action)
 
 
 func cancel_action() -> void:
@@ -136,7 +136,7 @@ func set_facing(angle: float) -> void:
 	_facing = angle
 
 	# Duck-typed through the sink, for the same reason the sprite sink itself is: this
-	# driver does not depend on [DotPlayerSpriteVisual], and a sink whose target happens
+	# driver does not depend on [GSPlayerSpriteVisual], and a sink whose target happens
 	# to understand a facing angle should get one.
 	for sink in sinks():
 		if not sink.has_method("target"):
@@ -166,7 +166,7 @@ func state() -> StringName:
 	return states.state() if states != null else &""
 
 
-func clip() -> DotPlayerAnimClip:
+func clip() -> GSPlayerAnimClip:
 	return _clip
 
 
@@ -178,11 +178,11 @@ func action() -> StringName:
 	return _action
 
 
-func sinks() -> Array[DotPlayerAnimSink]:
-	var out: Array[DotPlayerAnimSink] = []
+func sinks() -> Array[GSPlayerAnimSink]:
+	var out: Array[GSPlayerAnimSink] = []
 
 	for child in get_children():
-		var s := child as DotPlayerAnimSink
+		var s := child as GSPlayerAnimSink
 		if s != null:
 			out.append(s)
 
@@ -242,7 +242,7 @@ func _advance_action(delta: float) -> void:
 
 
 ## Reads the motion out of the player's body, for the automatic case.
-## What it cannot work out is left out, not guessed, so [DotPlayerAnimState] defaults apply and a
+## What it cannot work out is left out, not guessed, so [GSPlayerAnimState] defaults apply and a
 ## body that is not a [CharacterBody3D] still gets idle and walk.
 func _motion_from_body() -> Dictionary:
 	var motion: Dictionary = {}
@@ -266,7 +266,7 @@ func _motion_from_body() -> Dictionary:
 		motion["on_floor"] = b2.is_on_floor()
 		motion["facing"] = _heading_of(b2.velocity)
 
-	var ch := player().component(&"DotPlayerChar")
+	var ch := player().component(&"GSPlayerChar")
 
 	if ch != null and ch.has_method("is_crouched"):
 		motion["crouched"] = bool(ch.call("is_crouched"))
@@ -276,9 +276,9 @@ func _motion_from_body() -> Dictionary:
 
 
 ## The heading of a 2D velocity, keeping the previous one when it is standing still.
-## Asks [DotPlayerSpriteFacing.angle_of] rather than re-answering it.
+## Asks [GSPlayerSpriteFacing.angle_of] rather than re-answering it.
 func _heading_of(velocity: Vector2) -> float:
-	return DotPlayerSpriteFacing.angle_of(velocity, _facing)
+	return GSPlayerSpriteFacing.angle_of(velocity, _facing)
 
 
 func _ids() -> PackedStringArray:

@@ -13,12 +13,12 @@ func _ready() -> void:
 
 
 func _probe(body: String, two: bool, sc: Array) -> void:
-	var arms := DotPlayerViewArms.new()
+	var arms := GSPlayerViewArms.new()
 	add_child(arms)
 	var weapon := Node3D.new()
 	add_child(weapon)
 	weapon.position = Vector3(0.08, -0.2, -0.4)
-	var lk := DotHumanoidLook.stock(1)
+	var lk := GSHumanoidLook.stock(1)
 	lk.body = StringName(body)
 	arms.mirror_support_forearm = mirror_on
 	arms.hand_scale = sc[0]
@@ -26,11 +26,11 @@ func _probe(body: String, two: bool, sc: Array) -> void:
 	arms.build(lk, 1.8)
 	var grip := Vector3(0.0, -0.08, 0.1)
 	var fore := Vector3(-0.03, -0.07, -0.1)
-	arms.set_held(DotViewGrip.two_hand(weapon, grip, fore) if two else DotViewGrip.one_hand(weapon, grip))
+	arms.set_held(GSViewGrip.two_hand(weapon, grip, fore) if two else GSViewGrip.one_hand(weapon, grip))
 	for i in 8:
 		arms.tick(0.0, 1.0 / 30.0)
 		await get_tree().process_frame
-	var fig := arms.arms() as DotHumanoidFigure
+	var fig := arms.arms() as GSHumanoidFigure
 	var sk := fig.skeleton()
 	var mi := fig.mesh()
 	var mesh := mi.mesh as ArrayMesh

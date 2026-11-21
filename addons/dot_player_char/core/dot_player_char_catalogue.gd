@@ -1,5 +1,5 @@
 @tool
-class_name DotPlayerCharCatalogue
+class_name GSPlayerCharCatalogue
 extends Resource
 
 ## Every character a session has.
@@ -8,7 +8,7 @@ const CHANNEL := "player.char"
 
 @export var id: StringName = &""
 
-@export var characters: Array[DotPlayerCharDef] = []
+@export var characters: Array[GSPlayerCharDef] = []
 
 @export var default_char: StringName = &""
 
@@ -16,15 +16,15 @@ var _by_id: Dictionary = {}
 var _built: bool = false
 
 
-func build() -> DotResult:
+func build() -> GSResult:
 	_by_id.clear()
 
 	if characters.is_empty():
-		return DotResult.fail(DotError.CODE_INVALID, "A catalogue with no characters.")
+		return GSResult.fail(GSError.CODE_INVALID, "A catalogue with no characters.")
 
 	for c in characters:
 		if c == null:
-			return DotResult.fail(DotError.CODE_INVALID, "A null character.")
+			return GSResult.fail(GSError.CODE_INVALID, "A null character.")
 
 		var valid := c.validate()
 
@@ -32,27 +32,27 @@ func build() -> DotResult:
 			return valid.wrap("This character catalogue was not built")
 
 		if _by_id.has(c.id):
-			return DotResult.fail(
-				DotError.CODE_INVALID, "Two characters are called '%s'." % String(c.id)
+			return GSResult.fail(
+				GSError.CODE_INVALID, "Two characters are called '%s'." % String(c.id)
 			)
 
 		_by_id[c.id] = c
 
 	if default_char != &"" and not _by_id.has(default_char):
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"The default character '%s' is not in the catalogue." % String(default_char)
 		)
 
 	_built = true
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 func _ensure_built() -> void:
 	if not _built or _by_id.size() != characters.size():
 		var res := build()
 		if not res.ok:
-			DotLog.error(CHANNEL, "character catalogue unusable", {"why": res.error.message})
+			GSLog.error(CHANNEL, "character catalogue unusable", {"why": res.error.message})
 
 
 func has_char(char_id: StringName) -> bool:
@@ -60,7 +60,7 @@ func has_char(char_id: StringName) -> bool:
 	return _by_id.has(char_id)
 
 
-func get_char(char_id: StringName) -> DotPlayerCharDef:
+func get_char(char_id: StringName) -> GSPlayerCharDef:
 	_ensure_built()
 	return _by_id.get(char_id, null)
 
@@ -88,11 +88,11 @@ func ids_for(team: StringName, player_class: StringName = &"") -> Array[StringNa
 
 
 ## Never null for a built catalogue. Same reasoning as GameSpice Player Class's.
-func fallback_for(team: StringName = &"", player_class: StringName = &"") -> DotPlayerCharDef:
+func fallback_for(team: StringName = &"", player_class: StringName = &"") -> GSPlayerCharDef:
 	_ensure_built()
 
 	if default_char != &"" and _by_id.has(default_char):
-		var declared: DotPlayerCharDef = _by_id[default_char]
+		var declared: GSPlayerCharDef = _by_id[default_char]
 		if declared.allows(team, player_class):
 			return declared
 
@@ -120,7 +120,7 @@ func describe_lines() -> PackedStringArray:
 
 
 func describe() -> String:
-	return "DotPlayerCharCatalogue(%s, %d)" % [String(id), characters.size()]
+	return "GSPlayerCharCatalogue(%s, %d)" % [String(id), characters.size()]
 
 
 func _to_string() -> String:
@@ -130,11 +130,11 @@ func _to_string() -> String:
 ## One character with the metrics a first-person shooter assumes.
 ## 1.8 m standing, 1.0 m crouched, 0.35 m radius, eyes at 1.65: the numbers behind every doorway and vent
 ## built for this genre, so changing them changes what every existing map means.
-static func standard() -> DotPlayerCharCatalogue:
-	var cat := DotPlayerCharCatalogue.new()
+static func standard() -> GSPlayerCharCatalogue:
+	var cat := GSPlayerCharCatalogue.new()
 	cat.id = &"standard"
 
-	var one := DotPlayerCharDef.make(&"standard", 1.8, 0.35)
+	var one := GSPlayerCharDef.make(&"standard", 1.8, 0.35)
 	one.display_name = "Standard"
 	one.crouch_height = 1.0
 	one.eye_height = 1.65
@@ -151,24 +151,24 @@ static func standard() -> DotPlayerCharCatalogue:
 ## Three body types, as a game with visible characters needs.
 ## The metrics differ on purpose: a small character is harder to hit and fits gaps a large one does not,
 ## otherwise three characters are three skins.
-static func three_builds() -> DotPlayerCharCatalogue:
-	var cat := DotPlayerCharCatalogue.new()
+static func three_builds() -> GSPlayerCharCatalogue:
+	var cat := GSPlayerCharCatalogue.new()
 	cat.id = &"three_builds"
 
-	var light := DotPlayerCharDef.make(&"light", 1.65, 0.30)
+	var light := GSPlayerCharDef.make(&"light", 1.65, 0.30)
 	light.display_name = "Light"
 	light.description = "Small. Fits where the others do not, and is harder to hit."
 	light.mass = 62.0
 	light.hitbox_scale = 0.92
 	light.colour_channels = 2
 
-	var medium := DotPlayerCharDef.make(&"medium", 1.80, 0.35)
+	var medium := GSPlayerCharDef.make(&"medium", 1.80, 0.35)
 	medium.display_name = "Medium"
 	medium.description = "The baseline every map was built around."
 	medium.mass = 80.0
 	medium.colour_channels = 2
 
-	var heavy := DotPlayerCharDef.make(&"heavy", 2.00, 0.42)
+	var heavy := GSPlayerCharDef.make(&"heavy", 2.00, 0.42)
 	heavy.display_name = "Heavy"
 	heavy.description = "Large. Blocks a doorway, and is easier to hit."
 	heavy.mass = 115.0
@@ -185,11 +185,11 @@ static func three_builds() -> DotPlayerCharCatalogue:
 
 
 ## A 2D character, in pixels rather than metres.
-static func sprite_2d(p_height: float = 48.0) -> DotPlayerCharCatalogue:
-	var cat := DotPlayerCharCatalogue.new()
+static func sprite_2d(p_height: float = 48.0) -> GSPlayerCharCatalogue:
+	var cat := GSPlayerCharCatalogue.new()
 	cat.id = &"sprite_2d"
 
-	var one := DotPlayerCharDef.make(&"sprite", p_height, p_height * 0.3)
+	var one := GSPlayerCharDef.make(&"sprite", p_height, p_height * 0.3)
 	one.display_name = "Sprite"
 	one.crouch_height = p_height * 0.6
 	one.eye_height = p_height * 0.8
@@ -204,17 +204,17 @@ static func sprite_2d(p_height: float = 48.0) -> DotPlayerCharCatalogue:
 
 static func presets() -> Dictionary:
 	return {
-		&"standard": Callable(DotPlayerCharCatalogue, "standard"),
-		&"three_builds": Callable(DotPlayerCharCatalogue, "three_builds"),
-		&"sprite_2d": Callable(DotPlayerCharCatalogue, "sprite_2d"),
+		&"standard": Callable(GSPlayerCharCatalogue, "standard"),
+		&"three_builds": Callable(GSPlayerCharCatalogue, "three_builds"),
+		&"sprite_2d": Callable(GSPlayerCharCatalogue, "sprite_2d"),
 	}
 
 
-static func preset(p_id: StringName) -> DotPlayerCharCatalogue:
+static func preset(p_id: StringName) -> GSPlayerCharCatalogue:
 	var table := presets()
 
 	if not table.has(p_id):
 		return null
 
 	var fn: Callable = table[p_id]
-	return fn.call() as DotPlayerCharCatalogue
+	return fn.call() as GSPlayerCharCatalogue

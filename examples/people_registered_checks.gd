@@ -1,6 +1,6 @@
 extends RefCounted
 
-## The suite's registered-body section ([method DotHumanoidAssets.register_body]): a game's own body on the kit rig,
+## The suite's registered-body section ([method GSHumanoidAssets.register_body]): a game's own body on the kit rig,
 ## read from outside the project, swapping LOD0..LOD2 by distance and tinted by the look's top. The body here is a
 ## stock one re-exported with three detail meshes, so no private art is needed. Reports through the suite's `_check`.
 
@@ -16,15 +16,15 @@ func _init(host: Node) -> void:
 
 func run() -> void:
 	suite._section("a registered body")
-	suite._check(not DotHumanoidAssets.register_body(ID, "user://nothing_here.glb") and not DotHumanoidAssets.register_body(&"matt", PATH),
+	suite._check(not GSHumanoidAssets.register_body(ID, "user://nothing_here.glb") and not GSHumanoidAssets.register_body(&"matt", PATH),
 		"a missing file or a stock id is refused")
 	suite._check(_write_body(), "a stock body re-exported as LOD0..LOD2")
-	suite._check(DotHumanoidAssets.register_body(ID, PATH) and DotHumanoidLook.is_body(ID), "registered from outside the project")
-	var look := DotHumanoidLook.make(ID, Color("c58a62"), Color("3b2a20"), Color("2050c0"), Color("2f3a4f"))
-	var kept := DotHumanoidLook.from_dict(look.to_dict())
+	suite._check(GSHumanoidAssets.register_body(ID, PATH) and GSHumanoidLook.is_body(ID), "registered from outside the project")
+	var look := GSHumanoidLook.make(ID, Color("c58a62"), Color("3b2a20"), Color("2050c0"), Color("2f3a4f"))
+	var kept := GSHumanoidLook.from_dict(look.to_dict())
 	suite._check(look.body == ID and kept != null and kept.body == ID, "a look keeps it, through a dictionary too")
 
-	var f := DotHumanoidFigure.new()
+	var f := GSHumanoidFigure.new()
 	suite.add_child(f)
 	f.build(look, 1.8)
 	var meshes := f.find_children("*", "MeshInstance3D", true, false)
@@ -32,16 +32,16 @@ func run() -> void:
 		"one mesh instance, the LOD0 (%d instances)" % meshes.size())
 	var material := f.mesh().material_override as ShaderMaterial
 	suite._check(material != null and material.get_shader_parameter(&"albedo_tex") != null
-		and material.get_shader_parameter(&"tint") == look.top and is_equal_approx(material.get_shader_parameter(&"amount"), DotHumanoidAssets.team_tint),
+		and material.get_shader_parameter(&"tint") == look.top and is_equal_approx(material.get_shader_parameter(&"amount"), GSHumanoidAssets.team_tint),
 		"its own texture, tinted by the top")
-	var cousin := DotHumanoidLook.make(ID, Color("f1d2b6"), Color("8c8c8c"), look.top, Color("2a2f38"))
-	suite._check(DotHumanoidAssets.material_for(cousin) == material, "one material per top, whatever the other colours")
-	suite._check(DotViewArmsMaterial.for_look(look) == material, "the first-person arms wear the same one")
+	var cousin := GSHumanoidLook.make(ID, Color("f1d2b6"), Color("8c8c8c"), look.top, Color("2a2f38"))
+	suite._check(GSHumanoidAssets.material_for(cousin) == material, "one material per top, whatever the other colours")
+	suite._check(GSViewArmsMaterial.for_look(look) == material, "the first-person arms wear the same one")
 
 	var near := f.mesh().mesh
-	f._pick_detail(DotHumanoidAssets.lod_distances[0] + 1.0)
+	f._pick_detail(GSHumanoidAssets.lod_distances[0] + 1.0)
 	var mid := f.mesh().mesh
-	f._pick_detail(DotHumanoidAssets.lod_distances[1] + 1.0)
+	f._pick_detail(GSHumanoidAssets.lod_distances[1] + 1.0)
 	var far := f.mesh().mesh
 	f._pick_detail(1.0)
 	suite._check(near != mid and mid != far and f.mesh().mesh == near, "the mesh steps down by distance and back")
@@ -53,19 +53,19 @@ func run() -> void:
 	for i in 20:
 		f.animate(4.0, 1.0 / 30.0)
 		await suite.get_tree().process_frame
-	suite._check(f.clip == DotHumanoidClips.RUN or f.clip == DotHumanoidClips.WALK, "it plays the family clips (%s)" % f.clip)
+	suite._check(f.clip == GSHumanoidClips.RUN or f.clip == GSHumanoidClips.WALK, "it plays the family clips (%s)" % f.clip)
 	suite._check(not skeleton.get_bone_pose_rotation(hand).is_equal_approx(before), "and its bones move")
 	f.queue_free()
 
-	suite._check(DotHumanoidAssets.register_body(ID, "") and not DotHumanoidLook.is_body(ID)
-		and DotHumanoidLook.make(ID, Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE).body == DotHumanoidLook.BODIES[0],
+	suite._check(GSHumanoidAssets.register_body(ID, "") and not GSHumanoidLook.is_body(ID)
+		and GSHumanoidLook.make(ID, Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE).body == GSHumanoidLook.BODIES[0],
 		"forgotten again, a look of it draws the first body")
 	DirAccess.remove_absolute(PATH)
 
 
 # Matt's body with its mesh renamed LOD0 and two copies beside it, as a game's prepared avatar is laid out.
 func _write_body() -> bool:
-	var root := (load(DotHumanoidAssets.body_path(&"matt")) as PackedScene).instantiate()
+	var root := (load(GSHumanoidAssets.body_path(&"matt")) as PackedScene).instantiate()
 	var mesh := root.find_children("*", "MeshInstance3D", true, false).front() as MeshInstance3D
 	mesh.name = "LOD0"
 	# Named as another exporter would: the figure must find the clips' path anyway.
@@ -81,7 +81,7 @@ func _write_body() -> bool:
 		mesh.get_parent().add_child(copy)
 		copy.owner = root
 	# A prepared avatar carries its painted texture on the mesh, where the stock bodies use the shared atlas.
-	var image := DotHumanoidAssets.load_texture(DotHumanoidAssets.directory().path_join("atlas_people.png")).get_image()
+	var image := GSHumanoidAssets.load_texture(GSHumanoidAssets.directory().path_join("atlas_people.png")).get_image()
 	if image.is_compressed():
 		var _plain := image.decompress()
 	var painted := StandardMaterial3D.new()

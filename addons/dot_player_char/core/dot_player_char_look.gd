@@ -1,9 +1,9 @@
-class_name DotPlayerCharLook
+class_name GSPlayerCharLook
 extends RefCounted
 
 ## What a player has chosen for their character, as a bounded document.
 ## A server validates one from ids alone (slot exists, option legal, colour count and
-## values), holding no art. Separate from [DotPlayerCharDef]: content ships, a look arrives.
+## values), holding no art. Separate from [GSPlayerCharDef]: content ships, a look arrives.
 
 ## Which character this is a look for.
 var char_id: StringName = &""
@@ -15,8 +15,8 @@ var choices: Dictionary = {}
 var colours: Array[Color] = []
 
 
-static func make(p_char: StringName) -> DotPlayerCharLook:
-	var l := DotPlayerCharLook.new()
+static func make(p_char: StringName) -> GSPlayerCharLook:
+	var l := GSPlayerCharLook.new()
 	l.char_id = p_char
 	return l
 
@@ -35,13 +35,13 @@ func clear_slot(slot: StringName) -> void:
 
 ## Whether this look is legal for a character. Loads nothing.
 ## Keep it that way: a server must be able to check it without holding the art.
-func validate(def: DotPlayerCharDef) -> DotResult:
+func validate(def: GSPlayerCharDef) -> GSResult:
 	if def == null:
-		return DotResult.fail(DotError.CODE_INVALID, "No character to validate against.")
+		return GSResult.fail(GSError.CODE_INVALID, "No character to validate against.")
 
 	if char_id != &"" and char_id != def.id:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"This look is for '%s' and was checked against '%s'."
 			% [String(char_id), String(def.id)]
 		)
@@ -50,8 +50,8 @@ func validate(def: DotPlayerCharDef) -> DotResult:
 		var slot := StringName(str(key))
 
 		if not def.has_slot(slot):
-			return DotResult.fail(
-				DotError.CODE_INVALID,
+			return GSResult.fail(
+				GSError.CODE_INVALID,
 				"'%s' has no slot called '%s'." % [String(def.id), String(slot)]
 			)
 
@@ -59,29 +59,29 @@ func validate(def: DotPlayerCharDef) -> DotResult:
 		var options := def.slot_options(slot)
 
 		if not options.has(option):
-			return DotResult.fail(
-				DotError.CODE_INVALID,
+			return GSResult.fail(
+				GSError.CODE_INVALID,
 				"'%s' is not an option for '%s' on '%s'."
 				% [String(option), String(slot), String(def.id)],
 				"Known: %s" % ", ".join(_names(options))
 			)
 
 	if colours.size() > def.colour_channels:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"%d colours for a character with %d channels."
 			% [colours.size(), def.colour_channels],
 			"A document that may carry any number of colours is a document a client "
 			+ "can make arbitrarily large."
 		)
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## Removes everything illegal, rather than refusing the whole document.
 ## For loading a saved look after its content was removed; [method validate] is for the
 ## trust boundary. Returns how many things it dropped.
-func conform(def: DotPlayerCharDef) -> int:
+func conform(def: GSPlayerCharDef) -> int:
 	if def == null:
 		return 0
 
@@ -104,7 +104,7 @@ func conform(def: DotPlayerCharDef) -> int:
 
 ## Fills every empty slot with the character's first option, so a renderer never sees
 ## a half-built look.
-func fill_defaults(def: DotPlayerCharDef) -> void:
+func fill_defaults(def: GSPlayerCharDef) -> void:
 	if def == null:
 		return
 
@@ -134,8 +134,8 @@ func to_dict() -> Dictionary:
 	}
 
 
-static func from_dict(d: Dictionary) -> DotPlayerCharLook:
-	var l := DotPlayerCharLook.new()
+static func from_dict(d: Dictionary) -> GSPlayerCharLook:
+	var l := GSPlayerCharLook.new()
 	l.char_id = StringName(str(d.get("char", "")))
 
 	var c: Variant = d.get("choices", {})
@@ -150,8 +150,8 @@ static func from_dict(d: Dictionary) -> DotPlayerCharLook:
 	return l
 
 
-func copy_look() -> DotPlayerCharLook:
-	return DotPlayerCharLook.from_dict(to_dict())
+func copy_look() -> GSPlayerCharLook:
+	return GSPlayerCharLook.from_dict(to_dict())
 
 
 func describe() -> String:
@@ -168,4 +168,4 @@ func _names(list: Array[StringName]) -> PackedStringArray:
 
 
 func _to_string() -> String:
-	return "DotPlayerCharLook(%s)" % describe()
+	return "GSPlayerCharLook(%s)" % describe()

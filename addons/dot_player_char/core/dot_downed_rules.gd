@@ -1,4 +1,4 @@
-class_name DotDownedRules
+class_name GSDownedRules
 extends RefCounted
 
 ## What a downed player holds, whether they may crawl with it, and how the body lies. The

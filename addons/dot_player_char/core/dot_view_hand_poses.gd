@@ -1,8 +1,8 @@
-class_name DotViewHandPoses
+class_name GSViewHandPoses
 extends RefCounted
 
-## How each hand holds each kind of weapon in first person: the grips [DotPlayerViewArms] closes its [DotViewHand]s
-## into. A kind ([member DotViewGrip.kind]) has a `firing` hand (the right) and, for a two-hand weapon, a `support`
+## How each hand holds each kind of weapon in first person: the grips [GSPlayerViewArms] closes its [GSViewHand]s
+## into. A kind ([member GSViewGrip.kind]) has a `firing` hand (the right) and, for a two-hand weapon, a `support`
 ## one (the left).
 ##
 ## A hand is a Dictionary:
@@ -13,7 +13,7 @@ extends RefCounted
 ## - `thumb`, `index`, `middle`, `ring`, `pinky`: each finger's three joint curls toward the palm (degrees);
 ## - `spread`: how far the fingers fan out (degrees).
 ##
-## A game edits [member DotPlayerViewArms.hand_poses] (a fresh [method table]) to adjust one, or adds kinds.
+## A game edits [member GSPlayerViewArms.hand_poses] (a fresh [method table]) to adjust one, or adds kinds.
 
 const RIFLE: StringName = &"rifle"
 const PISTOL: StringName = &"pistol"
@@ -23,10 +23,10 @@ const SNIPER: StringName = &"sniper"
 const GRENADE: StringName = &"grenade"
 const KNIFE: StringName = &"knife"
 const FISTS: StringName = &"fists"
-## What a knife hand blends to as a throw winds up ([member DotPlayerViewArms.throw_grip]): the blade pinched between
+## What a knife hand blends to as a throw winds up ([member GSPlayerViewArms.throw_grip]): the blade pinched between
 ## the thumb and the first two fingers, the others tucked.
 const KNIFE_THROW: StringName = &"knife_throw"
-## The fingers a hand pose curls, in [DotViewHand]'s order.
+## The fingers a hand pose curls, in [GSViewHand]'s order.
 const FINGERS: Array[StringName] = [&"thumb", &"index", &"middle", &"ring", &"pinky"]
 
 

@@ -1,6 +1,6 @@
 extends RefCounted
 
-## The suite's knife-throw and sprinting-arms section ([method DotHumanoidFigure.set_throw_charge]), split out to
+## The suite's knife-throw and sprinting-arms section ([method GSHumanoidFigure.set_throw_charge]), split out to
 ## keep people_selftest under the file-size gate. Reports through the suite's `_section` and `_check`.
 
 const DT := 1.0 / 60.0
@@ -14,10 +14,10 @@ func _init(host: Node) -> void:
 
 func run() -> void:
 	suite._section("a knife thrown and a sprint with a blade, as others see them")
-	var f := DotHumanoidFigure.new()
+	var f := GSHumanoidFigure.new()
 	suite.add_child(f)
-	f.build(DotHumanoidLook.stock(4), 1.8)
-	f.set_hold(DotHumanoidFigure.Hold.MELEE)
+	f.build(GSHumanoidLook.stock(4), 1.8)
+	f.set_hold(GSHumanoidFigure.Hold.MELEE)
 	_frames(f, 0.0, 20)
 	var rest := _arm(f, "R")
 	var length: float = rest[0].distance_to(rest[1]) + rest[1].distance_to(rest[2])
@@ -81,7 +81,7 @@ func run() -> void:
 		swing = hi - lo
 	suite._check(swing > 0.15 * length, "and they pump with the stride (%.2f m)" % swing)
 
-	f.set_hold(DotHumanoidFigure.Hold.GUN)
+	f.set_hold(GSHumanoidFigure.Hold.GUN)
 	_frames(f, 7.0, 30)
 	suite._check(f.arms.run < 0.01, "a gun keeps its own sprint carry (%.2f)" % f.arms.run)
 	f.queue_free()
@@ -91,15 +91,15 @@ func run() -> void:
 
 ## Your own view: a one-hand blade while sprinting brings the free arm up as a pumping fist.
 func _view_run() -> void:
-	var arms := DotPlayerViewArms.new()
+	var arms := GSPlayerViewArms.new()
 	suite.add_child(arms)
 	var weapon := Node3D.new()
 	suite.add_child(weapon)
 	weapon.position = Vector3(0.08, -0.2, -0.4)
-	arms.build(DotHumanoidLook.stock(3), 1.8)
-	arms.set_held(DotViewGrip.one_hand(weapon, Vector3(0.0, -0.08, 0.1)))
+	arms.build(GSHumanoidLook.stock(3), 1.8)
+	arms.set_held(GSViewGrip.one_hand(weapon, Vector3(0.0, -0.08, 0.1)))
 	arms.tick(0.0, 1.0 / 30.0)
-	var sk: Skeleton3D = (arms.arms() as DotHumanoidFigure).skeleton()
+	var sk: Skeleton3D = (arms.arms() as GSHumanoidFigure).skeleton()
 	var upper := sk.find_bone("UpperArm.L")
 	suite._check(not arms.describe()["left_arm"], "in your view the free arm is hidden while not sprinting")
 	arms.run = 1.0
@@ -121,13 +121,13 @@ func _view_run() -> void:
 	await suite.get_tree().process_frame
 
 
-## A strike's arms turn faster than [member DotHumanoidFigure.limb_turn_rate] lets a stride's limbs, and no faster than
-## [member DotHumanoidFigure.strike_turn_rate].
+## A strike's arms turn faster than [member GSHumanoidFigure.limb_turn_rate] lets a stride's limbs, and no faster than
+## [member GSHumanoidFigure.strike_turn_rate].
 func _strike_rate() -> void:
-	var f := DotHumanoidFigure.new()
+	var f := GSHumanoidFigure.new()
 	suite.add_child(f)
-	f.build(DotHumanoidLook.stock(4), 1.8)
-	f.set_hold(DotHumanoidFigure.Hold.MELEE)
+	f.build(GSHumanoidLook.stock(4), 1.8)
+	f.set_hold(GSHumanoidFigure.Hold.MELEE)
 	f.limb_turn_rate = 400.0
 	f.strike_turn_rate = 1500.0
 	_frames(f, 0.0, 20)
@@ -137,7 +137,7 @@ func _strike_rate() -> void:
 	for name in names:
 		last.append(sk.get_bone_pose_rotation(sk.find_bone(name)))
 	var fastest := 0.0
-	f.swing(DotHumanoidClips.SLASH)
+	f.swing(GSHumanoidClips.SLASH)
 	for _i in 60:
 		_frames(f, 0.0, 1)
 		for n in names.size():
@@ -155,16 +155,16 @@ func _bone_world(sk: Skeleton3D, bone: String) -> Vector3:
 	return (sk.global_transform * sk.get_bone_global_pose(sk.find_bone(bone))).origin
 
 
-func _frames(f: DotHumanoidFigure, speed: float, n: int) -> void:
+func _frames(f: GSHumanoidFigure, speed: float, n: int) -> void:
 	for _i in n:
 		f.animate(speed, DT)
 
 
 ## The [param side] arm's shoulder, elbow and hand in the figure's frame, from the poses as written this frame.
-func _arm(f: DotHumanoidFigure, side: String) -> Array[Vector3]:
+func _arm(f: GSHumanoidFigure, side: String) -> Array[Vector3]:
 	var sk := f.skeleton()
 	var to := f._to_figure()
 	var out: Array[Vector3] = []
 	for bone in ["UpperArm.", "LowerArm.", "Middle1."] as Array[String]:
-		out.append(to * DotHumanoidIk.global_pose(sk, sk.find_bone(bone + side)).origin)
+		out.append(to * GSHumanoidIk.global_pose(sk, sk.find_bone(bone + side)).origin)
 	return out

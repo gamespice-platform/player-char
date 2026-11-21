@@ -1,6 +1,6 @@
 extends RefCounted
 
-## The arms of a [DotHumanoidFigure] holding a blade or nothing, written over the clip: a knife throw's windup
+## The arms of a [GSHumanoidFigure] holding a blade or nothing, written over the clip: a knife throw's windup
 ## (the arm cocked back by the meter) and release, and a sprint's pumping arms. Drawn only; distances are in
 ## arm lengths so every body size and clip set gets the same pose.
 
@@ -175,7 +175,7 @@ static func _smooth(x: float) -> float:
 func _bones(skeleton: Skeleton3D, model: Node, animation: Animation, names: Array[String]) -> Array[int]:
 	var key := "%d:%s" % [animation.get_instance_id(), names[0]]
 	if not _keyed.has(key):
-		_keyed[key] = DotHumanoidIk.keyed_bones(skeleton, model, animation, names)
+		_keyed[key] = GSHumanoidIk.keyed_bones(skeleton, model, animation, names)
 	return _keyed[key]
 
 
@@ -183,16 +183,16 @@ func _turn_chest(skeleton: Skeleton3D, bone: int, to_figure: Transform3D, angle:
 	var parent := skeleton.get_bone_parent(bone)
 	var to_fig := to_figure.basis.get_rotation_quaternion()
 	var turn := to_fig.inverse() * Quaternion(Vector3.UP, angle) * to_fig
-	var parent_q := DotHumanoidIk.chain_rotation(skeleton, parent) if parent >= 0 else Quaternion.IDENTITY
+	var parent_q := GSHumanoidIk.chain_rotation(skeleton, parent) if parent >= 0 else Quaternion.IDENTITY
 	var global_q := parent_q * skeleton.get_bone_pose_rotation(bone)
 	skeleton.set_bone_pose_rotation(bone, (parent_q.inverse() * turn * global_q).normalized())
 
 
 ## The arm's shoulder (figure frame) and its two lengths.
 func _measure(skeleton: Skeleton3D, bones: Array[int], to_figure: Transform3D) -> Array:
-	var upper := to_figure * DotHumanoidIk.global_pose(skeleton, bones[0]).origin
-	var lower := to_figure * DotHumanoidIk.global_pose(skeleton, bones[1]).origin
-	var end := to_figure * DotHumanoidIk.global_pose(skeleton, bones[2]).origin
+	var upper := to_figure * GSHumanoidIk.global_pose(skeleton, bones[0]).origin
+	var lower := to_figure * GSHumanoidIk.global_pose(skeleton, bones[1]).origin
+	var end := to_figure * GSHumanoidIk.global_pose(skeleton, bones[2]).origin
 	return [upper, upper.distance_to(lower), lower.distance_to(end)]
 
 
@@ -202,7 +202,7 @@ func _reach(skeleton: Skeleton3D, bones: Array[int], to_figure: Transform3D, off
 	var length: float = float(m[1]) + float(m[2])
 	var target: Vector3 = (m[0] as Vector3) + offset * length
 	var inverse := to_figure.affine_inverse()
-	DotHumanoidIk.two_bone(skeleton, bones, inverse * target, to_figure.basis.inverse() * pole, w)
+	GSHumanoidIk.two_bone(skeleton, bones, inverse * target, to_figure.basis.inverse() * pole, w)
 
 
 ## A sprinting arm: the upper arm [param swing] radians forward of hanging, the elbow bent [constant RUN_ELBOW_DEG]
@@ -219,4 +219,4 @@ func _run_arm(skeleton: Skeleton3D, bones: Array[int], to_figure: Transform3D, s
 	var hand := elbow + fore * lb
 	var pole := elbow - (shoulder + hand) * 0.5
 	var inverse := to_figure.affine_inverse()
-	DotHumanoidIk.two_bone(skeleton, bones, inverse * hand, to_figure.basis.inverse() * pole, w)
+	GSHumanoidIk.two_bone(skeleton, bones, inverse * hand, to_figure.basis.inverse() * pole, w)

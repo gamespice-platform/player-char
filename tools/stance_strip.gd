@@ -13,7 +13,7 @@ const PHASES := [
 	[&"stand_up", 1.2, 0.0, 0.0, false, false],
 ]
 
-var _fig: DotHumanoidFigure
+var _fig: GSHumanoidFigure
 var _t := 0.0
 var _crouch := 0.0
 var _last_head := Vector3.ZERO
@@ -36,10 +36,10 @@ func _initialize() -> void:
 	plane.size = Vector2(20, 20)
 	floor_mesh.mesh = plane
 	root.add_child(floor_mesh)
-	_fig = DotHumanoidFigure.new()
+	_fig = GSHumanoidFigure.new()
 	root.add_child(_fig)
-	_fig.build(DotHumanoidLook.stock(3), 1.8)
-	_fig.set_hold(DotHumanoidFigure.Hold.GUN)
+	_fig.build(GSHumanoidLook.stock(3), 1.8)
+	_fig.set_hold(GSHumanoidFigure.Hold.GUN)
 	var cam := Camera3D.new()
 	root.add_child(cam)
 	cam.current = true

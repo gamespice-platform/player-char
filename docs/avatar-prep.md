@@ -9,7 +9,7 @@ Blender needs its bundled numpy for the glTF importer; run it as the work user (
 ## What the script does
 
 - Drops the hand-held weapon (SWAT: 24 KSVR meshes, 14k triangles) and the alpha-blended eyebrows/eyelashes (a second pass per person).
-- Renames bones to canonical Mixamo names (`mixamorig:Hips_63` becomes `Hips`) so `DotHumanoidActions.profile_bone_of` and one shared map cover every Mixamo-rigged avatar (`mixamo_bone_map.json`: canonical bone to UAL bone and FC kit bone, from `tools/ual_retarget.gd` MAP; it is the avatars-3 clip-mapping table, not a fork).
+- Renames bones to canonical Mixamo names (`mixamorig:Hips_63` becomes `Hips`) so `GSHumanoidActions.profile_bone_of` and one shared map cover every Mixamo-rigged avatar (`mixamo_bone_map.json`: canonical bone to UAL bone and FC kit bone, from `tools/ual_retarget.gd` MAP; it is the avatars-3 clip-mapping table, not a fork).
 - Scales both to 1.8 m, feet on y=0, hips on the origin axis (measured: bounds 0.0..1.80 m), Y-up as glTF has it. The source A-pose (military) and T-pose (SWAT) are kept; rough retarget of a T-pose source is the known gap in docs/people.md.
 - Trims the skeleton and moves the dropped bones' weights to the nearest kept parent. Source 66 / 65 bones; LOD0 46 / 45 (no ring finger, no finger tips, no toe/head ends); LOD1-2 22 / 21 (no fingers).
 - Decimates to the LOD budget, packs all materials into one 1024-wide atlas (military 1024x1024, SWAT 1024x512; 512 px per big material) and joins to one mesh with one material, so a team's 64 bodies share one material and one surface.
@@ -48,7 +48,7 @@ Both fit 64 players with the chain. The unprocessed downloads do not on a weaker
 
 ## Gib cut (docs/gibbable-avatars.md)
 
-Roles come from bone names (`LeftArm`..., `Head`, rest torso) via each vertex's strongest weight, the cut `DotGibMesh` would make. After this prep the share of triangles whose three vertices disagree on role (those get split at death): military LOD0 3.4 percent, LOD1 6.0, LOD2 13; SWAT LOD0 1.2, LOD1 2.2, LOD2 4.4. The exploded-role render (`*_gib.png`: head yellow, torso blue, arms red/green, legs magenta/cyan) shows clean seams at shoulders, hips and neck. Note SWAT's helmet/mask mesh is skinned to the head, so the head piece is 76 percent of its triangles; cap it or cut the helmet off as its own piece. Gib pieces are not stored: they are built lazily from the LOD0 mesh at the moment of death and cached per mesh, so a living player carries none.
+Roles come from bone names (`LeftArm`..., `Head`, rest torso) via each vertex's strongest weight, the cut `GSGibMesh` would make. After this prep the share of triangles whose three vertices disagree on role (those get split at death): military LOD0 3.4 percent, LOD1 6.0, LOD2 13; SWAT LOD0 1.2, LOD1 2.2, LOD2 4.4. The exploded-role render (`*_gib.png`: head yellow, torso blue, arms red/green, legs magenta/cyan) shows clean seams at shoulders, hips and neck. Note SWAT's helmet/mask mesh is skinned to the head, so the head piece is 76 percent of its triangles; cap it or cut the helmet off as its own piece. Gib pieces are not stored: they are built lazily from the LOD0 mesh at the moment of death and cached per mesh, so a living player carries none.
 
 ## First-person arms
 
@@ -67,17 +67,17 @@ Two config keys came out of the LOD1/2 check: `covered` cuts the skin faces a cl
 
 The config's `forearm` (forearm length over upper-arm length; absent or 0 keeps the model's arm) makes `kit_rig.py` slide each hand, and the far part of its forearm, along the forearm until the arm has that ratio; the report gives the result as `forearm_left` / `forearm_right`. SWAT needs it: its wrist joint sits at the long gloves' cuffs, so its forearm was 0.87 of the upper arm (kit 1.39, military 1.34). The first-person arm then reached a rifle grip only near full stretch, where the two-bone elbow moves a lot for a small hand move: the right elbow popped into view by 0.06 m on idle and walk. `swat.json` sets 1.35.
 
-A game registers the result at run time with `DotHumanoidAssets.register_body(id, path)` (docs/people.md, "A game's own body"); the GLB stays in the game's private assets and is read from outside the project.
+A game registers the result at run time with `GSHumanoidAssets.register_body(id, path)` (docs/people.md, "A game's own body"); the GLB stays in the game's private assets and is read from outside the project.
 
 ## Team colours
 
-A registered body draws with `DotHumanoidAssets.TEAM_SHADER`: its own texture, with everything but warm skin turned toward the look's top colour at the same brightness, by `DotHumanoidAssets.team_tint` (0 = untouched). One material per body and top colour, so a team's players batch.
+A registered body draws with `GSHumanoidAssets.TEAM_SHADER`: its own texture, with everything but warm skin turned toward the look's top colour at the same brightness, by `GSHumanoidAssets.team_tint` (0 = untouched). One material per body and top colour, so a team's players batch.
 
 The warm-is-skin guess fails on tan or brown cloth: the military vest and camo pants stayed brown under a red team. A config's `dye` map (material name to 0..1) makes `prep_avatar.py` bake the answer into the vertex colour, and the shader multiplies the tint by its red and applies the skin test only where green is 1. Unlisted materials, and a body with no vertex colour at all, read as white and keep the guess. The military config dyes vest, pants and hat fully and never dyes `player_soldier` (the bare skin); SWAT needs none (black and navy cloth, skin that the guess finds).
 
 ## Animation LOD plan
 
-DotHumanoidFigure already steps the clip rate down at 22 m and 45 m, and a registered body swaps LOD0..LOD2 at `DotHumanoidAssets.lod_distances` (the same distances by default) on its one mesh instance. The bench used: LOD0 posed every frame, LOD1 every 3rd, LOD2 every 6th, nothing past the far tier. 64 people cost 56-277 us of script a frame in the bench.
+GSHumanoidFigure already steps the clip rate down at 22 m and 45 m, and a registered body swaps LOD0..LOD2 at `GSHumanoidAssets.lod_distances` (the same distances by default) on its one mesh instance. The bench used: LOD0 posed every frame, LOD1 every 3rd, LOD2 every 6th, nothing past the far tier. 64 people cost 56-277 us of script a frame in the bench.
 
 ## Left (nightly fc-military-avatar-1)
 

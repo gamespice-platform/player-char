@@ -1,11 +1,11 @@
-class_name DotViewArmsMaterial
+class_name GSViewArmsMaterial
 extends RefCounted
 
-## The first-person arms' material: the crowd's palette swap ([DotHumanoidAssets]) plus close-up detail, since your own
+## The first-person arms' material: the crowd's palette swap ([GSHumanoidAssets]) plus close-up detail, since your own
 ## arms fill a quarter of the screen where a flat swatch reads as white plastic. Skin gets mottling, a soft sheen and
 ## light through it; clothing gets a woven bump. The pattern follows each vertex's rest position, so it does not swim.
 
-## Stored per vertex by [DotPlayerViewArms] in CUSTOM0 (rest position, w = 1): where the detail pattern is read.
+## Stored per vertex by [GSPlayerViewArms] in CUSTOM0 (rest position, w = 1): where the detail pattern is read.
 const REST_FORMAT := Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT
 
 const DETAIL := """
@@ -15,7 +15,7 @@ uniform float weave_scale = 900.0;
 uniform float weave_depth = 0.0004;
 uniform float detail = 1.0;
 varying vec3 rest;
-// DotPlayerViewArms.draw_depth: the clip position of the view point grown by it about the eye (same pixel, further depth).
+// GSPlayerViewArms.draw_depth: the clip position of the view point grown by it about the eye (same pixel, further depth).
 // Only from draw_eye's own view: a shadow pass renders from the light, where the growth would move the shadow.
 instance uniform float draw_depth = 1.0;
 instance uniform vec3 draw_eye = vec3(0.0);
@@ -98,15 +98,15 @@ static var _shader: Shader = null
 static var _materials: Dictionary = {}
 
 
-## The arms' material for [param look]: [DotHumanoidAssets]' swap for it, with the detail on top. One per look.
-static func for_look(look: DotHumanoidLook) -> ShaderMaterial:
+## The arms' material for [param look]: [GSHumanoidAssets]' swap for it, with the detail on top. One per look.
+static func for_look(look: GSHumanoidLook) -> ShaderMaterial:
 	# A registered body brings its own painted texture: there are no swatches for the detail to read.
-	if DotHumanoidLook.registered.has(look.body):
-		return DotHumanoidAssets.material_for(look)
+	if GSHumanoidLook.registered.has(look.body):
+		return GSHumanoidAssets.material_for(look)
 	var key := look.key()
 	if _materials.has(key):
 		return _materials[key]
-	var base := DotHumanoidAssets.material_for(look)
+	var base := GSHumanoidAssets.material_for(look)
 	if _shader == null:
 		_shader = Shader.new()
 		_shader.code = shader_code()
@@ -121,15 +121,15 @@ static func for_look(look: DotHumanoidLook) -> ShaderMaterial:
 
 ## The crowd shader with its fragment replaced by the detailed one and specular turned on.
 static func shader_code() -> String:
-	var crowd := DotHumanoidAssets.SHADER
+	var crowd := GSHumanoidAssets.SHADER
 	var head := crowd.substr(0, crowd.find("void fragment()")).replace("specular_disabled", "specular_schlick_ggx")
 	return head + DETAIL + FRAGMENT
 
 
-## How many of [param look]'s swaps are skin colours: [method DotHumanoidAssets.material_for] lists them first.
-static func skin_swaps(look: DotHumanoidLook) -> int:
-	var wears: Dictionary = DotHumanoidAssets.WEARS.get(look.body, {})
-	return mini((wears.get("skin", []) as Array).size(), DotHumanoidAssets.SWAPS)
+## How many of [param look]'s swaps are skin colours: [method GSHumanoidAssets.material_for] lists them first.
+static func skin_swaps(look: GSHumanoidLook) -> int:
+	var wears: Dictionary = GSHumanoidAssets.WEARS.get(look.body, {})
+	return mini((wears.get("skin", []) as Array).size(), GSHumanoidAssets.SWAPS)
 
 
 static func clear_cache() -> void:

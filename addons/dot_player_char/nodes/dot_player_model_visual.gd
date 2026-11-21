@@ -1,8 +1,8 @@
-class_name DotPlayerModelVisual
-extends DotPlayerCharVisual
+class_name GSPlayerModelVisual
+extends GSPlayerCharVisual
 
 ## The 3D implementation of GameSpice Player Char's visual seam.
-## Planning is [DotPlayerModelBuilder]'s and lookup [DotPlayerModelRig]'s; this decides
+## Planning is [GSPlayerModelBuilder]'s and lookup [GSPlayerModelRig]'s; this decides
 ## when to rebuild: not on a stance change, but on a changed hat.
 
 ## Not [code]CHANNEL[/code]: the parent chain already has one.
@@ -11,7 +11,7 @@ const MODEL_CHANNEL := "player.model"
 ## The model was rebuilt. Carries how many parts were shown.
 signal rebuilt(shown: int)
 
-@export var catalogue: DotPlayerModelCatalogue = null
+@export var catalogue: GSPlayerModelCatalogue = null
 
 ## Shown when a part's content is missing. Optional; nothing is shown without one.
 @export var placeholder: PackedScene = null
@@ -19,20 +19,20 @@ signal rebuilt(shown: int)
 ## Whether to hide the whole rig when [method set_shown] is given false.
 @export var hide_when_not_shown: bool = true
 
-var rig: DotPlayerModelRig = null
+var rig: GSPlayerModelRig = null
 
-var _def: DotPlayerModelDef = null
+var _def: GSPlayerModelDef = null
 var _last_plan: Array[Dictionary] = []
 var _last_signature: String = ""
 
 
 func _ready() -> void:
 	if rig == null:
-		rig = DotPlayerModelRig.new()
+		rig = GSPlayerModelRig.new()
 		rig.name = "Rig"
 		add_child(rig)
 
-	# Onto the player body, not left here: see [member DotPlayerCharVisual.anchor_ref].
+	# Onto the player body, not left here: see [member GSPlayerCharVisual.anchor_ref].
 	var _seated := seat()
 
 
@@ -44,12 +44,12 @@ func _anchor_class() -> StringName:
 	return &"Node3D"
 
 
-func apply_char(def: DotPlayerCharDef, look: DotPlayerCharLook) -> void:
+func apply_char(def: GSPlayerCharDef, look: GSPlayerCharLook) -> void:
 	if catalogue == null:
 		return
 
 	var wanted := def.model_id if def != null else &""
-	var model: DotPlayerModelDef = null
+	var model: GSPlayerModelDef = null
 
 	if wanted != &"" and catalogue.has_model(wanted):
 		model = catalogue.get_model(wanted)
@@ -57,7 +57,7 @@ func apply_char(def: DotPlayerCharDef, look: DotPlayerCharLook) -> void:
 		model = catalogue.fallback()
 
 	if model == null:
-		DotLog.warn(MODEL_CHANNEL, "no model to build", {"wanted": String(wanted)})
+		GSLog.warn(MODEL_CHANNEL, "no model to build", {"wanted": String(wanted)})
 		return
 
 	if model != _def:
@@ -65,7 +65,7 @@ func apply_char(def: DotPlayerCharDef, look: DotPlayerCharLook) -> void:
 		var res := rig.build_from(model)
 
 		if not res.ok:
-			DotLog.error(MODEL_CHANNEL, "rig not built", {"why": res.error.message})
+			GSLog.error(MODEL_CHANNEL, "rig not built", {"why": res.error.message})
 			return
 
 		# A new rig has empty mounts, so the signature from the previous model must not
@@ -73,7 +73,7 @@ func apply_char(def: DotPlayerCharDef, look: DotPlayerCharLook) -> void:
 		# happens to be wearing the same parts shows an empty body.
 		_last_signature = ""
 
-	var plan := DotPlayerModelBuilder.plan(model, look)
+	var plan := GSPlayerModelBuilder.plan(model, look)
 	var signature := _signature(plan)
 
 	if signature == _last_signature:
@@ -86,7 +86,7 @@ func apply_char(def: DotPlayerCharDef, look: DotPlayerCharLook) -> void:
 	_last_signature = signature
 	_last_plan = plan
 
-	var built := DotPlayerModelBuilder.apply(
+	var built := GSPlayerModelBuilder.apply(
 		plan, _root(), placeholder, model.tint_parameter
 	)
 
@@ -96,7 +96,7 @@ func apply_char(def: DotPlayerCharDef, look: DotPlayerCharLook) -> void:
 
 func set_stance(crouched: bool) -> void:
 	# Deliberately not a rebuild. A stance is an animation's business — see
-	# [DotPlayerAnimDriver] — and re-instantiating a wardrobe every time somebody
+	# [GSPlayerAnimDriver] — and re-instantiating a wardrobe every time somebody
 	# ducks is the eager half of the mistake this class's documentation names.
 	if rig != null:
 		rig.set_meta("crouched", crouched)
@@ -130,7 +130,7 @@ func rebuild() -> void:
 	_last_signature = ""
 
 	if _def != null and not _last_plan.is_empty():
-		var built := DotPlayerModelBuilder.apply(
+		var built := GSPlayerModelBuilder.apply(
 			_last_plan, _root(), placeholder, _def.tint_parameter
 		)
 		if built.ok:
@@ -142,7 +142,7 @@ func plan() -> Array[Dictionary]:
 
 
 func summary() -> Dictionary:
-	return DotPlayerModelBuilder.summarise(_last_plan)
+	return GSPlayerModelBuilder.summarise(_last_plan)
 
 
 func describe_lines() -> PackedStringArray:
@@ -190,6 +190,6 @@ func _retint(steps: Array[Dictionary]) -> void:
 			continue
 
 		for child in mount.get_children():
-			DotPlayerModelBuilder.tint(
+			GSPlayerModelBuilder.tint(
 				child, step.get("colours", []) as Array, _def.tint_parameter
 			)

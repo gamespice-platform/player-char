@@ -18,7 +18,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var pack := StringName(_args.get("pack", "protagonists"))
-	var skin := StringName(_args.get("skin", DotKenneyCharacters.skins(pack)[0]))
+	var skin := StringName(_args.get("skin", GSKenneyCharacters.skins(pack)[0]))
 	var clips: Array[StringName] = [&"idle", &"walk", &"run", &"jump", &"fall", &"land", &"death", &"idle_gun", &"walk_gun", &"run_gun", &"crouch", &"crouch_walk", &"crawl"]
 	var sheet := Image.create(CELL.x * TIMES, CELL.y * clips.size(), false, Image.FORMAT_RGB8)
 	sheet.fill(Color(0.35, 0.4, 0.45))
@@ -41,7 +41,7 @@ func _run() -> void:
 	plane.size = Vector2(6, 6)
 	floor_mesh.mesh = plane
 	viewport.add_child(floor_mesh)
-	var person := DotKenneyCharacters.build(pack, skin)
+	var person := GSKenneyCharacters.build(pack, skin)
 	if person == null:
 		quit(1)
 		return

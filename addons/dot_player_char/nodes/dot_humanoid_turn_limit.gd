@@ -1,4 +1,4 @@
-class_name DotHumanoidTurnLimit
+class_name GSHumanoidTurnLimit
 extends RefCounted
 
 ## Caps how fast a figure's limbs turn on screen, after everything that poses them (the clip, a blend, the overlays,

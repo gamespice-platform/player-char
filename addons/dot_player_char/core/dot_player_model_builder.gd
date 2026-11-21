@@ -1,4 +1,4 @@
-class_name DotPlayerModelBuilder
+class_name GSPlayerModelBuilder
 extends RefCounted
 
 ## Works out what goes where ([method plan], pure), then puts it there ([method apply], the only node work).
@@ -9,7 +9,7 @@ const CHANNEL := "player.model"
 
 
 ## What to build for a character's look. Touches no nodes and loads nothing.
-static func plan(def: DotPlayerModelDef, look: DotPlayerCharLook) -> Array[Dictionary]:
+static func plan(def: GSPlayerModelDef, look: GSPlayerCharLook) -> Array[Dictionary]:
 	var steps: Array[Dictionary] = []
 
 	if def == null:
@@ -30,7 +30,7 @@ static func plan(def: DotPlayerModelDef, look: DotPlayerCharLook) -> Array[Dicti
 			# Refused rather than built into the wrong mount. A part whose slot does
 			# not match is a content error, and building it anyway is how a hat ends up
 			# on a foot with nothing saying why.
-			DotLog.warn(CHANNEL, "part is in the wrong slot", {
+			GSLog.warn(CHANNEL, "part is in the wrong slot", {
 				"part": String(part), "asked_for": String(slot),
 				"belongs_in": String(def.part_slot(part)),
 			})
@@ -66,9 +66,9 @@ static func apply(
 	rig: Node3D,
 	placeholder: PackedScene = null,
 	tint_prefix: String = "dot_tint_"
-) -> DotResult:
+) -> GSResult:
 	if rig == null:
-		return DotResult.fail(DotError.CODE_INVALID, "No rig to build on.")
+		return GSResult.fail(GSError.CODE_INVALID, "No rig to build on.")
 
 	var cleared: Dictionary = {}
 	var shown := 0
@@ -80,7 +80,7 @@ static func apply(
 		if mount == null:
 			# A mismatch between the definition and the rig, which is a content problem
 			# and worth naming rather than skipping in silence.
-			DotLog.warn(CHANNEL, "the rig has no mount for a slot", {
+			GSLog.warn(CHANNEL, "the rig has no mount for a slot", {
 				"slot": str(step.get("slot", "")), "expected_node": mount_name,
 			})
 			continue
@@ -108,7 +108,7 @@ static func apply(
 		tint(instance, step.get("colours", []) as Array, tint_prefix)
 		shown += 1
 
-	return DotResult.success(shown)
+	return GSResult.success(shown)
 
 
 ## Applies tint colours to whatever a part instantiated.
@@ -136,7 +136,7 @@ static func _tint_recursive(node: Node, parameter: String, colour: Color) -> voi
 
 
 ## Clears every mount a definition names, without building anything.
-static func clear(def: DotPlayerModelDef, rig: Node3D) -> int:
+static func clear(def: GSPlayerModelDef, rig: Node3D) -> int:
 	if def == null or rig == null:
 		return 0
 

@@ -1,26 +1,26 @@
-class_name DotPlayerRagdolls
+class_name GSPlayerRagdolls
 extends Node3D
 
 ## Where a game's dead bodies lie: builds each from a death, keeps no more than the cap, passes their sounds on.
 ## One per world, placed by the game (no autoload). The cap is the lower of the server's and [member local_cap];
-## the oldest body fades quickly. Use: `spawn(victim_figure, DotPlayerDeath.from_dict(info), victim_velocity)`.
+## the oldest body fades quickly. Use: `spawn(victim_figure, GSPlayerDeath.from_dict(info), victim_velocity)`.
 
 const CHANNEL := "player.ragdoll"
 
 ## A body was built.
-signal spawned(ragdoll: DotPlayerRagdoll)
+signal spawned(ragdoll: GSPlayerRagdoll)
 
-var rules: DotPlayerRagdollRules = DotPlayerRagdollRules.new()
+var rules: GSPlayerRagdollRules = GSPlayerRagdollRules.new()
 
 ## The reactions a death's id is looked up in. The stock set unless a game adds its own; the
 ## weights here do not matter on a client (the server picked), only the poses and sounds.
-var reactions: DotPlayerDeathReactions = DotPlayerDeathReactions.stock()
+var reactions: GSPlayerDeathReactions = GSPlayerDeathReactions.stock()
 
 ## This machine's own limit: -1 for [method default_local_cap], 0 = unlimited, else a body count.
 var local_cap: int = -1
 
 ## Called as [code]sound_fn.call(id, position, volume)[/code] for each body's sound; GameSpice Audio's
-## [code]DotAudioManager.play_at[/code] fits. Unset, sounds go only to the [signal sound] signal.
+## [code]GSAudioManager.play_at[/code] fits. Unset, sounds go only to the [signal sound] signal.
 var sound_fn: Callable = Callable()
 
 ## Every body's sound, for a game that would rather listen than hand over a callable.
@@ -29,14 +29,14 @@ signal sound(id: StringName, position: Vector3, volume: float)
 ## How long an evicted body takes to fade.
 const EVICT_FADE := 0.3
 
-var _live: Array[DotPlayerRagdoll] = []
+var _live: Array[GSPlayerRagdoll] = []
 var _props: Array[RigidBody3D] = []
 
 
 ## Four on a machine that simulates physics on its only thread or is a phone; 0 (unlimited,
-## the server's [member DotPlayerRagdollRules.max_count] decides) otherwise.
+## the server's [member GSPlayerRagdollRules.max_count] decides) otherwise.
 static func default_local_cap() -> int:
-	if not DotPlatform.has_threads() or DotPlatform.is_mobile():
+	if not GSPlatform.has_threads() or GSPlatform.is_mobile():
 		return 4
 	return 0
 
@@ -47,7 +47,7 @@ func cap() -> int:
 	return cap_of(rules.max_count if rules != null else 8, local_cap)
 
 
-## [param server_max] ([member DotPlayerRagdollRules.max_count]) and [param machine]
+## [param server_max] ([member GSPlayerRagdollRules.max_count]) and [param machine]
 ## ([member local_cap]: -1 for [method default_local_cap]) combined: the lower, 0 on either side
 ## meaning no limit from it. 0 = unlimited. For a game keeping its own bodies (a 2D fall).
 static func cap_of(server_max: int, machine: int) -> int:
@@ -62,7 +62,7 @@ static func cap_of(server_max: int, machine: int) -> int:
 ## Builds a body for [param figure] dying as [param death] says. Returns it, or null when the
 ## style hides bodies or there was nothing to copy (and then the figure is hidden all the same
 ## when the style is HIDE).
-func spawn(figure: Node3D, death: DotPlayerDeath, velocity: Vector3 = Vector3.ZERO) -> DotPlayerRagdoll:
+func spawn(figure: Node3D, death: GSPlayerDeath, velocity: Vector3 = Vector3.ZERO) -> GSPlayerRagdoll:
 	if figure == null or rules == null:
 		return null
 
@@ -70,17 +70,17 @@ func spawn(figure: Node3D, death: DotPlayerDeath, velocity: Vector3 = Vector3.ZE
 	var limit := cap()
 	var room := limit - 1
 	# Make room: the oldest go first, quickly. Those already fading do not count. 0 = no cap.
-	var standing: Array[DotPlayerRagdoll] = []
+	var standing: Array[GSPlayerRagdoll] = []
 	if limit > 0:
 		standing = _standing()
 	while standing.size() > room and not standing.is_empty():
 		standing.pop_front().expire(EVICT_FADE)
-		DotLog.debug(CHANNEL, "cap reached, oldest body fading", {"cap": cap()})
+		GSLog.debug(CHANNEL, "cap reached, oldest body fading", {"cap": cap()})
 
 	var reaction := reactions.find(death.reaction) if death != null and reactions != null else null
-	var made := DotPlayerRagdoll.build(figure, self, rules, reaction, death, velocity)
+	var made := GSPlayerRagdoll.build(figure, self, rules, reaction, death, velocity)
 	if made == null:
-		DotLog.debug(CHANNEL, "no body built", {"figure": figure.name})
+		GSLog.debug(CHANNEL, "no body built", {"figure": figure.name})
 		return null
 
 	var _c := made.sound.connect(_on_sound)
@@ -90,19 +90,19 @@ func spawn(figure: Node3D, death: DotPlayerDeath, velocity: Vector3 = Vector3.ZE
 
 
 ## Drops a copy of [param model] (a weapon's world model) as a physics prop that fades after
-## [member DotPlayerRagdollRules.weapon_lifetime]. Null when off or the model has no mesh.
+## [member GSPlayerRagdollRules.weapon_lifetime]. Null when off or the model has no mesh.
 ## Presentation only: nothing collides with it.
 func drop_prop(model: Node3D, velocity: Vector3 = Vector3.ZERO) -> RigidBody3D:
 	if model == null or rules == null or not rules.weapon_drop or not model.is_inside_tree():
 		return null
 	var meshes: Array[MeshInstance3D] = []
-	for mesh in DotPlayerRagdoll.meshes_of(model):
+	for mesh in GSPlayerRagdoll.meshes_of(model):
 		if not _is_effect(mesh, model):
 			meshes.append(mesh)
 	if meshes.is_empty():
 		return null
 
-	var frame := Transform3D(DotPlayerRagdollMath.ortho(model.global_basis), model.global_position)
+	var frame := Transform3D(GSPlayerRagdollMath.ortho(model.global_basis), model.global_position)
 	var to_local := frame.affine_inverse()
 	var bounds := AABB()
 	var first := true
@@ -150,7 +150,7 @@ func drop_prop(model: Node3D, velocity: Vector3 = Vector3.ZERO) -> RigidBody3D:
 	_props.append(body)
 	var timer := get_tree().create_timer(rules.weapon_lifetime)
 	var _t := timer.timeout.connect(_expire_prop.bind(body))
-	DotLog.debug(CHANNEL, "weapon dropped", {"life": rules.weapon_lifetime})
+	GSLog.debug(CHANNEL, "weapon dropped", {"life": rules.weapon_lifetime})
 	return body
 
 
@@ -178,12 +178,12 @@ func _expire_prop(prop) -> void:
 
 
 ## Applies a shot's impulse to the lying part nearest [param point] (within [param radius]); false
-## unless [member DotPlayerRagdollRules.shootable]. With [param from], a part behind world
+## unless [member GSPlayerRagdollRules.shootable]. With [param from], a part behind world
 ## geometry is skipped: the impact point sits on the wall a body lies against.
 func shoot(point: Vector3, direction: Vector3, impulse: float = 4.0, radius: float = 0.6, from: Vector3 = Vector3.INF) -> bool:
 	if rules == null or not rules.shootable:
 		return false
-	direction = DotPlayerRagdollMath.finite_or(direction)
+	direction = GSPlayerRagdollMath.finite_or(direction)
 	if not is_finite(impulse) or not point.is_finite():
 
 		return false
@@ -191,7 +191,7 @@ func shoot(point: Vector3, direction: Vector3, impulse: float = 4.0, radius: flo
 	_reap()
 	var best: RigidBody3D = null
 	var best_d := radius
-	var hit_body: DotPlayerRagdoll = null
+	var hit_body: GSPlayerRagdoll = null
 	for body in _live:
 		for node in body.part_nodes():
 			var rb := node as RigidBody3D
@@ -206,9 +206,9 @@ func shoot(point: Vector3, direction: Vector3, impulse: float = 4.0, radius: flo
 		return false
 	hit_body.wake()
 	best.freeze = false
-	var push := DotPlayerRagdollMath.unit(direction, Vector3.ZERO) * impulse * rules.force_scale
-	var lever := DotPlayerRagdollMath.finite_or(point - best.global_position)
-	best.apply_impulse(DotPlayerRagdollMath.finite_or(push), lever)
+	var push := GSPlayerRagdollMath.unit(direction, Vector3.ZERO) * impulse * rules.force_scale
+	var lever := GSPlayerRagdollMath.finite_or(point - best.global_position)
+	best.apply_impulse(GSPlayerRagdollMath.finite_or(push), lever)
 	return true
 
 
@@ -216,12 +216,12 @@ func shoot(point: Vector3, direction: Vector3, impulse: float = 4.0, radius: flo
 func _covered(from: Vector3, target: Vector3) -> bool:
 	if from == Vector3.INF or not is_inside_tree():
 		return false
-	return not DotPlayerRagdoll.crossing(get_world_3d().direct_space_state, from, target, rules.collision_mask).is_empty()
+	return not GSPlayerRagdoll.crossing(get_world_3d().direct_space_state, from, target, rules.collision_mask).is_empty()
 
 
 ## Bodies not yet fading, oldest first.
-func _standing() -> Array[DotPlayerRagdoll]:
-	var out: Array[DotPlayerRagdoll] = []
+func _standing() -> Array[GSPlayerRagdoll]:
+	var out: Array[GSPlayerRagdoll] = []
 	for body in _live:
 		if is_instance_valid(body) and not body.expiring:
 			out.append(body)
@@ -229,7 +229,7 @@ func _standing() -> Array[DotPlayerRagdoll]:
 
 
 func _reap() -> void:
-	var kept: Array[DotPlayerRagdoll] = []
+	var kept: Array[GSPlayerRagdoll] = []
 	for body in _live:
 		if is_instance_valid(body) and not body.is_queued_for_deletion():
 			kept.append(body)
@@ -237,7 +237,7 @@ func _reap() -> void:
 
 
 ## Bodies lying about now, fading ones included.
-func live() -> Array[DotPlayerRagdoll]:
+func live() -> Array[GSPlayerRagdoll]:
 	_reap()
 	return _live.duplicate()
 
@@ -250,7 +250,7 @@ func standing_count() -> int:
 
 ## Builds one throwaway body off a stock figure, far below the world, and frees it [param frames] frames later, so the first real death does not pay for first-use work (the physics bodies and joints, the script and shape setup: a 32 ms hitch in a web build). Call it under a loading cover; it neither emits [signal spawned] nor plays a sound, and no body is left in the yard.
 func prewarm(frames: int = 2) -> void:
-	if rules == null or not is_inside_tree() or rules.effective_style() == DotPlayerRagdollRules.Style.HIDE:
+	if rules == null or not is_inside_tree() or rules.effective_style() == GSPlayerRagdollRules.Style.HIDE:
 		return
 	var figure := Node3D.new()
 	figure.name = "RagdollPrewarm"
@@ -269,7 +269,7 @@ func prewarm(frames: int = 2) -> void:
 		mesh.scale = spec[2]
 		mesh.position = spec[1]
 		figure.add_child(mesh)
-	var made := DotPlayerRagdoll.build(figure, self, rules, null, null)
+	var made := GSPlayerRagdoll.build(figure, self, rules, null, null)
 	if is_inside_tree():
 		for i in frames:
 			await get_tree().physics_frame
