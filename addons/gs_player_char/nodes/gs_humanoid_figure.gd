@@ -12,9 +12,13 @@ func build(p_look: GSHumanoidLook, p_height: float = 1.8) -> void:
 	height = p_height
 	_forget_body()
 
-	var scene := GSHumanoidAssets.scene(body_path(look.body))
-	if scene != null:
-		_model = scene.instantiate() as Node3D
+	# A body whose file is absent or unreadable (a pack without the people, a native build that never imported them) is drawn as the next stock person, never as nothing.
+	var body := GSHumanoidAssets.available_body(look.body)
+	if body != &"" and body != look.body:
+		GSLog.warn(CHANNEL, "body unavailable; drawing a stock person instead", {"body": String(look.body), "instead": String(body)})
+		look = GSHumanoidLook.make(body, look.skin, look.hair, look.top, look.bottom)
+	if body != &"":
+		_model = GSHumanoidAssets.scene(body_path(body)).instantiate() as Node3D
 
 	if _model == null:
 		# A capsule rather than nothing: an invisible player is worse than a grey one.
@@ -27,6 +31,17 @@ func build(p_look: GSHumanoidLook, p_height: float = 1.8) -> void:
 	_model.name = "Body"
 	add_child(_model)
 	from_art = true
+	_find_parts()
+	_prepare_animation()
+	_fit_to_height()
+	_index_bones()
+
+	_play(GSHumanoidClips.IDLE, 1.0)
+	_anim.advance(0.0)
+
+
+## Finds the skeleton and meshes of the new body and folds the detail meshes into one instance.
+func _find_parts() -> void:
 	_skeleton = _model.find_children("*", "Skeleton3D", true, false).front() as Skeleton3D
 	var meshes := _model.find_children("*", "MeshInstance3D", true, false)
 	_mesh = meshes.front() as MeshInstance3D if not meshes.is_empty() else null
@@ -45,6 +60,10 @@ func build(p_look: GSHumanoidLook, p_height: float = 1.8) -> void:
 		_skeleton.name = "Skeleton3D"
 		if _skeleton.get_parent() != _model:
 			_skeleton.get_parent().name = "CharacterArmature"
+
+
+## Wires the clips and the material of the new body.
+func _prepare_animation() -> void:
 	_anim = _model.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if _anim == null:
 		_anim = AnimationPlayer.new()
@@ -64,6 +83,9 @@ func build(p_look: GSHumanoidLook, p_height: float = 1.8) -> void:
 		_mesh.lod_bias = lod_bias
 		_mesh.visibility_range_end = draw_range
 
+
+## Scales the body to the height asked for and measures where its ankles rest.
+func _fit_to_height() -> void:
 	# The kit faces +Z and this family's forward is -Z; scaled to the height asked for, measured
 	# from the mesh rather than assumed.
 	var tall := GSHumanoidFrames.measure(_mesh, _model)
@@ -79,14 +101,14 @@ func build(p_look: GSHumanoidLook, p_height: float = 1.8) -> void:
 			if foot >= 0:
 				_floor_ankles.append((_model.transform * _skel_to_model * _skeleton.get_bone_global_rest(foot).origin).y)
 
+
+## Remembers the upper-body bones the aim and overlay clips drive.
+func _index_bones() -> void:
 	for bone in GSHumanoidClips.UPPER_BONES:
 		var i := _skeleton.find_bone(bone) if _skeleton != null else -1
 		if i >= 0:
 			_upper[bone] = i
 			_upper_paths[bone] = NodePath("%s:%s" % [String(_model.get_path_to(_skeleton)), bone])
-
-	_play(GSHumanoidClips.IDLE, 1.0)
-	_anim.advance(0.0)
 
 
 ## Drops the body built before and everything cached from it, for [method build] to start over.

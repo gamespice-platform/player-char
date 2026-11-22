@@ -158,6 +158,29 @@ static func scene(path: String) -> PackedScene:
 	return _scenes[path]
 
 
+## The first body that can be drawn: [param id] when its model loads, else the stock [constant GSHumanoidLook.BODIES] in order, then any registered one. [code]&""[/code] when none loads (the figure then draws a capsule).
+## A model counts only with a skeleton and a mesh, so a file that loads but holds no person is skipped too.
+static func available_body(id: StringName) -> StringName:
+	var order: Array[StringName] = [id]
+	order.append_array(GSHumanoidLook.BODIES)
+	for registered_id: StringName in GSHumanoidLook.registered:
+		order.append(registered_id)
+	for candidate in order:
+		if not GSHumanoidLook.is_body(candidate):
+			continue
+		var packed := scene(body_path(candidate))
+		if packed == null:
+			continue
+		var probe := packed.instantiate()
+		var usable := probe != null and probe.find_children("*", "Skeleton3D", true, false).size() > 0 \
+			and probe.find_children("*", "MeshInstance3D", true, false).size() > 0
+		if probe != null:
+			probe.free()
+		if usable:
+			return candidate
+	return &""
+
+
 ## A model by path, imported or not: [code]load()[/code] when the project has imported it, and
 ## otherwise the source file read at run time through [GLTFDocument], packed as a scene.
 ## The fallback matters: a stale import cache has the [code].glb[/code] but no imported scene.
