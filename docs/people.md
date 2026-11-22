@@ -57,6 +57,19 @@ Only `people_matt.glb` carries clips; the others are a quarter of the size witho
 - **A figure something else carries** (an NPC on a physics body) sets `auto_animate`: it measures how fast it moves and animates from that. The body moves in physics ticks (or snapshots), so at a frame rate above the tick rate it stands still on most frames: the speed is measured over at least `AUTO_WINDOW` (0.05 s) of moves, held through `AUTO_HOLD` (0.1 s) without one, and the figure is posed on the frames its body stepped (at least every `AUTO_POSE_GAP`, 1/60 s, standing). Measured frame to frame, game-playlot's NPCs at 355 frames a second against 128 ticks flipped idle, walk and run 218 times a second each, every flip a crossfade and a stride match.
 - **A real ladder climb** would be better than the made one above; no free CC0 clip has one (see the next section). Nor does any have a seat with the arms on armrests: the real sit has the hands in the lap.
 
+## Library avatars (standalone GLBs)
+
+The shipped people and Kenney GLBs are lean on purpose: no texture (the palette shader recolours them) and, for the people, no clips (matt's are retargeted at run time). The TMC avatar library and Nightly's Assets audit judge a GLB on its own (a texture of at least 1024 px, an idle/walk/run set, 20 to 100 bones, 1 to 2.6 m), so those five failed. `library/avatars/` holds standalone copies, outside the addon so no game ships them:
+
+| File | Tris | Clips | Made by |
+| --- | --- | --- | --- |
+| `gs-people-{matt,lis,sam,shaun}.glb` | 2607, 2662, 3714, 3550 | matt's 21, on every body (same 43-bone rig) | `blender -b --factory-startup --python tools/build_library_avatars.py -- addons/gs_player_char/people library/avatars` (embeds the swatch atlas at 1024 px, nearest filtering) |
+| `gs-kenney-criminal.glb` | 1604 | the 13 baked clips of `kenney_clips.res`, scaled to 1.8 m, criminal skin | `GPU_OFFLOAD=0 godot --headless --path . res://tools/export_library_kenney.tscn -- library/avatars/gs-kenney-criminal.glb [pack] [skin]` (strips `GODOT_single_root`, which the site's wearable validator rejects) |
+
+Sam and shaun pass the audit (100). **Matt, lis and Kenney still carry `LOW_TRIS`** (budget floor 3000): the kit's decimation (`build_people.py` RATIO 0.42) and Kenney's own mesh sit below it, and subdividing would only fake the count. The Quaternius Zombie Apocalypse Kit source is not on disk; re-download it, run `build_people.py` with a higher RATIO, then rerun the tool above.
+
+`tools/library_avatars_shot.sh` renders the five side by side (`gpu.sh shot` puts it on a GPU box). Publish with gs-workbench's `tools/publish_avatar_content.gd` (`--kind avatar --licence CC0-1.0`); a re-publish of the same `--id` updates the avatar.
+
 ## Real clips from the Universal Animation Library
 
 Quaternius' [Universal Animation Library](https://quaternius.com/packs/universalanimationlibrary.html) (CC0 1.0) is the same artist's clip library, on a different skeleton: a 65-bone mannequin about 1.8 tall, with a hand bone, three-joint fingers and the feet under the shins, where the kit has 43 bones, is about 1.1 tall, and hangs its feet off the root. `tools/ual_retarget.gd` carries a clip across and saves it into `people/people_ual.res`, and `GSHumanoidClips.adopt` puts each clip in that file over the made one of the same name, after the mirror and the made clips (the library is right-handed already).
