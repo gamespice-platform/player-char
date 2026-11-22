@@ -3,12 +3,12 @@
 importer="oggvorbisstr"
 type="AudioStreamOggVorbis"
 uid="uid://lskvkfiomthl"
-path="res://.godot/imported/whoosh_1.ogg-f33bc95e2cbe244f1dfd07ad4fddd6f3.oggvorbisstr"
+path="res://.godot/imported/whoosh_1.ogg-e5dc5c2a7de8938ec817137451c1f5f1.oggvorbisstr"
 
 [deps]
 
 source_file="res://addons/gs_player_char/death/sounds/whoosh_1.ogg"
-dest_files=["res://.godot/imported/whoosh_1.ogg-f33bc95e2cbe244f1dfd07ad4fddd6f3.oggvorbisstr"]
+dest_files=["res://.godot/imported/whoosh_1.ogg-e5dc5c2a7de8938ec817137451c1f5f1.oggvorbisstr"]
 
 [params]
 

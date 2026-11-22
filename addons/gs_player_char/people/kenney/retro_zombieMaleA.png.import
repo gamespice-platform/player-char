@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://do4c0m7k20e8y"
-path="res://.godot/imported/retro_zombieMaleA.png-572d255eb64600af60bf9124da6b386c.ctex"
+path="res://.godot/imported/retro_zombieMaleA.png-923a66d867e0808eb54adf52abd69982.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://addons/gs_player_char/people/kenney/retro_zombieMaleA.png"
-dest_files=["res://.godot/imported/retro_zombieMaleA.png-572d255eb64600af60bf9124da6b386c.ctex"]
+dest_files=["res://.godot/imported/retro_zombieMaleA.png-923a66d867e0808eb54adf52abd69982.ctex"]
 
 [params]
 

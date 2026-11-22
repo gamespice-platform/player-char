@@ -3,12 +3,12 @@
 importer="oggvorbisstr"
 type="AudioStreamOggVorbis"
 uid="uid://jwo6cedtmxeh"
-path="res://.godot/imported/slump_0.ogg-b266e9688014b5c35c440fa0f84e2ede.oggvorbisstr"
+path="res://.godot/imported/slump_0.ogg-c8a7f99dd39305827e1a6040184b5bad.oggvorbisstr"
 
 [deps]
 
 source_file="res://addons/gs_player_char/death/sounds/slump_0.ogg"
-dest_files=["res://.godot/imported/slump_0.ogg-b266e9688014b5c35c440fa0f84e2ede.oggvorbisstr"]
+dest_files=["res://.godot/imported/slump_0.ogg-c8a7f99dd39305827e1a6040184b5bad.oggvorbisstr"]
 
 [params]
 

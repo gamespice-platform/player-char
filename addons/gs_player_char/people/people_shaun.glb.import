@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://dgptaiabr2gpr"
-path="res://.godot/imported/people_shaun.glb-d367549e44eda548fdc984106dbfe93d.scn"
+path="res://.godot/imported/people_shaun.glb-124d9cb9ed5b4b06188431ebf05b2349.scn"
 
 [deps]
 
 source_file="res://addons/gs_player_char/people/people_shaun.glb"
-dest_files=["res://.godot/imported/people_shaun.glb-d367549e44eda548fdc984106dbfe93d.scn"]
+dest_files=["res://.godot/imported/people_shaun.glb-124d9cb9ed5b4b06188431ebf05b2349.scn"]
 
 [params]
 

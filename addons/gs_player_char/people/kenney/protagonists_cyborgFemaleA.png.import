@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://chm0qw1ptyu2s"
-path="res://.godot/imported/protagonists_cyborgFemaleA.png-0c5e6e0602646ecb06949122a1f4507e.ctex"
+path="res://.godot/imported/protagonists_cyborgFemaleA.png-f4514783c842e41b49f1a00c18e43424.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://addons/gs_player_char/people/kenney/protagonists_cyborgFemaleA.png"
-dest_files=["res://.godot/imported/protagonists_cyborgFemaleA.png-0c5e6e0602646ecb06949122a1f4507e.ctex"]
+dest_files=["res://.godot/imported/protagonists_cyborgFemaleA.png-f4514783c842e41b49f1a00c18e43424.ctex"]
 
 [params]
 

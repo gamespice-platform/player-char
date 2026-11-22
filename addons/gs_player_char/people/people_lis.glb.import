@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://npdq121r51nw"
-path="res://.godot/imported/people_lis.glb-601afae8af3617364132fe587e1d21d6.scn"
+path="res://.godot/imported/people_lis.glb-016549c725cdb0befaa66c206451d470.scn"
 
 [deps]
 
 source_file="res://addons/gs_player_char/people/people_lis.glb"
-dest_files=["res://.godot/imported/people_lis.glb-601afae8af3617364132fe587e1d21d6.scn"]
+dest_files=["res://.godot/imported/people_lis.glb-016549c725cdb0befaa66c206451d470.scn"]
 
 [params]
 

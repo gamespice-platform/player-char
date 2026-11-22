@@ -3,12 +3,12 @@
 importer="oggvorbisstr"
 type="AudioStreamOggVorbis"
 uid="uid://covblxbg1y37r"
-path="res://.godot/imported/face_plant_0.ogg-eae7a72e61acc5f9a34267e76fe4c32d.oggvorbisstr"
+path="res://.godot/imported/face_plant_0.ogg-48902b14bfe4ebe551efbe3b42207ba7.oggvorbisstr"
 
 [deps]
 
 source_file="res://addons/gs_player_char/death/sounds/face_plant_0.ogg"
-dest_files=["res://.godot/imported/face_plant_0.ogg-eae7a72e61acc5f9a34267e76fe4c32d.oggvorbisstr"]
+dest_files=["res://.godot/imported/face_plant_0.ogg-48902b14bfe4ebe551efbe3b42207ba7.oggvorbisstr"]
 
 [params]
 

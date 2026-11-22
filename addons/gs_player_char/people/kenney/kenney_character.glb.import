@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://bcwk5j40xaqt6"
-path="res://.godot/imported/kenney_character.glb-40adb28573156837d89ee8b2cc00fc13.scn"
+path="res://.godot/imported/kenney_character.glb-8411d375ddd032578214dcc5567419fa.scn"
 
 [deps]
 
 source_file="res://addons/gs_player_char/people/kenney/kenney_character.glb"
-dest_files=["res://.godot/imported/kenney_character.glb-40adb28573156837d89ee8b2cc00fc13.scn"]
+dest_files=["res://.godot/imported/kenney_character.glb-8411d375ddd032578214dcc5567419fa.scn"]
 
 [params]
 

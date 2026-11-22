@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://br6i7cgmqn3hx"
-path="res://.godot/imported/people_matt.glb-2e6555cbed0700609c973fdba7673026.scn"
+path="res://.godot/imported/people_matt.glb-78e80692e4b1d7d09ff69a653ea19456.scn"
 
 [deps]
 
 source_file="res://addons/gs_player_char/people/people_matt.glb"
-dest_files=["res://.godot/imported/people_matt.glb-2e6555cbed0700609c973fdba7673026.scn"]
+dest_files=["res://.godot/imported/people_matt.glb-78e80692e4b1d7d09ff69a653ea19456.scn"]
 
 [params]
 

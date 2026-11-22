@@ -176,6 +176,9 @@ const OFF_FLOOR_STATES: Array[StringName] = [GSPlayerAnimState.SWIM, GSPlayerAni
 	GSPlayerAnimState.JUMP, GSPlayerAnimState.FALL]
 
 ## The zombie walk's and the sprint's own ground speeds (m/s), for the rate at other speeds.
+## The kit WALK and CRAWL clips' own ground speeds (m/s, from tools/crawl_stride): the rate is speed / natural, so the planted foot keeps pace with the body.
+const WALK_NATURAL := 1.53
+const CRAWL_NATURAL := 0.38
 const ZOMBIE_WALK_NATURAL := 1.3
 const ZOMBIE_SPRINT_NATURAL := 6.0
 

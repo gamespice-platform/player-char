@@ -3,12 +3,12 @@
 importer="oggvorbisstr"
 type="AudioStreamOggVorbis"
 uid="uid://bmp0pvogjexfq"
-path="res://.godot/imported/thud_1.ogg-6b2ad8cb4bf215f4375a664f66d63e8c.oggvorbisstr"
+path="res://.godot/imported/thud_1.ogg-1dc48d7b5a25e1591ced45792a1d4758.oggvorbisstr"
 
 [deps]
 
 source_file="res://addons/gs_player_char/death/sounds/thud_1.ogg"
-dest_files=["res://.godot/imported/thud_1.ogg-6b2ad8cb4bf215f4375a664f66d63e8c.oggvorbisstr"]
+dest_files=["res://.godot/imported/thud_1.ogg-1dc48d7b5a25e1591ced45792a1d4758.oggvorbisstr"]
 
 [params]
 

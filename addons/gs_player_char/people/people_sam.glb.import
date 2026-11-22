@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://d4e7cjfwe2cj"
-path="res://.godot/imported/people_sam.glb-a16c9f169744b917b34921343f14d42f.scn"
+path="res://.godot/imported/people_sam.glb-a72402613c821a7e318d4b761a83fd3c.scn"
 
 [deps]
 
 source_file="res://addons/gs_player_char/people/people_sam.glb"
-dest_files=["res://.godot/imported/people_sam.glb-a16c9f169744b917b34921343f14d42f.scn"]
+dest_files=["res://.godot/imported/people_sam.glb-a72402613c821a7e318d4b761a83fd3c.scn"]
 
 [params]
 

@@ -10,7 +10,7 @@ func _clip_for(p_state: StringName, speed: float) -> Array:
 			named = GSHumanoidClips.IDLE_GUN if gun else GSHumanoidClips.IDLE
 		return [named, 1.0]
 	if downed:
-		return [StringName(downed_clips.get(&"crawl", GSHumanoidClips.CRAWL)), clampf(speed / 1.2, 0.0, 1.6)]
+		return [StringName(downed_clips.get(&"crawl", GSHumanoidClips.CRAWL)), clampf(speed / CRAWL_NATURAL, 0.0, 3.4)]
 	if _action_full != &"":
 		return [_action_full, 1.0]
 	# A rider is carried: whatever speed the seat moves at, the legs stay sat.
@@ -50,7 +50,7 @@ func _clip_for(p_state: StringName, speed: float) -> Array:
 			# A game whose run threshold sits above its sprint speed would walk at a sprinter's pace.
 			if sprint_speed > 0.0 and speed >= sprint_speed and _sprint_clip_for(speed):
 				return [GSHumanoidClips.SPRINT, 1.0]
-			return [GSHumanoidClips.WALK_GUN if gun else GSHumanoidClips.WALK, clampf(speed / 1.9, 0.6, 1.6)]
+			return [GSHumanoidClips.WALK_GUN if gun else GSHumanoidClips.WALK, clampf(speed / WALK_NATURAL, 0.6, 1.8)]
 		GSPlayerAnimState.RUN:
 			if _sprint_clip_for(speed):
 				return [GSHumanoidClips.SPRINT, 1.0]
