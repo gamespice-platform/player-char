@@ -292,11 +292,13 @@ func _animate_step(speed: float, p_delta: float) -> void:
 	# The legs' own pose turns no faster than they are drawn before the foot hold reads it: the hold then pins a foot where
 	# it is drawn, not where a clip raced at the matched rate would put it, and lets go only once the drawn foot lifts.
 	# Held back after the hold instead, a planted leg is dragged by the limit below and its foot skates.
-	_stride_limit.step(_skeleton, deg_to_rad(limb_turn_rate) if seen else 0.0, delta)
+	# A crawl's feet are placed by its own IK, which a limit at the walk's rate drags under the floor: it turns freer.
+	var turn_rate := deg_to_rad(limb_turn_rate) * (CRAWL_TURN_FREE if _crawl.weight > 0.0 else 1.0) if seen else 0.0
+	_stride_limit.step(_skeleton, turn_rate, delta)
 	var planted := _apply_floor(seen, delta)
 	# On the pose as drawn: a floor IK let go on landing turns no faster than a clip.
 	var striking := overlay in STRIKE_CLIPS or arms.release_at < 1.0
-	_turn_limit.step(_skeleton, deg_to_rad(limb_turn_rate) if seen else 0.0, delta, deg_to_rad(strike_turn_rate) if striking else -1.0)
+	_turn_limit.step(_skeleton, turn_rate, delta, deg_to_rad(strike_turn_rate) if striking else -1.0)
 	# A leg held back can carry its ankle under the floor again; the lift only lifts, so a foot already up is left. A held foot
 	# stays where the leg was drawn down to, not where the hold first caught it.
 	if planted and _turn_limit.turned():
@@ -400,6 +402,9 @@ func _apply_floor(feet: bool = true, delta: float = 0.0) -> bool:
 
 func _skeleton_up() -> Vector3:
 	return (_to_figure().basis.inverse() * Vector3.UP).normalized()
+
+
+const CRAWL_TURN_FREE := 1.5
 
 
 func _apply_crawl_feet(speed: float, dt: float) -> void:

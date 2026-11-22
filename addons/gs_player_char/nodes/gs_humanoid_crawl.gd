@@ -85,6 +85,9 @@ func step(figure: Node3D, skeleton: Skeleton3D, active: bool, speed: float, dt: 
 		# by (its bend flips from frame to frame), and a knee pointed at the floor would go through it.
 		var hip_x := GSHumanoidIk.global_pose(skeleton, leg[0]).origin.x
 		var pole := Vector3(signf(hip_x) if hip_x != 0.0 else 1.0, -0.3, 0.0)
-		var ankle := GSHumanoidIk.two_bone_to(skeleton, leg[0], leg[1], end_local, to_skel * ankles[k].lerp(target, w), pole, 1.0)
+		var goal := ankles[k].lerp(target, w)
+		# Never below the floor the foot lands on: the clip's own ankle dips under it between steps.
+		goal.y = maxf(goal.y, lands[k].y)
+		var ankle := GSHumanoidIk.two_bone_to(skeleton, leg[0], leg[1], end_local, to_skel * goal, pole, 1.0)
 		var parent := skeleton.get_bone_parent(leg[2])
 		skeleton.set_bone_pose_position(leg[2], ankle if parent < 0 else GSHumanoidIk.global_pose(skeleton, parent).affine_inverse() * ankle)
