@@ -35,7 +35,7 @@ CLIPS = {"Death": "death", "Duck": "duck", "HitReact": "hit", "Idle": "idle", "I
 BODIES = [("matt", "Characters_Matt", True), ("lis", "Characters_Lis", False),
 	("sam", "Characters_Sam", False), ("shaun", "Characters_Shaun", False)]
 
-RATIO = 0.42
+RATIO = float(os.environ.get("GS_PEOPLE_RATIO", "0.42"))  # the shipped lean bodies; the library builds use a higher one (docs/people.md)
 
 
 def base_name(action):

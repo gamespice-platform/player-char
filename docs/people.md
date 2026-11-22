@@ -59,16 +59,20 @@ Only `people_matt.glb` carries clips; the others are a quarter of the size witho
 
 ## Library avatars (standalone GLBs)
 
-The shipped people and Kenney GLBs are lean on purpose: no texture (the palette shader recolours them) and, for the people, no clips (matt's are retargeted at run time). The TMC avatar library and Nightly's Assets audit judge a GLB on its own (a texture of at least 1024 px, an idle/walk/run set, 20 to 100 bones, 1 to 2.6 m), so those five failed. `library/avatars/` holds standalone copies, outside the addon so no game ships them:
+The shipped people and Kenney GLBs are lean on purpose: no texture (the palette shader recolours them) and, for the people, no clips (matt's are retargeted at run time). The TMC avatar library and Nightly's Assets audit judge a GLB on its own (a texture of at least 1024 px, an idle/walk/run set, 20 to 100 bones, 1 to 2.6 m, 3000 to 30000 tris), so the lean files fail it by design. Nightly's `gs-player-char` source therefore excludes the `people` folder, and `library/avatars/` holds standalone copies, outside the addon so no game ships them:
 
 | File | Tris | Clips | Made by |
 | --- | --- | --- | --- |
-| `gs-people-{matt,lis,sam,shaun}.glb` | 2607, 2662, 3714, 3550 | matt's 21, on every body (same 43-bone rig) | `blender -b --factory-startup --python tools/build_library_avatars.py -- addons/gs_player_char/people library/avatars` (embeds the swatch atlas at 1024 px, nearest filtering) |
-| `gs-kenney-criminal.glb` | 1604 | the 13 baked clips of `kenney_clips.res`, scaled to 1.8 m, criminal skin | `GPU_OFFLOAD=0 godot --headless --path . res://tools/export_library_kenney.tscn -- library/avatars/gs-kenney-criminal.glb [pack] [skin]` (strips `GODOT_single_root`, which the site's wearable validator rejects) |
+| `gs-people-{matt,lis,sam,shaun}.glb` | 3415, 3487, 3714, 3550 | matt's 21, on every body (same 43-bone rig) | see below (swatch atlas embedded at 1024 px, nearest filtering) |
+| `gs-kenney-{criminal,cyborg,skater-girl,skater-boy,human-woman,human-man,zombie-woman,zombie-man}.glb` | 1604 each | the 13 baked clips of `kenney_clips.res`, scaled to 1.8 m | `GPU_OFFLOAD=0 godot --headless --path . res://tools/export_library_kenney.tscn -- library/avatars/gs-kenney-<name>.glb <pack> <skin>` (strips `GODOT_single_root`, which the site's wearable validator rejects) |
 
-Sam and shaun pass the audit (100). **Matt, lis and Kenney still carry `LOW_TRIS`** (budget floor 3000): the kit's decimation (`build_people.py` RATIO 0.42) and Kenney's own mesh sit below it, and subdividing would only fake the count. The Quaternius Zombie Apocalypse Kit source is not on disk; re-download it, run `build_people.py` with a higher RATIO, then rerun the tool above.
+People build: download the kit (Quaternius [Zombie Apocalypse Kit](https://quaternius.com/packs/zombieapocalypsekit.html), CC0 1.0; the Drive links hit a quota, the GitHub mirror `Mtjan18/3DGameZombieShooter` carries the full March 2024 pack with its `License.txt`), then `GS_PEOPLE_RATIO=0.55 blender -b --factory-startup --python tools/build_people.py -- <kit> <out>` (the shipped files stay at the default 0.42; the higher ratio is what lifts matt and lis over the floor, no subdividing), `python3 tools/split_people_atlas.py <out>` (needs Pillow and numpy), then `blender -b --factory-startup --python tools/build_library_avatars.py -- <out> library/avatars`.
 
-`tools/library_avatars_shot.sh` renders the five side by side (`gpu.sh shot` puts it on a GPU box). Publish with gs-workbench's `tools/publish_avatar_content.gd` (`--kind avatar --licence CC0-1.0`); a re-publish of the same `--id` updates the avatar.
+Sam, shaun, matt and lis pass the audit (100). **The eight Kenney skins carry `LOW_TRIS`** (1604, floor 3000): Kenney's own mesh is that small and subdividing would only fake the count. The retro skins (human, zombie) are also `LOW_TEX` (their texture is under 1024 px).
+
+`tools/library_avatars_shot.sh` renders every file in `library/avatars/` in two rows (`gpu.sh shot` puts it on a GPU box). Publish with gs-workbench's `tools/publish_avatar_content.gd` (`--kind avatar --licence CC0-1.0`). The site's publish route ignores `--id` for avatars, so a re-publish creates a new avatar: delete the superseded one, and mind the per-member cap (`play.avatar.maxModelsPerUser`, 12 on dev).
+
+Dev library ids: sam 9, shaun 10, criminal 13, matt 15, lis 16, cyborg 17, skater girl 18, skater boy 19, human woman 20, human man 21, zombie woman 22, zombie man 23.
 
 ## Real clips from the Universal Animation Library
 

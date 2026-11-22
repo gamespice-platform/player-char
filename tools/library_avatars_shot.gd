@@ -13,7 +13,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var out := OS.get_cmdline_user_args()[0] if not OS.get_cmdline_user_args().is_empty() else OUT_DEFAULT
-	root.size = Vector2i(1400, 520)
+	root.size = Vector2i(1280, 640)
 	var env := WorldEnvironment.new()
 	env.environment = Environment.new()
 	env.environment.background_mode = Environment.BG_COLOR
@@ -27,6 +27,8 @@ func _run() -> void:
 	var files := DirAccess.get_files_at(DIR)
 	files.sort()
 	var x := 0.0
+	var n := 0
+	var per_row := 6
 	for f in files:
 		if not f.ends_with(".glb"):
 			continue
@@ -36,15 +38,15 @@ func _run() -> void:
 			printerr("did not load " + f)
 			continue
 		var node := doc.generate_scene(state)
-		node.position.x = x
+		node.position = Vector3(1.6 * (n % per_row), -2.3 * (n / per_row), 0)
+		n += 1
 		root.add_child(node)
-		x += 1.6
 		for player: AnimationPlayer in node.find_children("*", "AnimationPlayer", true, false):
 			if player.has_animation("idle"):
 				player.play("idle")
 		print("LIBRARY ", f, " clips=", node.find_children("*", "AnimationPlayer", true, false).map(func(p: AnimationPlayer) -> int: return p.get_animation_list().size()))
 	var camera := Camera3D.new()
-	camera.position = Vector3(x / 2.0 - 0.8, 1.0, 5.2)
+	camera.position = Vector3(1.6 * (per_row - 1) / 2.0, -0.2, 7.2)
 	camera.fov = 45
 	root.add_child(camera)
 	for i in 20:

@@ -3,4 +3,4 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p out
-timeout 300 xvfb-run -a godot --path . --resolution 1400x520 --script res://tools/library_avatars_shot.gd -- "${1:-res://out/library_avatars.png}" 2>&1 | grep -E "LIBRARY|ERROR|SCRIPT" || true
+timeout 300 xvfb-run -a godot --path . --resolution 1280x640 --script res://tools/library_avatars_shot.gd -- "${1:-res://out/library_avatars.png}" 2>&1 | grep -E "LIBRARY|ERROR|SCRIPT" || true
