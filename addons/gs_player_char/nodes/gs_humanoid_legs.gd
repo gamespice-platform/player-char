@@ -252,6 +252,11 @@ func resettle(skeleton: Skeleton3D, to_world: Transform3D) -> void:
 
 
 ## Lets go of every [method hold_feet] hold at once (the feet left the floor, the clip is not a stride, the body was moved).
+## Whether a foot is held now ([method hold_feet]): the stride's planted foot a stop leaves standing where it came down.
+func is_holding() -> bool:
+	return _holds[0] != null or _holds[1] != null or _held[0].length_squared() > 1e-10 or _held[1].length_squared() > 1e-10
+
+
 func let_go() -> void:
 	_holds = [null, null]
 	_held = [Vector3.ZERO, Vector3.ZERO]

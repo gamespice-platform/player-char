@@ -27,12 +27,10 @@ const CROUCH_BLEND := 0.25
 ## How far back a propped, downed body leans about the hips, in radians.
 const PROP_LEAN := 1.2
 
-## How far a sprinter leans forward about the hips (radians), and how fast it eases in (radians a second).
-## Off (0.0) for now: at 0.14 the captured avatar run slid 1.24 m/s, since the lean moves the planted foot the hold has pinned. Nightly zombie-filmstrip-1 has the follow-up.
-const SPRINT_LEAN := 0.0
+## How far a sprinter leans forward (radians at the aim bones' full share, so the chest bends about a third of it and the head about a quarter), and how fast it eases in (radians a second).
+## It bends the spine, never the model, so the feet the hold pinned stay put.
+const SPRINT_LEAN := 0.4
 const SPRINT_LEAN_RATE := 1.2
-## Metres the body is moved up per radian of sprint lean (for a 1.8 m figure); negative lowers it. Measured by the ankles-out-of-the-floor check: the leaned stride's lowest ankle only stays above the floor with the body set down a little.
-const SPRINT_LEAN_LIFT := -0.5
 
 ## The clip a downed pose plays; a game with better clips assigns its own names.
 var downed_clips: Dictionary = {&"propped": &"", &"crawl": GSHumanoidClips.CRAWL}
@@ -165,9 +163,11 @@ var land_stride_speed: float = LAND_STRIDE_SPEED:
 const LAND_STRIDE_SPEED := 1.0
 ## A stride's foot within this of its rest height (metres) and moving slower than [constant FOOT_HOLD_SETTLE] m/s in the world as the clip draws it is planted;
 ## a lifted foot eases back onto the clip's over [constant FOOT_HOLD_RELEASE] seconds.
-const FOOT_HOLD_HEIGHT := 0.04
-const FOOT_HOLD_SETTLE := 1.0
+const FOOT_HOLD_HEIGHT := 0.09
+const FOOT_HOLD_SETTLE := 3.0
 const FOOT_HOLD_RELEASE := 0.12
+## The same for feet a stop holds, and the ease off them once the body leaves the stop (seconds): slow enough not to read as a slide.
+const FOOT_STOP_RELEASE := 1.0
 
 
 static func _rate_ok(what: String, value: float, zero := "0: no limit") -> bool:

@@ -410,10 +410,18 @@ func _apply_floor(feet: bool = true, delta: float = 0.0) -> bool:
 	var grounded := feet and _skeleton != null and not (downed or seated or driving) and bool(_motion.get("on_floor", true)) \
 		and not bool(_motion.get("wall_running", false)) and not state in OFF_FLOOR_STATES
 	if delta > 0.0:
-		if grounded and foot_hold_reach > 0.0 and state in STRIDE_STATES and clip in STRIDE_CLIPS and is_inside_tree():
+		# A stop keeps the feet where the stride set them down (the idle blend would drag them back across the floor); they ease
+		# off the hold slowly once the body does something else.
+		var striding: bool = state in STRIDE_STATES and clip in STRIDE_CLIPS
+		var standing: bool = state == GSPlayerAnimState.IDLE
+		if grounded and foot_hold_reach > 0.0 and striding and is_inside_tree():
 			var to_figure := _model.transform * _skel_to_model
 			legs.hold_feet(_skeleton, global_transform * to_figure, to_figure, _floor_ankles, FOOT_HOLD_HEIGHT, FOOT_HOLD_SETTLE,
 				foot_hold_reach, FOOT_HOLD_RELEASE, delta)
+		elif grounded and foot_hold_reach > 0.0 and legs.is_holding() and is_inside_tree():
+			var to_figure := _model.transform * _skel_to_model
+			legs.hold_feet(_skeleton, global_transform * to_figure, to_figure, _floor_ankles, FOOT_HOLD_HEIGHT if standing else -1.0,
+				FOOT_HOLD_SETTLE, foot_hold_reach, FOOT_STOP_RELEASE, delta)
 		else:
 			legs.let_go()
 	if grounded:
