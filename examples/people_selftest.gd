@@ -4,8 +4,8 @@ extends "res://examples/people_selftest_part.gd"
 ## from how it moves. What a person LOOKS like is `tools/people_sheet.gd`'s contact sheets.
 ## godot --headless --path . res://examples/people_selftest.tscn
 
-const SECTIONS := 25
-const CHECKS := 282
+const SECTIONS := 26
+const CHECKS := 289
 
 
 func _ready() -> void:
@@ -29,6 +29,7 @@ func _run() -> void:
 	_test_unimported()
 	await GSPeopleViewChecks.new(self).run()
 	await GSPeopleLegsChecks.new(self).run()
+	await GSPeopleFootChecks.new(self).run()
 	await preload("people_stance_checks.gd").new(self).run()
 	await GSPeopleCarryChecks.new(self).run()
 	await preload("people_throw_checks.gd").new(self).run()
