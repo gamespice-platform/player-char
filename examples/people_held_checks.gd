@@ -111,6 +111,29 @@ func run_arms_dress() -> void:
 	var fore := Vector3(0.0, -0.06, -0.15)
 	var measured := GSViewGrip.two_hand(weapon, grip, fore).bounds_local()
 	suite._check(measured.size.is_equal_approx(box.size), "a weapon's box is measured from its meshes when it gives none (%s)" % measured.size)
+	# A diagonal bar: its box is mostly empty corners, and the convex fit is not.
+	var bar := MeshInstance3D.new()
+	var bar_mesh := BoxMesh.new()
+	bar_mesh.size = Vector3(0.04, 0.04, 0.6)
+	bar.mesh = bar_mesh
+	bar.rotation.x = deg_to_rad(45.0)
+	weapon.add_child(bar)
+	weapon.mesh = null
+	var diagonal := GSViewGrip.one_hand(weapon, grip)
+	var bar_box := diagonal.bounds_local()
+	var fit := diagonal.hull_planes()
+	suite._check(fit.size() == 26 * 4, "a grip fits a 26-plane convex solid to its meshes (%d floats)" % fit.size())
+	var corners := [bar_box.position + Vector3(0.02, 0.02, 0.02), bar_box.end - Vector3(0.02, 0.02, 0.02),
+			Vector3(0.0, bar_box.position.y + 0.02, bar_box.end.z - 0.02), Vector3(0.0, bar_box.end.y - 0.02, bar_box.position.z + 0.02)]
+	var empty_corners := 0
+	for q: Vector3 in corners:
+		if GSViewArmsClear.depth_in(bar_box, q) > 0.0 and GSViewArmsClear.depth_in_hull(fit, q) == 0.0:
+			empty_corners += 1
+	suite._check(empty_corners >= 2, "the box of a diagonal bar holds empty corners the fit does not (%d of 4 corners)" % empty_corners)
+	suite._check(GSViewArmsClear.depth_in_hull(fit, Vector3.ZERO) > 0.015, "and the bar's own middle is inside the fit (%.3f m deep)" % GSViewArmsClear.depth_in_hull(fit, Vector3.ZERO))
+	weapon.remove_child(bar)
+	bar.free()
+	weapon.mesh = box
 	# A rifle whose stock runs back to the shoulder and whose receiver is wide: the stock elbows go through it.
 	var rifle := AABB(Vector3(-0.06, -0.22, -0.35), Vector3(0.22, 0.28, 0.75))
 	var depths := []

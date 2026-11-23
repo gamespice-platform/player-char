@@ -19,6 +19,12 @@ var kind: StringName = &"rifle"
 var forward: Vector3 = Vector3.FORWARD
 var up: Vector3 = Vector3.UP
 var _measured := false
+## Points on the weapon's surface in the frame [member bounds] is in, for a host that sets [member bounds] itself
+## (a bare marker anchor has no mesh to measure). The arms then keep out of the convex fit of these points, not the box.
+var hull_points := PackedVector3Array()
+var _hull := PackedFloat32Array()
+var _hull_measured := false
+var _host_box := false
 
 
 ## A one-hand weapon (a pistol, a knife).
@@ -64,6 +70,7 @@ func up_world() -> Vector3:
 ## [member bounds], measured on first use when the host did not set it; empty when there is nothing to measure.
 func bounds_local() -> AABB:
 	if bounds.has_volume() or _measured or not is_valid():
+		_host_box = _host_box or (bounds.has_volume() and not _measured)
 		return bounds
 	_measured = true
 	bounds = _measure(anchor, Transform3D.IDENTITY, AABB())
@@ -78,3 +85,27 @@ static func _measure(node: Node, to_anchor: Transform3D, box: AABB) -> AABB:
 		if child is Node3D:
 			box = _measure(child, to_anchor * (child as Node3D).transform, box)
 	return box
+
+
+## A tight convex fit to the visible meshes' vertices in [member anchor]'s space ([method GSViewArmsClear.dop_planes]), so the arms clear the weapon itself
+## and not the empty corners of its box. Measured once; empty when the host set [member bounds] itself (its box is then the whole answer) or there is no mesh.
+func hull_planes() -> PackedFloat32Array:
+	if _hull_measured or not is_valid():
+		return _hull
+	_hull_measured = true
+	var points := hull_points
+	if points.is_empty():
+		if _host_box:
+			return _hull
+		_collect(anchor, Transform3D.IDENTITY, points)
+	_hull = GSViewArmsClear.dop_planes(points)
+	return _hull
+
+
+static func _collect(node: Node, to_anchor: Transform3D, points: PackedVector3Array) -> void:
+	if node is MeshInstance3D and (node as MeshInstance3D).visible and (node as MeshInstance3D).mesh != null:
+		for p in (node as MeshInstance3D).mesh.get_faces():
+			points.append(to_anchor * p)
+	for child in node.get_children():
+		if child is Node3D:
+			_collect(child, to_anchor * (child as Node3D).transform, points)
