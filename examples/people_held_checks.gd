@@ -131,6 +131,28 @@ func run_arms_dress() -> void:
 			empty_corners += 1
 	suite._check(empty_corners >= 2, "the box of a diagonal bar holds empty corners the fit does not (%d of 4 corners)" % empty_corners)
 	suite._check(GSViewArmsClear.depth_in_hull(fit, Vector3.ZERO) > 0.015, "and the bar's own middle is inside the fit (%.3f m deep)" % GSViewArmsClear.depth_in_hull(fit, Vector3.ZERO))
+	# An L-shaped gun (receiver on top, a grip hanging off its back end): the convex fit closes over the notch under the receiver in front of the grip, the solid keeps it.
+	var l_points := PackedVector3Array()
+	for part: Array in [[Vector3(0.06, 0.08, 0.5), Vector3(0.0, 0.04, 0.0)], [Vector3(0.06, 0.16, 0.08), Vector3(0.0, -0.08, 0.21)]]:
+		var piece := BoxMesh.new()
+		piece.size = part[0]
+		for v in piece.get_faces():
+			l_points.append(v + (part[1] as Vector3))
+	var arm := 0.03
+	var l_fit := GSViewArmsClear.dop_planes(l_points)
+	var notch := Vector3(0.0, -0.1, -0.1)
+	var started := Time.get_ticks_usec()
+	var l_solid := GSViewArmsSolid.fit(l_points, arm)
+	var built := (Time.get_ticks_usec() - started) / 1000.0
+	suite._check(l_solid != null and GSViewArmsSolid.fit(l_points, arm) == l_solid, "a weapon's solid is built once per mesh and radius (%.0f ms)" % built)
+	suite._check(GSViewArmsClear.depth_in_hull(GSViewArmsClear.grown(l_fit, arm), notch) > 0.0, "the convex fit of an L closes over the notch under its receiver")
+	suite._check(l_solid.depth_at(notch) == 0.0, "the solid leaves the notch open (%.3f m)" % l_solid.depth_at(notch))
+	suite._check(l_solid.depth_at(Vector3(0.0, 0.04, 0.0)) >= arm + 0.02, "and is deep inside the receiver (%.3f m)" % l_solid.depth_at(Vector3(0.0, 0.04, 0.0)))
+	suite._check(absf(l_solid.depth_at(Vector3(0.03 + 0.005, 0.04, 0.0)) - (arm - 0.005)) < 0.012, "a point 5 mm off the receiver is in its %.0f mm skin by about 25 mm (%.3f m)" % [arm * 1000.0, l_solid.depth_at(Vector3(0.035, 0.04, 0.0))])
+	suite._check(l_solid.depth_at(Vector3(0.2, 0.0, 0.0)) == 0.0 and l_solid.depth_at(Vector3(0.0, -0.1, 0.0)) == 0.0, "far air and the notch's far corner are clear")
+	var l_box := l_solid.box
+	var turned := GSViewArmsClear.scan(Vector3(0.0, -0.1, -0.5), Vector3(0.0, -0.1, 0.0), Vector2(0.3, 0.3), Vector3.DOWN, Vector3(0.0, 0.0, 1.0), Transform3D.IDENTITY, l_box, Vector3.UP, 0.0, PackedFloat32Array(), l_solid)
+	suite._check(turned.size() == 5 and turned[4] < 0.005, "an arm reaching under the receiver along the notch is not scored as buried (%.3f m)" % turned[4])
 	weapon.remove_child(bar)
 	bar.free()
 	weapon.mesh = box
