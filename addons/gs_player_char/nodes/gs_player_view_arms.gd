@@ -87,6 +87,29 @@ func sway() -> Vector3:
 	return _sway
 
 
+## `viewmodel_fov`'s hook (gs-menu's applier calls it on its `gs_view_model` group): [member hands_fov] from 4:3 degrees.
+func set_hands_fov_at_4_3(horizontal: float) -> void:
+	hands_fov = GSViewLens.vertical_from_horizontal_4_3(horizontal)
+
+
+## The scale the arms' view-space X and Y are drawn at now; 1 with no [member hands_fov], camera or detail material.
+func lens() -> float:
+	if hands_fov <= 0.0 or not _detail_on or not is_inside_tree():
+		return 1.0
+	var camera := get_viewport().get_camera_3d()
+	return GSViewLens.lens_scale(camera.fov, hands_fov) / lens_neutral if camera != null else 1.0
+
+
+## [param world] moved where the arms' [method lens] draws it: what is worn on the arms (a watch, a bracelet) calls it
+## on its own solved transform so it stays on the drawn wrist. Identity while the lens is 1.
+func lensed(world: Transform3D) -> Transform3D:
+	var k := lens()
+	if k == 1.0:
+		return world
+	var eye := get_viewport().get_camera_3d().global_transform
+	return eye * Transform3D(Basis.from_scale(Vector3(k, k, 1.0)), Vector3.ZERO) * eye.affine_inverse() * world
+
+
 func _apply_mode() -> void:
 	var was := shown
 	shown = _downed or _grip != null
@@ -164,9 +187,11 @@ func _apply_draw_depth() -> void:
 	var depth := draw_depth if camera != null and _holding() else 1.0
 	var eye := camera.global_position if camera != null else Vector3.ZERO
 	var sent := Vector4(depth, eye.x, eye.y, eye.z)
-	if sent == _depth_sent:
+	var k := lens()
+	if sent == _depth_sent and k == _lens_sent:
 		return
 	_depth_sent = sent
+	_lens_sent = k
 	_depth_meshes.clear()
 	if _arms is GSHumanoidFigure and (_arms as GSHumanoidFigure).mesh() != null:
 		_depth_meshes.append((_arms as GSHumanoidFigure).mesh())
@@ -176,6 +201,7 @@ func _apply_draw_depth() -> void:
 	for m in _depth_meshes:
 		m.set_instance_shader_parameter(&"draw_depth", depth)
 		m.set_instance_shader_parameter(&"draw_eye", eye)
+		m.set_instance_shader_parameter(&"draw_lens", k)
 
 
 ## The real hands are drawn: built, a weapon held, and the arms up.

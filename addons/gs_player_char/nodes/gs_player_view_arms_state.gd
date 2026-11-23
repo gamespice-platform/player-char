@@ -44,6 +44,22 @@ var look: GSHumanoidLook = null
 var own_look: GSHumanoidLook = null
 ## The arms' close-up material ([GSViewArmsMaterial]: skin and cloth detail). Off: the crowd's flat palette.
 var detailed: bool = true
+## Vertical field of view the arms draw at in first person (the `viewmodel_fov` lens, [GSViewLens]); 0 is the camera's
+## own. Needs [member detailed]. Only for arms whose held model is not lensed itself: a lensed weapon is scaled twice.
+var hands_fov: float = 0.0:
+	set(value):
+		if not is_finite(value) or value < 0.0 or value >= 179.0:
+			push_error("GSPlayerViewArms.hands_fov must be 0 (off) or under 179 degrees, got %s" % value)
+			return
+		hands_fov = value
+## The lens scale at which the arms draw life size: [method GSViewLens.lens_scale] of the game's default camera and
+## default [member hands_fov]. The arms draw at lens_scale(camera, hands_fov) over it, so the defaults change nothing.
+var lens_neutral: float = 1.0:
+	set(value):
+		if not is_finite(value) or value <= 0.0:
+			push_error("GSPlayerViewArms.lens_neutral must be above 0, got %s" % value)
+			return
+		lens_neutral = value
 ## Turn the elbows so the arms do not pass through the weapon ([member GSViewGrip.bounds]); its radius in metres.
 var keep_arms_clear: bool = true
 var arm_radius: float = 0.03
@@ -171,6 +187,7 @@ var _arm_upper_r := -1
 var _arm_lower_r := -1
 ## Last values written to the draw-depth instance uniforms, so an unchanged set is not re-sent.
 var _depth_sent := Vector4(NAN, 0.0, 0.0, 0.0)
+var _lens_sent := 1.0
 var _depth_meshes: Array[GeometryInstance3D] = []
 var _turn_right := 0.0
 var _turn_left := 0.0

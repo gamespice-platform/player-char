@@ -54,8 +54,39 @@ func run() -> void:
 	custom.arms_factory = func(_l, _h): return Node3D.new()
 	custom.build()
 	suite._check(custom.describe()["custom"] and custom.arms().get_class() == "Node3D", "a game supplies its own arms")
+	await _lens(arms)
 	arms.queue_free()
 	custom.queue_free()
+
+
+## viewmodel_fov on the arms: the lens maths, what is worn follows it, and the material always writes its position.
+func _lens(arms: GSPlayerViewArms) -> void:
+	var camera := Camera3D.new()
+	suite.add_child(camera)
+	camera.fov = 100.0
+	camera.current = true
+	camera.global_transform = Transform3D(Basis.from_euler(Vector3(0.2, 0.7, 0.0)), Vector3(1.0, 1.6, -2.0))
+	suite._check(arms.lens() == 1.0, "no hands_fov: the arms draw at the camera's own lens")
+	arms.set_hands_fov_at_4_3(54.0)
+	var k := GSViewLens.lens_scale(100.0, GSViewLens.vertical_from_horizontal_4_3(54.0))
+	suite._check(is_equal_approx(arms.lens(), k) and k > 1.5, "viewmodel_fov 54 under a 100 degree lens scales them %.2f" % arms.lens())
+	arms.lens_neutral = k
+	suite._check(is_equal_approx(arms.lens(), 1.0), "and the game's default pair, as lens_neutral, draws them as before")
+	arms.lens_neutral = 1.0
+	var at := camera.global_transform * Vector3(0.1, -0.05, -0.5)
+	var drawn := camera.global_transform.affine_inverse() * (arms.lensed(Transform3D(Basis(), at)).origin)
+	suite._check(drawn.is_equal_approx(Vector3(0.1 * k, -0.05 * k, -0.5)), "a worn thing is moved where the lens draws its wrist (%s)" % drawn)
+	arms.set_downed(true)
+	arms.tick(0.0, 1.0 / 30.0)
+	var mesh := (arms.arms() as GSHumanoidFigure).mesh()
+	var sent: Variant = mesh.get_instance_shader_parameter(&"draw_lens")
+	var code := GSViewArmsMaterial.shader_code()
+	var unconditional := code.contains("\n\tPOSITION = PROJECTION_MATRIX * v;\n")
+	suite._check(sent is float and is_equal_approx(sent, k) and unconditional, "the material gets the lens and writes POSITION on every path (%s)" % sent)
+	arms.set_downed(false)
+	arms.hands_fov = 0.0
+	camera.queue_free()
+	await suite.get_tree().process_frame
 
 
 ## Triangles with a vertex on the hips more than 0.3 behind the body: the stock kit's backpack.

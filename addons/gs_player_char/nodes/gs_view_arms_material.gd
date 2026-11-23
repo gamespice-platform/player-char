@@ -19,6 +19,8 @@ varying vec3 rest;
 // Only from draw_eye's own view: a shadow pass renders from the light, where the growth would move the shadow.
 instance uniform float draw_depth = 1.0;
 instance uniform vec3 draw_eye = vec3(0.0);
+// GSPlayerViewArms.lens(): view-space X and Y scaled by it about the eye, as GSViewLens scales a held model.
+instance uniform float draw_lens = 1.0;
 
 float gs_hash(vec3 p) {
 	p = fract(p * 0.3183099 + 0.1);
@@ -36,10 +38,13 @@ float gs_noise(vec3 x) {
 
 void vertex() {
 	rest = CUSTOM0.xyz;
-	if (draw_depth > 1.0 && distance(INV_VIEW_MATRIX[3].xyz, draw_eye) < 0.01) {
-		vec4 v = MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
-		POSITION = PROJECTION_MATRIX * vec4(v.xyz * draw_depth, 1.0);
+	// POSITION is written on every path: a shader that writes it on some leaves it undefined on the rest (no arms).
+	vec4 v = MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
+	if (distance(INV_VIEW_MATRIX[3].xyz, draw_eye) < 0.01) {
+		v.xy *= draw_lens;
+		v.xyz *= draw_depth;
 	}
+	POSITION = PROJECTION_MATRIX * v;
 }
 """
 

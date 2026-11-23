@@ -46,7 +46,7 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is sp
 | `core/gs_player_hitbox_plan.gd`, `nodes/gs_player_hitboxes.gd` | optional hit zones (head, neck, torso, arms, hands, legs, feet) as pure data scaled from the height, and the node (off by default) that builds them as GameSpice Combat hitboxes whose `group` is the hit_group the resolver and `GSStatsHitzones` read; `config` (`disabled`, `groups`, `zones`), `hitbox_factory` / `set_factory`, override `zones()` |
 | `nodes/gs_player_first_person_body.gd` | your own body in first person: head shadow-only, body back |
 | `core/gs_view_grip.gd` | where the hands go on a first-person weapon: anchor, grip, support |
-| `nodes/gs_player_view_arms.gd` | your own crawling arms in first person while downed, under the yaw pivot; `arms_factory` swaps them and `set_held` poses them on a weapon (`GSViewGrip`); no game mounts it yet |
+| `nodes/gs_player_view_arms.gd` | your own crawling arms in first person while downed, under the yaw pivot; `arms_factory` swaps them and `set_held` poses them on a weapon (`GSViewGrip`); `hands_fov` / `set_hands_fov_at_4_3` draw them at `viewmodel_fov` (`lens()`, `lensed()` for what is worn on them) |
 | `nodes/gs_view_arms_material.gd` | `GSViewArmsMaterial`: the first-person arms' palette swap plus skin and cloth detail, one per look |
 | `core/gs_humanoid_look.gd` | a person as data: body and four colours; `stock(seed)`, `from_site(avatar)`, `with_side` |
 | `core/gs_humanoid_clips.gd` | the family clip names, `retarget`, the made crouch and grounded air clips, `adopt` (real clips over made ones) |

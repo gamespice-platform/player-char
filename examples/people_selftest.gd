@@ -5,7 +5,7 @@ extends "res://examples/people_selftest_part.gd"
 ## godot --headless --path . res://examples/people_selftest.tscn
 
 const SECTIONS := 25
-const CHECKS := 282
+const CHECKS := 287
 
 
 func _ready() -> void:
