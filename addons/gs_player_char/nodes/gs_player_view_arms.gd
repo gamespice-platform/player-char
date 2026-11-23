@@ -407,7 +407,9 @@ func _clear_pole(skeleton: Skeleton3D, bones: Array[int], target: Vector3, pole:
 	if _native != null and solid == null:
 		r = _native.clear_pole(shoulder, target, lengths, pole, dir, to_anchor, box, up, prev)
 	else:
-		r = GSViewArmsClear.scan(shoulder, target, lengths, pole, dir, to_anchor, box, up, prev, PackedFloat32Array(), solid, _grip.hull_pose)
+		if solid != null:
+			to_anchor = _grip.hull_pose.affine_inverse() * to_anchor
+		r = GSViewArmsClear.scan(shoulder, target, lengths, pole, dir, to_anchor, box, up, prev, PackedFloat32Array(), solid)
 	var turned := Vector3(r[0], r[1], r[2])
 	var turn := r[3]
 	var depth := r[4]
@@ -421,11 +423,11 @@ func _clear_pole(skeleton: Skeleton3D, bones: Array[int], target: Vector3, pole:
 	if absf(want - prev) > step:
 		turn = prev + signf(want - prev) * step
 		turned = pole.rotated(dir, deg_to_rad(turn))
-		depth = GSViewArmsClear.arm_depth(to_anchor, box, shoulder, GSViewArmsClear.elbow_for(shoulder, target, lengths, turned), target, PackedFloat32Array(), solid, _grip.hull_pose)
+		depth = GSViewArmsClear.arm_depth(to_anchor, box, shoulder, GSViewArmsClear.elbow_for(shoulder, target, lengths, turned), target, PackedFloat32Array(), solid)
 	elif want != turn:
 		turn = want
 		turned = pole.rotated(dir, deg_to_rad(turn))
-		depth = GSViewArmsClear.arm_depth(to_anchor, box, shoulder, GSViewArmsClear.elbow_for(shoulder, target, lengths, turned), target, PackedFloat32Array(), solid, _grip.hull_pose)
+		depth = GSViewArmsClear.arm_depth(to_anchor, box, shoulder, GSViewArmsClear.elbow_for(shoulder, target, lengths, turned), target, PackedFloat32Array(), solid)
 	if right:
 		_turn_right = turn
 		arm_depth_right = depth
