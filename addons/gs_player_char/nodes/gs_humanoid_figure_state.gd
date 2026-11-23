@@ -27,6 +27,13 @@ const CROUCH_BLEND := 0.25
 ## How far back a propped, downed body leans about the hips, in radians.
 const PROP_LEAN := 1.2
 
+## How far a sprinter leans forward about the hips (radians), and how fast it eases in (radians a second).
+## Off (0.0) for now: at 0.14 the captured avatar run slid 1.24 m/s, since the lean moves the planted foot the hold has pinned. Nightly zombie-filmstrip-1 has the follow-up.
+const SPRINT_LEAN := 0.0
+const SPRINT_LEAN_RATE := 1.2
+## Metres the body is moved up per radian of sprint lean (for a 1.8 m figure); negative lowers it. Measured by the ankles-out-of-the-floor check: the leaned stride's lowest ankle only stays above the floor with the body set down a little.
+const SPRINT_LEAN_LIFT := -0.5
+
 ## The clip a downed pose plays; a game with better clips assigns its own names.
 var downed_clips: Dictionary = {&"propped": &"", &"crawl": GSHumanoidClips.CRAWL}
 
@@ -186,8 +193,8 @@ const ZOMBIE_SPRINT_NATURAL := 6.0
 var sprint_speed: float = 0.0
 const SPRINT_EXIT := 0.8
 
-## Fastest a runner plays the run clip; faster plays the grounded sprint clip, since the run clip's flight hovers.
-const RUN_CLIP_MAX_SPEED := 5.5
+## Fastest a runner plays the run clip; faster plays the grounded sprint clip. The run clip's flight hovers both feet 7 cm+ up (floor_contact, a planted-foot hold that never engages), so a gun run at 4 m/s already takes the sprint clip.
+const RUN_CLIP_MAX_SPEED := 3.5
 var _sprint_clip: bool = false
 
 ## Ground speed above which the figure runs, and below which a runner walks again ([member GSPlayerAnimState.run_speed], [member GSPlayerAnimState.run_exit_speed]). A game whose walking pace is near the default 4.0 raises them so a walk does not play the hunched run clip.
@@ -303,6 +310,7 @@ var _turn_limit := GSHumanoidTurnLimit.new()
 var _stride_limit := GSHumanoidTurnLimit.new(GSHumanoidTurnLimit.LEG_BONES)
 var _swim_pitch: float = 0.0
 var _prop_pitch: float = 0.0
+var _sprint_pitch: float = 0.0
 var _view_pitch: float = 0.0
 var _own_back: float = 0.0
 var _own := GSHumanoidOwnView.new()

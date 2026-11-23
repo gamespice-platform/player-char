@@ -253,13 +253,16 @@ func _apply_swim(delta: float) -> void:
 	if _model == null:
 		return
 	var wanted := SWIM_LEAN if state == GSPlayerAnimState.SWIM and not downed else 0.0
-	var before := _swim_pitch + _prop_pitch + _slide_lift + _own_back
+	var before := _swim_pitch + _prop_pitch + _sprint_pitch + _slide_lift + _own_back
 	var sliding := state != GSPlayerAnimState.SWIM and clip == GSHumanoidClips.SLIDE
 	_slide_lift = move_toward(_slide_lift, SLIDE_LIFT * height / 1.8 if sliding else 0.0, delta * 0.6)
 	_swim_pitch = move_toward(_swim_pitch, wanted, delta * 3.0)
 	_prop_pitch = move_toward(_prop_pitch, -PROP_LEAN if downed and propped else 0.0, delta * 3.0)
+	# A sprinter leans into the run; the lean eases in and out with the clip.
+	var sprinting_now := clip == GSHumanoidClips.SPRINT and state in STRIDE_STATES and not downed
+	_sprint_pitch = move_toward(_sprint_pitch, SPRINT_LEAN if sprinting_now else 0.0, delta * SPRINT_LEAN_RATE)
 	_own_back = _own.back_for(_view_pitch) * height / 1.8
-	var total := _swim_pitch + _prop_pitch
+	var total := _swim_pitch + _prop_pitch + _sprint_pitch
 	if is_equal_approx(before, total + _slide_lift + _own_back) and total == 0.0 and _slide_lift == 0.0 and _own_back == 0.0:
 		return
 	_model.transform = _model_transform()
@@ -269,9 +272,9 @@ func _apply_swim(delta: float) -> void:
 ## The model under the figure: laid forward or back about the hips, raised by a slide and onto the floor, set back for its own view.
 func _model_transform() -> Transform3D:
 	var hips := Vector3(0.0, height * 0.55, 0.0)
-	var tilt := Transform3D(Basis(Vector3.RIGHT, -(_swim_pitch + _prop_pitch)), Vector3.ZERO)
+	var tilt := Transform3D(Basis(Vector3.RIGHT, -(_swim_pitch + _prop_pitch + _sprint_pitch)), Vector3.ZERO)
 	var about := Transform3D(Basis.IDENTITY, hips) * tilt * Transform3D(Basis.IDENTITY, -hips)
-	return Transform3D(Basis.IDENTITY, Vector3(0.0, _slide_lift + floor_lift, _own_back)) * about * Transform3D(_model_basis, _model_origin)
+	return Transform3D(Basis.IDENTITY, Vector3(0.0, _slide_lift + floor_lift + _sprint_pitch * SPRINT_LEAN_LIFT * height / 1.8, _own_back)) * about * Transform3D(_model_basis, _model_origin)
 
 
 ## Ends the playing action, easing out.
