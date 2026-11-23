@@ -150,8 +150,8 @@ func run_arms_dress() -> void:
 	suite._check(l_solid.depth_at(Vector3(0.0, 0.04, 0.0)) >= arm + 0.02, "and is deep inside the receiver (%.3f m)" % l_solid.depth_at(Vector3(0.0, 0.04, 0.0)))
 	suite._check(absf(l_solid.depth_at(Vector3(0.03 + 0.005, 0.04, 0.0)) - (arm - 0.005)) < 0.012, "a point 5 mm off the receiver is in its %.0f mm skin by about 25 mm (%.3f m)" % [arm * 1000.0, l_solid.depth_at(Vector3(0.035, 0.04, 0.0))])
 	suite._check(l_solid.depth_at(Vector3(0.2, 0.0, 0.0)) == 0.0 and l_solid.depth_at(Vector3(0.0, -0.1, 0.0)) == 0.0, "far air and the notch's far corner are clear")
-	var l_box := l_solid.box
-	var turned := GSViewArmsClear.scan(Vector3(0.0, -0.1, -0.5), Vector3(0.0, -0.1, 0.0), Vector2(0.3, 0.3), Vector3.DOWN, Vector3(0.0, 0.0, 1.0), Transform3D.IDENTITY, l_box, Vector3.UP, 0.0, PackedFloat32Array(), l_solid)
+	var far_box := AABB(Vector3(9.0, 9.0, 9.0), Vector3.ONE)
+	var turned := GSViewArmsClear.scan(Vector3(0.0, -0.1, -0.5), Vector3(0.0, -0.1, 0.0), Vector2(0.3, 0.3), Vector3.DOWN, Vector3(0.0, 0.0, 1.0), Transform3D.IDENTITY, far_box, Vector3.UP, 0.0, PackedFloat32Array(), l_solid)
 	suite._check(turned.size() == 5 and turned[4] < 0.005, "an arm reaching under the receiver along the notch is not scored as buried (%.3f m)" % turned[4])
 	weapon.remove_child(bar)
 	bar.free()

@@ -8,27 +8,29 @@ extends RefCounted
 const ANGLES: Array[float] = [0.0, 15.0, -15.0, 30.0, -30.0, 45.0, -45.0, 60.0, -60.0, 80.0, -80.0]
 ## The share of the forearm, from the hand end, left out of the depth (a hand on the grip is meant to touch it).
 const HAND_FREE := 0.35
+## With a solid (it keeps the notch the hand sits in) the forearm is scored nearer the hand: the wrist is where the clip showed.
+const SOLID_HAND_FREE := 0.12
 ## How far each frame's turn eases toward the best angle.
 const EASE := 0.35
 
 
-## The eased turn for an arm: [param pole] turned about [param dir] (the unit shoulder-to-[param target] line) part way from [param prev_turn] toward the least-buried angle of [constant ANGLES], scored by depth into [param box]
+## The eased turn for an arm (with a [param solid], [param pose] places its points in the anchor's space): [param pole] turned about [param dir] (the unit shoulder-to-[param target] line) part way from [param prev_turn] toward the least-buried angle of [constant ANGLES], scored by depth into [param box]
 ## (anchor space, through [param to_anchor]; or into the convex [param planes] when given, see [method dop_planes]), a small cost per degree, and a cost for an elbow above the shoulder along [param up]. All points in skeleton space; [param lengths] are the upper arm and forearm.
 ## Returns [turned.x, turned.y, turned.z, turn (degrees), depth of the turned arm (metres)].
 static func scan(shoulder: Vector3, target: Vector3, lengths: Vector2, pole: Vector3, dir: Vector3, to_anchor: Transform3D,
-		box: AABB, up: Vector3, prev_turn: float, planes := PackedFloat32Array(), solid: GSViewArmsSolid = null) -> PackedFloat64Array:
+		box: AABB, up: Vector3, prev_turn: float, planes := PackedFloat32Array(), solid: GSViewArmsSolid = null, pose := Transform3D.IDENTITY) -> PackedFloat64Array:
 	var best := 0.0
 	var best_score := INF
 	for angle in ANGLES:
 		var elbow := elbow_for(shoulder, target, lengths, pole.rotated(dir, deg_to_rad(angle)))
 		# Ties go to the smaller turn; an elbow raised above the shoulder crosses the view, so it scores worse.
-		var score := arm_depth(to_anchor, box, shoulder, elbow, target, planes, solid) + absf(angle) * 0.00005 + (0.05 if (elbow - shoulder).dot(up) > 0.0 else 0.0)
+		var score := arm_depth(to_anchor, box, shoulder, elbow, target, planes, solid, pose) + absf(angle) * 0.00005 + (0.05 if (elbow - shoulder).dot(up) > 0.0 else 0.0)
 		if score < best_score - 0.002:
 			best_score = score
 			best = angle
 	var turn := lerpf(prev_turn, best, EASE)
 	var turned := pole.rotated(dir, deg_to_rad(turn))
-	var depth := arm_depth(to_anchor, box, shoulder, elbow_for(shoulder, target, lengths, turned), target, planes, solid)
+	var depth := arm_depth(to_anchor, box, shoulder, elbow_for(shoulder, target, lengths, turned), target, planes, solid, pose)
 	return PackedFloat64Array([turned.x, turned.y, turned.z, turn, depth])
 
 
@@ -48,10 +50,16 @@ static func elbow_for(shoulder: Vector3, target: Vector3, lengths: Vector2, pole
 
 
 ## How deep the upper arm and the forearm (all but its hand end) go into [param box], or the convex [param planes] inside it (anchor space), metres.
-static func arm_depth(to_anchor: Transform3D, box: AABB, shoulder: Vector3, elbow: Vector3, target: Vector3, planes := PackedFloat32Array(), solid: GSViewArmsSolid = null) -> float:
+static func arm_depth(to_anchor: Transform3D, box: AABB, shoulder: Vector3, elbow: Vector3, target: Vector3, planes := PackedFloat32Array(), solid: GSViewArmsSolid = null, pose := Transform3D.IDENTITY) -> float:
 	var s := to_anchor * shoulder
 	var e := to_anchor * elbow
 	var h := to_anchor * target.lerp(elbow, HAND_FREE)
+	if solid != null:
+		# The solid's points sit in the weapon's own space, [param pose] places that in the anchor's.
+		var inv := pose.affine_inverse()
+		s = inv * s
+		e = inv * e
+		h = inv * h
 	# Most elbows miss the weapon: two native segment tests rule that out before the eighteen samples.
 	var gate := box if solid == null else solid.box
 	if gate.intersects_segment(s, e) == null and gate.intersects_segment(e, h) == null:
@@ -61,7 +69,8 @@ static func arm_depth(to_anchor: Transform3D, box: AABB, shoulder: Vector3, elbo
 		for i in 9:
 			var u := i / 8.0
 			deepest = maxf(deepest, maxf(solid.depth_at(s.lerp(e, u)), solid.depth_at(e.lerp(h, u))))
-		return deepest
+		# The box's depth counts too, at half: it is what swings the elbow clear of the wrist and hand, the solid only keeps the notch free.
+		return deepest + 2.0 * arm_depth(to_anchor, box, shoulder, elbow, target)
 	var hull := not planes.is_empty()
 	for i in 9:
 		var t := i / 8.0
