@@ -414,14 +414,18 @@ func _apply_floor(feet: bool = true, delta: float = 0.0) -> bool:
 		# off the hold slowly once the body does something else.
 		var striding: bool = state in STRIDE_STATES and clip in STRIDE_CLIPS
 		var standing: bool = state == GSPlayerAnimState.IDLE
+		# Touchdown: the legs blend from the air's spread back to the stance, and a foot that came down stays where it did.
+		_landing = maxf(_landing - delta, 0.0) if grounded and _was_grounded else (LAND_PIN if grounded else 0.0)
+		_was_grounded = grounded
 		if grounded and foot_hold_reach > 0.0 and striding and is_inside_tree():
 			var to_figure := _model.transform * _skel_to_model
 			legs.hold_feet(_skeleton, global_transform * to_figure, to_figure, _floor_ankles, FOOT_HOLD_HEIGHT, FOOT_HOLD_SETTLE,
 				foot_hold_reach, FOOT_HOLD_RELEASE, delta)
-		elif grounded and foot_hold_reach > 0.0 and legs.is_holding() and is_inside_tree():
+		elif grounded and foot_hold_reach > 0.0 and (legs.is_holding() or _landing > 0.0) and is_inside_tree():
 			var to_figure := _model.transform * _skel_to_model
-			legs.hold_feet(_skeleton, global_transform * to_figure, to_figure, _floor_ankles, FOOT_HOLD_HEIGHT if standing else -1.0,
-				FOOT_HOLD_SETTLE, foot_hold_reach, FOOT_STOP_RELEASE, delta)
+			var landing := _landing > 0.0
+			legs.hold_feet(_skeleton, global_transform * to_figure, to_figure, _floor_ankles, LAND_PIN_HEIGHT if landing else (FOOT_HOLD_HEIGHT if standing else -1.0),
+				INF if landing else FOOT_HOLD_SETTLE, LAND_PIN_REACH if landing else foot_hold_reach, FOOT_STOP_RELEASE, delta)
 		else:
 			legs.let_go()
 	if grounded:

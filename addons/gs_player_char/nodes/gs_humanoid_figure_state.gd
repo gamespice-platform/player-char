@@ -152,7 +152,14 @@ var foot_hold_reach: float = FOOT_HOLD_REACH:
 	set(value):
 		if _rate_ok("foot_hold_reach", value, "0: off"):
 			foot_hold_reach = value
-const FOOT_HOLD_REACH := 0.15
+## Seconds after touchdown that a foot within [constant FOOT_HOLD_HEIGHT] of the floor is held where it came down, however the blend out of the air moves it.
+const LAND_PIN := 0.5
+## A landing's pin takes a foot up to this high (metres) and lets the blend out of the air pull it up to this far (metres) from where it came down.
+const LAND_PIN_HEIGHT := 0.3
+const LAND_PIN_REACH := 1.0
+var _landing := 0.0
+var _was_grounded := true
+const FOOT_HOLD_REACH := 0.25
 ## Ground speed (metres a second) at or above which a landing plays the walk or run straight away, not the land clip
 ## ([member GSPlayerAnimState.land_stride_speed]): the land clip stands still, and on a body that lands moving its planted
 ## feet skated along the floor (prop-hunt's hop at 2.9 m/s, 1.45 m/s). 0 always plays the land clip.
