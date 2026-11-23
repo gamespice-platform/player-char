@@ -307,6 +307,11 @@ var _view_pitch: float = 0.0
 var _own_back: float = 0.0
 var _own := GSHumanoidOwnView.new()
 var legs := GSHumanoidLegs.new()
+## [method _heading_velocity]: the way the figure was last seen to move over the ground (zero before it has), and where that was measured from.
+const HEADING_STEP := 0.02
+const HEADING_MIN_SPEED := 0.1
+var _heading: Vector3 = Vector3.ZERO
+var _heading_from: Vector3 = Vector3.INF
 var _auto_last: Vector3 = Vector3.INF
 var _auto_since: float = 0.0
 var _auto_seen: Vector3 = Vector3.INF

@@ -242,6 +242,26 @@ func animate(speed: float, delta: float) -> void:
 	_frame_tf_ok = false
 
 
+## The ground velocity the legs and the stride match read: the game's `velocity` key, else the speed it passed along the way the
+## figure was last seen to move, so a game that sends only a speed still strafes and backpedals on the right feet.
+func _heading_velocity(speed: float) -> Vector3:
+	if _motion.has("velocity"):
+		return _motion["velocity"]
+	if speed < HEADING_MIN_SPEED or not is_inside_tree():
+		_heading = Vector3.ZERO
+		_heading_from = Vector3.INF
+		return Vector3.ZERO
+	var at := global_position
+	if _heading_from == Vector3.INF:
+		_heading_from = at
+	var moved := at - _heading_from
+	moved.y = 0.0
+	if moved.length() >= HEADING_STEP:
+		_heading = moved.normalized()
+		_heading_from = at
+	return _heading * speed
+
+
 func _animate_step(speed: float, p_delta: float) -> void:
 	_speed = speed
 	if _anim != null and _skip_frame(p_delta):
@@ -256,7 +276,8 @@ func _animate_step(speed: float, p_delta: float) -> void:
 	if _anim == null:
 		return
 	var facing := global_basis if is_inside_tree() else basis
-	legs.update(facing, _motion.get("velocity", Vector3.ZERO), delta)
+	var heading := _heading_velocity(speed)
+	legs.update(facing, heading, delta)
 	var wanted := _clip_for(state, speed)
 
 	if overlay != &"":
@@ -270,7 +291,7 @@ func _animate_step(speed: float, p_delta: float) -> void:
 	legs.restore(_skeleton)
 	_stride_limit.restore(_skeleton)
 	_play(wanted[0], wanted[1])
-	var matched := _matched_rate(legs.along_speed if _motion.has("velocity") else speed, delta)
+	var matched := _matched_rate(legs.along_speed if _motion.has("velocity") or _heading != Vector3.ZERO else speed, delta)
 	if not is_nan(matched):
 		_anim.speed_scale = matched
 	_anim.advance(delta)
