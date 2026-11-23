@@ -357,6 +357,9 @@ func _steady_pole(skeleton: Skeleton3D, bones: Array[int], target: Vector3, pole
 ## The most the elbow turn may change in one frame, degrees.
 const MAX_TURN_STEP := 4.0
 
+## Degrees per frame the elbow turns while crossing the weapon (its turn changing sign).
+const CROSS_STEP := 40.0
+
 ## The most the elbow direction (the pole across the shoulder-to-hand line) may swing in one frame, degrees. The turn cap above only
 ## bounds the clearance scan; a hand crossing the shoulder line (an aim-out finishing, a reload) can spin the sideways pole 180 degrees
 ## in a frame whatever the scan does, and the forearm jumped 0.3 m for one frame, or lay straight out (a T-pose flash).
@@ -408,8 +411,18 @@ func _clear_pole(skeleton: Skeleton3D, bones: Array[int], target: Vector3, pole:
 	var turn := r[3]
 	var depth := r[4]
 	# The scan eases a fraction of the gap, a big swing when the best angle flips by 60 degrees; cap the step so the forearm slews rather than jumps.
-	if absf(turn - prev) > MAX_TURN_STEP:
-		turn = prev + signf(turn - prev) * MAX_TURN_STEP
+	# Crossing the weapon (the turn changing sign) is the one place a slow slew hurts: the forearm drags through the receiver, so the elbow crosses the middle band faster.
+	var step := MAX_TURN_STEP
+	var want := turn
+	if turn * prev < 0.0:
+		step = CROSS_STEP
+		want = prev + (turn - prev) / GSViewArmsClear.EASE
+	if absf(want - prev) > step:
+		turn = prev + signf(want - prev) * step
+		turned = pole.rotated(dir, deg_to_rad(turn))
+		depth = GSViewArmsClear.arm_depth(to_anchor, box, shoulder, GSViewArmsClear.elbow_for(shoulder, target, lengths, turned), target)
+	elif want != turn:
+		turn = want
 		turned = pole.rotated(dir, deg_to_rad(turn))
 		depth = GSViewArmsClear.arm_depth(to_anchor, box, shoulder, GSViewArmsClear.elbow_for(shoulder, target, lengths, turned), target)
 	if right:
