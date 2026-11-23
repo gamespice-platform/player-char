@@ -178,6 +178,9 @@ var _turn_left := 0.0
 ## (never typed) so this addon loads without the extension. [member _native_tried] keeps it to one probe.
 var _native: Object = null
 var _native_tried := false
+var _hull_for: GSViewGrip = null
+var _hull_radius := -1.0
+var _hull := PackedFloat32Array()
 ## The forearm scale drawn, eased toward [member forearm_scale] (or 1 without a weapon) at [constant FORE_RATE].
 var _fore := 1.0
 ## The lean drawn, eased toward the one the grip needs at [constant LEAN_RATE]; [member _delta] is this tick's step.

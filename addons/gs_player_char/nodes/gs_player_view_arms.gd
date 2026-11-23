@@ -402,14 +402,14 @@ func _clear_pole(skeleton: Skeleton3D, bones: Array[int], target: Vector3, pole:
 		if native_clear and ClassDB.class_exists(&"GSSimViewArms"):
 			_native = ClassDB.instantiate(&"GSSimViewArms")
 	var prev := _turn_right if right else _turn_left
-	var solid := _grip.solid(arm_radius)
+	var planes := _hull_planes()
 	var r: PackedFloat64Array
-	if _native != null and solid == null:
+	if _native != null and planes.is_empty():
 		r = _native.clear_pole(shoulder, target, lengths, pole, dir, to_anchor, box, up, prev)
+	elif _native != null and _native.has_method(&"clear_pole_hull"):
+		r = _native.clear_pole_hull(shoulder, target, lengths, pole, dir, to_anchor, box, up, prev, planes)
 	else:
-		if solid != null:
-			to_anchor = _grip.hull_pose.affine_inverse() * to_anchor
-		r = GSViewArmsClear.scan(shoulder, target, lengths, pole, dir, to_anchor, box, up, prev, PackedFloat32Array(), solid)
+		r = GSViewArmsClear.scan(shoulder, target, lengths, pole, dir, to_anchor, box, up, prev, planes)
 	var turned := Vector3(r[0], r[1], r[2])
 	var turn := r[3]
 	var depth := r[4]
@@ -423,11 +423,11 @@ func _clear_pole(skeleton: Skeleton3D, bones: Array[int], target: Vector3, pole:
 	if absf(want - prev) > step:
 		turn = prev + signf(want - prev) * step
 		turned = pole.rotated(dir, deg_to_rad(turn))
-		depth = GSViewArmsClear.arm_depth(to_anchor, box, shoulder, GSViewArmsClear.elbow_for(shoulder, target, lengths, turned), target, PackedFloat32Array(), solid)
+		depth = GSViewArmsClear.arm_depth(to_anchor, box, shoulder, GSViewArmsClear.elbow_for(shoulder, target, lengths, turned), target)
 	elif want != turn:
 		turn = want
 		turned = pole.rotated(dir, deg_to_rad(turn))
-		depth = GSViewArmsClear.arm_depth(to_anchor, box, shoulder, GSViewArmsClear.elbow_for(shoulder, target, lengths, turned), target, PackedFloat32Array(), solid)
+		depth = GSViewArmsClear.arm_depth(to_anchor, box, shoulder, GSViewArmsClear.elbow_for(shoulder, target, lengths, turned), target, planes)
 	if right:
 		_turn_right = turn
 		arm_depth_right = depth
@@ -435,6 +435,16 @@ func _clear_pole(skeleton: Skeleton3D, bones: Array[int], target: Vector3, pole:
 		_turn_left = turn
 		arm_depth_left = depth
 	return turned
+
+
+## The weapon's convex fit grown by the arm's thickness, kept until the grip or the thickness changes.
+func _hull_planes() -> PackedFloat32Array:
+	if _hull_for != _grip or _hull_radius != arm_radius:
+		_hull_for = _grip
+		_hull_radius = arm_radius
+		var fit := _grip.hull_planes()
+		_hull = GSViewArmsClear.grown(fit, arm_radius) if not fit.is_empty() else fit
+	return _hull
 
 
 func _arm_lengths(skeleton: Skeleton3D, bones: Array[int]) -> Vector2:

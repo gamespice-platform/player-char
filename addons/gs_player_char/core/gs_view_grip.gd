@@ -21,14 +21,7 @@ var up: Vector3 = Vector3.UP
 var _measured := false
 ## Points on the weapon's surface in the frame [member bounds] is in, for a host that sets [member bounds] itself
 ## (a bare marker anchor has no mesh to measure). The arms then keep out of the convex fit of these points, not the box.
-var hull_points := PackedVector3Array():
-	set(v):
-		if v != hull_points:
-			hull_points = v
-			_hull_measured = false
-			_solid_radius = -1.0
-## Where [member hull_points] sit in the anchor's frame now (a weapon that moves against its anchor); identity for points already in it.
-var hull_pose := Transform3D.IDENTITY
+var hull_points := PackedVector3Array()
 var _hull := PackedFloat32Array()
 var _hull_measured := false
 var _host_box := false
@@ -116,22 +109,3 @@ static func _collect(node: Node, to_anchor: Transform3D, points: PackedVector3Ar
 	for child in node.get_children():
 		if child is Node3D:
 			_collect(child, to_anchor * (child as Node3D).transform, points)
-
-
-var _solid: GSViewArmsSolid = null
-var _solid_radius := -1.0
-
-
-## The weapon's mesh as a non-convex solid grown by [param radius] ([GSViewArmsSolid]): the arms keep out of the gun itself and still reach into the notch behind its grip, which the convex [method hull_planes] closes over.
-## Built from [member hull_points] or the visible meshes, once per weapon (cached by its points); null when the host set [member bounds] itself with no points, or there is no mesh.
-func solid(radius: float) -> GSViewArmsSolid:
-	if _solid_radius == radius or not is_valid():
-		return _solid
-	_solid_radius = radius
-	var points := hull_points
-	if points.is_empty():
-		if _host_box:
-			return _solid
-		_collect(anchor, Transform3D.IDENTITY, points)
-	_solid = GSViewArmsSolid.fit(points, radius)
-	return _solid
