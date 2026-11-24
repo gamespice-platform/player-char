@@ -386,6 +386,12 @@ const MAX_TURN_STEP := 4.0
 ## Degrees per frame the elbow turns while crossing the weapon (its turn changing sign).
 const CROSS_STEP := 40.0
 
+## How deep (metres) into the weapon's box an elbow turn may be and still be held by [member hold_clear_turn]; a turn buried more is free to move.
+const HOLD_DEPTH := 0.02
+
+## Keep the elbow turn it had when the next step would take a clear arm into the weapon (an unwind after a reload). Off only to measure what it prevents.
+var hold_clear_turn := true
+
 ## The most the elbow direction (the pole across the shoulder-to-hand line) may swing in one frame, degrees. The turn cap above only
 ## bounds the clearance scan; a hand crossing the shoulder line (an aim-out finishing, a reload) can spin the sideways pole 180 degrees
 ## in a frame whatever the scan does, and the forearm jumped 0.3 m for one frame, or lay straight out (a T-pose flash).
@@ -451,6 +457,14 @@ func _clear_pole(skeleton: Skeleton3D, bones: Array[int], target: Vector3, pole:
 		turn = want
 		turned = pole.rotated(dir, deg_to_rad(turn))
 		depth = GSViewArmsClear.arm_depth(to_anchor, box, shoulder, GSViewArmsClear.elbow_for(shoulder, target, lengths, turned), target)
+	# A turn that was clear must not unwind through the weapon: after a reload the elbow slewed back toward its natural side and swept the forearm
+	# through the receiver for ~15 frames. A step that lands deeper than the turn it had, while that turn is within HOLD_DEPTH, is not taken; the scan keeps asking.
+	if hold_clear_turn and depth > 0.0 and turn != prev:
+		var was_depth := GSViewArmsClear.arm_depth(to_anchor, box, shoulder, GSViewArmsClear.elbow_for(shoulder, target, lengths, pole.rotated(dir, deg_to_rad(prev))), target)
+		if was_depth <= HOLD_DEPTH and depth > was_depth:
+			turn = prev
+			turned = pole.rotated(dir, deg_to_rad(turn))
+			depth = was_depth
 	if right:
 		_turn_right = turn
 		arm_depth_right = depth
