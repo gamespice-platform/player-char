@@ -605,7 +605,7 @@ func _extend(skeleton: Skeleton3D, bones: Array[int], target: Vector3) -> float:
 
 
 ## The support hand's size against its own when it is on a bolt handle.
-const CYCLE_HAND_SIZE := 0.7
+const CYCLE_HAND_SIZE := 0.55
 
 ## The firing and support hand poses for [param grip] from [member hand_poses] (the support one empty for one hand):
 ## its kind's, a rifle's for an unknown kind, a knife's blended toward the throw's pinch by [member throw_grip].
