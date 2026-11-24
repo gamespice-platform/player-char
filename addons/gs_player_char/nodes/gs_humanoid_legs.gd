@@ -49,6 +49,12 @@ var _holds: Array = [null, null]
 var _held: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _letting: Array[float] = [0.0, 0.0]
 var _was: Array[Vector3] = [Vector3.INF, Vector3.INF]
+# [method step_off]: per leg how far through its step (0..1, -1 when not stepping) and the world point it steps from.
+var _off: Array[float] = [-1.0, -1.0]
+var _off_from: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+## Per leg, whether the step has been taken since the stride ended; [member _armed] while a stride is being followed through.
+var _stepped: Array[bool] = [false, false]
+var _armed := false
 
 
 ## Reads the ground [param velocity] (world) against [param facing] (the figure's world basis) and eases the twist.
@@ -178,6 +184,9 @@ func hold_feet(skeleton: Skeleton3D, to_world: Transform3D, to_figure: Transform
 	if skeleton == null or floor_y.size() < LEGS.size() or dt <= 0.0:
 		return
 	_legs_for(skeleton)
+	_off = [-1.0, -1.0]
+	_stepped = [false, false]
+	_armed = true
 	var to_skel := to_world.affine_inverse()
 	var knees: Array[Transform3D] = []
 	var lows := PackedFloat32Array()
@@ -213,16 +222,73 @@ func hold_feet(skeleton: Skeleton3D, to_world: Transform3D, to_figure: Transform
 		_held[k] = shift
 		if shift.length_squared() < 1e-10:
 			continue
-		for bone: int in [leg[0], leg[1]]:
-			if not _saved.has(bone):
-				_saved[bone] = skeleton.get_bone_pose_rotation(bone)
-		var hip_s := GSHumanoidIk.chain_pose(skeleton, leg[3]).origin
-		var pole: Vector3 = knee.origin - (hip_s + ankle_s) * 0.5
-		if pole.length_squared() < 1e-8:
-			pole = to_skel.basis * Vector3.FORWARD
-		var target := _within_leg(to_world * hip_s, ankle + shift, (to_world * knee.origin).distance_to(to_world * hip_s)
-			+ (to_world * knee.origin).distance_to(ankle))
-		var _reached := GSHumanoidIk.two_bone_to(skeleton, leg[0], leg[1], leg[2], to_skel * target, pole, 1.0)
+		_pin(skeleton, leg, knee, ankle_s, to_world, to_skel, shift)
+
+
+## Draws leg [param leg]'s ankle [param shift] (world) off where its clip puts it, by two-bone IK.
+func _pin(skeleton: Skeleton3D, leg: Array, knee: Transform3D, ankle_s: Vector3, to_world: Transform3D, to_skel: Transform3D,
+		shift: Vector3) -> void:
+	for bone: int in [leg[0], leg[1]]:
+		if not _saved.has(bone):
+			_saved[bone] = skeleton.get_bone_pose_rotation(bone)
+	var ankle := to_world * ankle_s
+	var hip_s := GSHumanoidIk.chain_pose(skeleton, leg[3]).origin
+	var pole: Vector3 = knee.origin - (hip_s + ankle_s) * 0.5
+	if pole.length_squared() < 1e-8:
+		pole = to_skel.basis * Vector3.FORWARD
+	var target := _within_leg(to_world * hip_s, ankle + shift, (to_world * knee.origin).distance_to(to_world * hip_s)
+		+ (to_world * knee.origin).distance_to(ankle))
+	var _reached := GSHumanoidIk.two_bone_to(skeleton, leg[0], leg[1], leg[2], to_skel * target, pole, 1.0)
+
+
+## Whether any foot is held by [method hold_feet] or still stepping off its hold ([method step_off]).
+func holding() -> bool:
+	return _armed
+
+
+## The stop after a stride: each foot comes down where its clip's blend puts it and stays there ([method hold_feet]'s hold, or its
+## landing), then steps (lifts [param lift] metres and sets down) onto where the clip now draws it over [param seconds], instead of the
+## blend dragging a planted foot across the floor to its rest pose (a skate at the stop). A foot is down when its ankle is within
+## [param height] of [param floor_y] (figure space, per leg; [param to_figure] is skeleton space to figure). [param to_world] is skeleton
+## space to world. Drawing only; [method restore] undoes it. Ends ([method holding] false) when each foot has stepped.
+func step_off(skeleton: Skeleton3D, to_world: Transform3D, to_figure: Transform3D, floor_y: PackedFloat32Array, height: float,
+		seconds: float, lift: float, dt: float) -> void:
+	if skeleton == null or dt <= 0.0 or floor_y.size() < LEGS.size():
+		return
+	_legs_for(skeleton)
+	var to_skel := to_world.affine_inverse()
+	var pending := false
+	for k in _floor_legs.size():
+		if _stepped[k]:
+			continue
+		var leg: Array = _floor_legs[k]
+		var knee := GSHumanoidIk.chain_pose(skeleton, leg[4])
+		var ankle_s: Vector3 = knee * (leg[2] as Vector3)
+		var ankle := to_world * ankle_s
+		if _off[k] < 0.0:
+			if _holds[k] != null:
+				_off_from[k] = _holds[k]
+			elif (to_figure * ankle_s).y - floor_y[k] <= height:
+				_off_from[k] = ankle
+			else:
+				pending = true
+				continue
+			_off[k] = 0.0
+			_holds[k] = null
+			_held[k] = Vector3.ZERO
+		_off[k] = minf(_off[k] + dt / maxf(seconds, 0.001), 1.0)
+		var p: float = _off[k]
+		if p >= 1.0:
+			_off[k] = -1.0
+			_stepped[k] = true
+			continue
+		pending = true
+		var from: Vector3 = _off_from[k]
+		var along := smoothstep(0.0, 1.0, p)
+		var shift := Vector3((from.x - ankle.x) * (1.0 - along), lift * sin(PI * p), (from.z - ankle.z) * (1.0 - along))
+		_pin(skeleton, leg, knee, ankle_s, to_world, to_skel, shift)
+	if not pending:
+		_armed = false
 
 
 ## [param target] raised as far as the leg needs to reach it from [param hip] with [param span] (world, metres): a held foot the
@@ -256,6 +322,8 @@ func let_go() -> void:
 	_holds = [null, null]
 	_held = [Vector3.ZERO, Vector3.ZERO]
 	_was = [Vector3.INF, Vector3.INF]
+	_off = [-1.0, -1.0]
+	_armed = false
 
 
 func _legs_for(skeleton: Skeleton3D) -> void:

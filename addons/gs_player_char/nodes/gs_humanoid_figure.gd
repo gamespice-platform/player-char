@@ -391,6 +391,9 @@ func _apply_floor(feet: bool = true, delta: float = 0.0) -> bool:
 			var to_figure := _model.transform * _skel_to_model
 			legs.hold_feet(_skeleton, global_transform * to_figure, to_figure, _floor_ankles, FOOT_HOLD_HEIGHT, FOOT_HOLD_SETTLE,
 				foot_hold_reach, FOOT_HOLD_RELEASE, delta)
+		elif grounded and foot_hold_reach > 0.0 and foot_step_off > 0.0 and legs.holding() and is_inside_tree():
+			var to_figure := _model.transform * _skel_to_model
+			legs.step_off(_skeleton, global_transform * to_figure, to_figure, _floor_ankles, FOOT_HOLD_HEIGHT, foot_step_off, FOOT_STEP_LIFT, delta)
 		else:
 			legs.let_go()
 	if grounded:

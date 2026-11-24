@@ -148,6 +148,15 @@ var foot_hold_reach: float = FOOT_HOLD_REACH:
 		if _rate_ok("foot_hold_reach", value, "0: off"):
 			foot_hold_reach = value
 const FOOT_HOLD_REACH := 0.15
+## Seconds a foot held through a stride takes to step onto the stopped pose when the body stops ([method GSHumanoidLegs.step_off]): without it the idle blend
+## drags the planted foot across the floor. 0 lets the blend have it. Drawing only.
+var foot_step_off: float = FOOT_STEP_OFF:
+	set(value):
+		if _rate_ok("foot_step_off", value, "0: off"):
+			foot_step_off = value
+const FOOT_STEP_OFF := 0.3
+## How high (metres) that step lifts the foot.
+const FOOT_STEP_LIFT := 0.16
 ## Ground speed (metres a second) at or above which a landing plays the walk or run straight away, not the land clip
 ## ([member GSPlayerAnimState.land_stride_speed]): the land clip stands still, and on a body that lands moving its planted
 ## feet skated along the floor (prop-hunt's hop at 2.9 m/s, 1.45 m/s). 0 always plays the land clip.

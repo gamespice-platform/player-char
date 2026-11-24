@@ -5,7 +5,7 @@ extends "res://examples/people_selftest_part.gd"
 ## godot --headless --path . res://examples/people_selftest.tscn
 
 const SECTIONS := 26
-const CHECKS := 292
+const CHECKS := 293
 
 
 func _ready() -> void:
@@ -262,6 +262,7 @@ func _test_figure() -> void:
 	_check(f.overlay == &"", "and ends")
 
 	_check_planted_foot(2.0, GSHumanoidClips.WALK, "a walker's")
+	_check_stop_slide(4.3, 0.4)
 	_check_sprint_pop(9.0)
 	_check_handover_slide(7.0)
 	_check_handover_slide(7.5)
@@ -343,6 +344,25 @@ func _check_handover_slide(pace: float) -> void:
 					worst = maxf(worst, Vector2(moved.x, moved.z).length())
 		before = at
 	_check(g.clip == GSHumanoidClips.SPRINT and worst < 0.08, "a ramp to %.1f m/s: the foot on the ground moves under 8 cm over the hand-over frame (%.3f m)" % [pace, worst])
+	g.queue_free()
+
+
+## A walker slowed to a stop over [param ramp] seconds sets each planted foot down once: no planted foot (low, not lifting) skates over 0.2 s or more.
+func _check_stop_slide(pace: float, ramp: float) -> void:
+	var g := GSHumanoidFigure.new()
+	add_child(g)
+	g.build(GSHumanoidLook.stock(9), 1.8)
+	var sk := g.skeleton()
+	var m := GSClipMetrics.new()
+	var dt := 1.0 / 60.0
+	for i in 60 + int(ramp / dt) + 90:
+		var speed := pace if i < 60 else maxf(pace * (1.0 - (i - 60) * dt / ramp), 0.0)
+		g.position.z -= speed * dt
+		g.animate(speed, dt)
+		sk.force_update_all_bone_transforms()
+		m.add(m.pose_sample(i * dt, sk, g.global_position, true))
+	var row := m.evaluate({})[0]
+	_check(not row.get("skip", false) and row["pass"], "a walk slowed to a stop: the metric's planted foot skates %s m/s at most (limit %s)" % [row["value"], row["limit"]])
 	g.queue_free()
 
 
