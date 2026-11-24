@@ -18,7 +18,7 @@ const CHEST_PITCH := 0.22
 ## Seconds to ease the whole carry in or out, a stance (sprint aside, which the figure eases), and the aim.
 const EASE := 0.2
 const STANCE_EASE := 0.35
-const AIM_IN := 0.08
+const AIM_IN := 0.2
 const AIM_OUT := 0.3
 
 ## Seconds the gun stays shouldered after a shot.
@@ -40,7 +40,12 @@ const GRIP_CLIP := &"ual_idle"
 const GRIP_ARMS: Array[String] = ["LowerArm.R", "LowerArm.L"]
 
 ## Seconds for a shot's kick to settle.
-const KICK_SECONDS := 0.1
+const KICK_SECONDS := 0.18
+
+## The held aim's breathing: seconds a breath takes, and the sway it draws (metres, degrees) at full aim.
+const BREATH_SECONDS := 4.0
+const BREATH_SWAY := 0.004
+const BREATH_TURN := 0.35
 
 ## The style drawn, or null for none; until [method set_class] is called a gun is carried as a rifle.
 var style: GSHumanoidCarry = null
@@ -64,6 +69,8 @@ var support_grip := Vector3.INF
 var _fire_hold := 0.0
 var _stepped := false
 var _kick := 0.0
+var _bolt := 0.0
+var _clock := 0.0
 var _reload_time := 0.0
 var _turns: Array[Quaternion] = []
 var _bones: Dictionary = {}
@@ -111,6 +118,7 @@ func _set_style(p_style: GSHumanoidCarry) -> void:
 func fired() -> void:
 	_fire_hold = AIM_HOLD
 	_kick = 1.0
+	_bolt = style.bolt if style != null else 0.0
 
 
 ## Eases the blends by [param delta]; [param active] says whether the carry is drawn at all. Every frame, LOD or not.
@@ -131,6 +139,8 @@ func step(delta: float, active: bool) -> void:
 	swap = move_toward(swap, 1.0 if switching else 0.0, delta / STANCE_EASE)
 	_reload_time = _reload_time + delta if reloading else 0.0
 	_kick = move_toward(_kick, 0.0, delta / KICK_SECONDS)
+	_bolt = maxf(_bolt - delta, 0.0)
+	_clock = fmod(_clock + delta, 1000.0)
 
 
 ## Writes the gun arm over the pose. [param to_figure] is the skeleton's frame in the figure's; [param animation] the clip playing; [param phase] how far through its stride (0 to 1, or negative for none); [param pitch] the
@@ -152,8 +162,9 @@ func apply(skeleton: Skeleton3D, model: Node3D, anim: AnimationPlayer, to_figure
 	# The stance, blended: sprint over ready, the aim over both, reload and swap over all.
 	var grip := s.ready_grip.lerp(s.sprint_grip, sprint)
 	var turn := _turns[0].slerp(_turns[1], sprint)
-	grip = grip.lerp(s.aim_grip, aim)
-	turn = turn.slerp(_turns[2], aim)
+	var eased := smoothstep(0.0, 1.0, aim)
+	grip = grip.lerp(s.aim_grip, eased)
+	turn = turn.slerp(_turns[2], eased)
 	grip = grip.lerp(s.reload_grip, reload)
 	turn = turn.slerp(_turns[3], reload)
 	grip = grip.lerp(s.swap_grip, swap)
@@ -176,6 +187,11 @@ func apply(skeleton: Skeleton3D, model: Node3D, anim: AnimationPlayer, to_figure
 		grip += Vector3(amp.y * sin(a), amp.x * sin(2.0 * a), 0.0) * size
 		var deg := amp.z * (PI / 180.0)
 		turn = Quaternion.from_euler(Vector3(0.4 * deg * sin(2.0 * a), deg * sin(a), -0.6 * deg * sin(a))) * turn
+	# A held aim breathes: a slow rise and settle and a hair of drift, so the gun is never a statue.
+	if aim > 0.0:
+		var b := TAU * _clock / BREATH_SECONDS
+		grip += Vector3(sin(b * 0.5) * 0.5, sin(b), 0.0) * (BREATH_SWAY * size * eased)
+		turn = Quaternion.from_euler(Vector3(deg_to_rad(BREATH_TURN) * sin(b), deg_to_rad(BREATH_TURN) * 0.6 * sin(b * 0.5), 0.0) * eased) * turn
 	# The view's pitch, about the shoulder: in full when aiming, half at the ready, little at a sprint.
 	var shoulder := to_figure * (shoulder_global * skeleton.get_bone_pose(bones[0])).origin
 	var share := lerpf(0.5, 1.0, aim) * (1.0 - 0.7 * sprint * (1.0 - aim)) - CHEST_PITCH * lerpf(s.follow, 0.25, aim)
@@ -186,6 +202,12 @@ func apply(skeleton: Skeleton3D, model: Node3D, anim: AnimationPlayer, to_figure
 	if _kick > 0.0:
 		grip += turn * Vector3(0.0, 0.0, s.kick * _kick * size)
 		turn = turn * Quaternion(Vector3.RIGHT, deg_to_rad(s.kick_climb) * _kick)
+	# The action worked after a shot: the gun rolls and draws back, then settles.
+	if _bolt > 0.0 and s.bolt > 0.0:
+		var t := 1.0 - _bolt / s.bolt
+		var work := sin(PI * smoothstep(0.1, 1.0, t))
+		grip += turn * Vector3(0.0, 0.0, s.bolt_back * work * size)
+		turn = turn * Quaternion(Vector3.BACK, deg_to_rad(s.bolt_roll) * work)
 	# The hand bone that puts the gun's frame there, in skeleton space.
 	var hand := to_figure.affine_inverse() * Transform3D(Basis(turn), grip) * _hand_frame_inv
 	GSHumanoidIk.two_bone_under(skeleton, bones, shoulder_global, hand.origin, to_figure.basis.inverse() * POLE, w)

@@ -47,6 +47,12 @@ const CLASSES: Array[StringName] = [&"rifle", &"smg", &"shotgun", &"sniper", &"h
 @export var kick := 0.03
 @export var kick_climb := 4.0
 
+## A bolt or lever cycle after a shot, in seconds (0 for none): the gun rolls by [member bolt_roll] degrees and
+## draws back [member bolt_back] metres while the hand works the action, then settles.
+@export var bolt := 0.0
+@export var bolt_roll := 14.0
+@export var bolt_back := 0.04
+
 
 ## A new carry for [param kind] (one of [constant CLASSES]; "smg", "carbine", "assault" and the like read as
 ## the nearest), or null for a class held in one hand without a stance (melee, thrown). Each call builds its own.
@@ -67,11 +73,13 @@ static func for_class(kind: StringName) -> GSHumanoidCarry:
 			c.kick_climb = 9.0
 		"sniper", "marksman", "dmr":
 			c.id = &"sniper"
-			c.ready_turn = Vector3(-15.0, 6.0, 0.0)
+			c.ready_grip = Vector3(0.16, 0.78, -0.30)
+			c.ready_turn = Vector3(-4.0, 6.0, 0.0)
 			c.aim_grip = Vector3(0.14, 0.80, -0.16)
 			c.support = Vector3(0.0, -0.03, -0.36)
-			c.kick = 0.05
-			c.kick_climb = 7.0
+			c.kick = 0.07
+			c.kick_climb = 9.0
+			c.bolt = 0.9
 		"heavy", "minigun", "launcher":
 			c.id = &"heavy"
 			c.ready_grip = Vector3(0.20, 0.64, -0.28)

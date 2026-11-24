@@ -43,7 +43,7 @@ func run() -> void:
 	suite._check(a.distance_to(b) > 0.005, "running, the gun sways with the stride (%.3f m)" % a.distance_to(b))
 
 	f.carry.fired()
-	_frames(f, 0.0, 10)
+	_frames(f, 0.0, 18)
 	var aimed := _gun(f)
 	suite._check(f.carry.aim > 0.99 and absf(-aimed.basis.z.normalized().y) < 0.2, "a shot shoulders it level (aim %.2f, muzzle %s)" % [f.carry.aim, -aimed.basis.z])
 	_frames(f, 0.0, 120)
@@ -57,6 +57,20 @@ func run() -> void:
 	_frames(f, 0.0, 30)
 	suite._check(f.carry.swap > 0.99 and not f.carry.support_grip.is_finite(), "changing weapon lowers it, the other hand off it")
 	f.carry.switching = false
+
+	f.carry.set_class(&"sniper")
+	_frames(f, 0.0, 130)
+	f.carry.fired()
+	_frames(f, 0.0, 40)
+	var worked := _gun(f)
+	_frames(f, 0.0, 40)
+	var settled := _gun(f)
+	suite._check(f.carry.style.bolt > 0.0 and worked.basis.x.angle_to(settled.basis.x) > deg_to_rad(5.0),
+		"a sniper works its bolt after a shot: the gun rolls (%.1f degrees off its hold)" % rad_to_deg(worked.basis.x.angle_to(settled.basis.x)))
+	_frames(f, 0.0, 130)
+	var rifle_style := GSHumanoidCarry.for_class(&"rifle")
+	suite._check(rifle_style.bolt == 0.0 and f.carry.aim < 0.01, "a rifle has no bolt to work; the sniper is back at the ready")
+	f.carry.set_class(&"rifle")
 
 	f.set_motion({"swimming": true})
 	_frames(f, 2.0, 30)
