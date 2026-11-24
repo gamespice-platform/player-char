@@ -264,6 +264,9 @@ func _test_figure() -> void:
 
 	_check_planted_foot(2.0, GSHumanoidClips.WALK, "a walker's")
 	_check_stop_slide(4.3, 0.4)
+	_check_landing_slide(0.0, true)
+	_check_landing_slide(0.0, false)
+	_check_landing_slide(3.0, true)
 	_check_sprint_pop(9.0)
 	_check_handover_slide(7.0)
 	_check_handover_slide(7.5)
@@ -364,6 +367,35 @@ func _check_stop_slide(pace: float, ramp: float) -> void:
 		m.add(m.pose_sample(i * dt, sk, g.global_position, true))
 	var row := m.evaluate({})[0]
 	_check(not row.get("skip", false) and row["pass"], "a walk slowed to a stop: the metric's planted foot skates %s m/s at most (limit %s)" % [row["value"], row["limit"]])
+	g.queue_free()
+
+
+## A jump landed on the spot (or at [param pace]) sets each foot down once: no planted foot skates over 0.2 s or more after the landing
+## (the air clip's feet come down ahead of the stance the next clip draws, and blended onto it they slid back).
+func _check_landing_slide(pace: float, plant: bool) -> void:
+	var g := GSHumanoidFigure.new()
+	add_child(g)
+	g.build(GSHumanoidLook.stock(9), 1.8)
+	g.foot_land_plant = 0.3 if plant else 0.0
+	var sk := g.skeleton()
+	var m := GSClipMetrics.new()
+	var dt := 1.0 / 60.0
+	for i in 60 + 24 + 18 + 90:
+		var air := i >= 60 and i < 60 + 24 + 18
+		var up := i < 60 + 24
+		var speed := pace if i >= 60 and i < 60 + 24 + 18 + 30 else 0.0
+		g.set_motion({"on_floor": not air, "vertical": (4.0 if up else -4.0) if air else 0.0, "velocity": Vector3(0, 0, -speed)})
+		g.position.z -= speed * dt
+		g.animate(speed, dt)
+		sk.force_update_all_bone_transforms()
+		m.add(m.pose_sample(i * dt, sk, g.global_position, not air))
+	var slide := {}
+	for r in m.evaluate({}):
+		if r["check"] == "foot_slide":
+			slide = r
+	var held: bool = not slide.is_empty() and (slide.get("skip", false) or slide["pass"])
+	_check(held == plant, "a jump landed at %.0f m/s with foot_land_plant %s: %s (%s m/s, limit %s)" % [pace, "on" if plant else "0",
+		"no planted foot skates over 0.2 s" if plant else "the air clip's feet slide back (the check can fail)", slide.get("value", "?"), slide.get("limit", "?")])
 	g.queue_free()
 
 

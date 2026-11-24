@@ -384,18 +384,30 @@ func _lift_body() -> void:
 ## With [param delta] (a clip step), a stride's planted feet are first held where they came down ([member foot_hold_reach]).
 func _apply_floor(feet: bool = true, delta: float = 0.0) -> bool:
 	_lift_body()
-	var grounded := feet and _skeleton != null and not (downed or seated or driving) and bool(_motion.get("on_floor", true)) \
+	var on_floor := _skeleton != null and not (downed or seated or driving) and bool(_motion.get("on_floor", true)) \
 		and not bool(_motion.get("wall_running", false)) and not state in OFF_FLOOR_STATES
+	var grounded := feet and on_floor
+	# A landing out of the air plants the feet where they came down (the next clip's stance is not where the air clip's feet are).
+	if delta > 0.0 and grounded and not _on_floor_before and foot_land_plant > 0.0 and foot_hold_reach > 0.0 \
+			and not (state in STRIDE_STATES and clip in STRIDE_CLIPS) and is_inside_tree():
+		legs.arm()
+		_landing = true
+	if delta > 0.0:
+		_on_floor_before = on_floor
 	if delta > 0.0:
 		if grounded and foot_hold_reach > 0.0 and state in STRIDE_STATES and clip in STRIDE_CLIPS and is_inside_tree():
+			_landing = false
 			var to_figure := _model.transform * _skel_to_model
 			legs.hold_feet(_skeleton, global_transform * to_figure, to_figure, _floor_ankles, FOOT_HOLD_HEIGHT, FOOT_HOLD_SETTLE,
 				foot_hold_reach, FOOT_HOLD_RELEASE, delta)
-		elif grounded and foot_hold_reach > 0.0 and foot_step_off > 0.0 and legs.holding() and is_inside_tree():
+		elif grounded and foot_hold_reach > 0.0 and (foot_land_plant if _landing else foot_step_off) > 0.0 and legs.holding() and is_inside_tree():
 			var to_figure := _model.transform * _skel_to_model
-			legs.step_off(_skeleton, global_transform * to_figure, to_figure, _floor_ankles, FOOT_HOLD_HEIGHT, foot_step_off, FOOT_STEP_LIFT, delta)
+			legs.step_off(_skeleton, global_transform * to_figure, to_figure, _floor_ankles, FOOT_HOLD_HEIGHT,
+				foot_land_plant if _landing else foot_step_off, FOOT_STEP_LIFT, delta)
+			_landing = _landing and legs.holding()
 		else:
 			legs.let_go()
+			_landing = false
 	if grounded:
 		legs.on_floor(_skeleton, _model.transform * _skel_to_model, _floor_ankles, floor_lift)
 	return grounded

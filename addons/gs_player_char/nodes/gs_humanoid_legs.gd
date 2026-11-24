@@ -246,6 +246,14 @@ func holding() -> bool:
 	return _armed
 
 
+## Makes [method step_off] follow through without a stride before it: each foot stays where it is drawn once it is down, then steps onto the
+## clip's pose. For a landing: the air clip's feet come down ahead of the stance the next clip draws.
+func arm() -> void:
+	_off = [-1.0, -1.0]
+	_stepped = [false, false]
+	_armed = true
+
+
 ## The stop after a stride: each foot comes down where its clip's blend puts it and stays there ([method hold_feet]'s hold, or its
 ## landing), then steps (lifts [param lift] metres and sets down) onto where the clip now draws it over [param seconds], instead of the
 ## blend dragging a planted foot across the floor to its rest pose (a skate at the stop). A foot is down when its ankle is within

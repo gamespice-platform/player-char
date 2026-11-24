@@ -155,6 +155,14 @@ var foot_step_off: float = FOOT_STEP_OFF:
 		if _rate_ok("foot_step_off", value, "0: off"):
 			foot_step_off = value
 const FOOT_STEP_OFF := 0.3
+## Seconds a landing takes to step the feet it came down on onto the pose the next clip draws ([method GSHumanoidLegs.step_off] from a landing): the air
+## clip's feet come down ahead of the stance and the blend slid them back (a jump read foot_slide 1.1 m/s on the clip metric). 0 lets the blend have it.
+## Drawing only.
+var foot_land_plant: float = FOOT_LAND_PLANT:
+	set(value):
+		if _rate_ok("foot_land_plant", value, "0: off"):
+			foot_land_plant = value
+const FOOT_LAND_PLANT := 0.3
 ## How high (metres) that step lifts the foot.
 const FOOT_STEP_LIFT := 0.16
 ## Ground speed (metres a second) at or above which a landing plays the walk or run straight away, not the land clip
@@ -270,6 +278,9 @@ var floor_reach: float = 0.45
 ## How far the body is drawn above its origin now to stand on the floor under it, metres.
 var floor_lift: float = 0.0
 var _lift_at := Vector3.INF
+## Whether the body stood on a floor last drawn step, and whether the feet are following through a landing ([member foot_land_plant]).
+var _on_floor_before := true
+var _landing := false
 ## The camera distance and whether it may be in view at the last clip step, for [member lift_range].
 var _step_distance := 0.0
 var _step_seen := true
