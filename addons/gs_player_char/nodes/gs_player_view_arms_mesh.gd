@@ -3,6 +3,14 @@ extends "gs_player_view_arms_state.gd"
 ## The build-time half of [GSPlayerViewArms]: stripping the figure's mesh down to arms and hands.
 
 
+## The stripped meshes per source body mesh and mirror flag, as [source, two-arm, one-arm]: the strip walks every vertex in GDScript (10 ms a build),
+## and it reads only the body's mesh and skeleton, never the look, so a second arms rig on the same body reuses the first one's meshes. The
+## source is held, so its id cannot be reused by another mesh.
+static var _strip_cache: Dictionary = {}
+## The atlas spot of a stripped mesh's hand per mesh id and side.
+static var _hand_uv_cache: Dictionary = {}
+
+
 ## Gear is skinned into the body mesh, so it goes by dropping its triangles from this figure's own copy of the mesh.
 func _strip_gear(figure: GSHumanoidFigure) -> void:
 	var instance := figure.mesh()
@@ -12,6 +20,13 @@ func _strip_gear(figure: GSHumanoidFigure) -> void:
 		return
 
 	var old := instance.mesh
+	var cache_key := [old.get_instance_id(), mirror_support_forearm]
+	var hit: Array = _strip_cache.get(cache_key, [])
+	if not hit.is_empty() and hit[0] == old:
+		instance.mesh = hit[1]
+		_two_arm_mesh = hit[1]
+		_one_arm_mesh = hit[2]
+		return
 	var out := ArrayMesh.new()
 	var one_arm := ArrayMesh.new()
 
@@ -64,6 +79,7 @@ func _strip_gear(figure: GSHumanoidFigure) -> void:
 	instance.mesh = out
 	_two_arm_mesh = out
 	_one_arm_mesh = one_arm
+	_strip_cache[cache_key] = [old, out, one_arm]
 
 
 ## [param arrays]' triangle indices less the triangles with a vertex carrying more than [constant TOUCH_WEIGHT] on a bone
@@ -128,6 +144,17 @@ func _make_hands(figure: GSHumanoidFigure) -> void:
 ## The atlas spot of the kit hand on [param side] (".R"): the UV of a vertex bound mostly to a finger root, so a gloved
 ## outfit's hands stay gloved. Vector2.ZERO when the mesh has none.
 func _hand_uv(instance: MeshInstance3D, skeleton: Skeleton3D, side: String) -> Vector2:
+	var mesh := instance.mesh
+	var uv_key := [mesh.get_instance_id(), side]
+	var cached: Array = _hand_uv_cache.get(uv_key, [])
+	if not cached.is_empty() and cached[0] == mesh:
+		return cached[1]
+	var found := _scan_hand_uv(instance, skeleton, side)
+	_hand_uv_cache[uv_key] = [mesh, found]
+	return found
+
+
+func _scan_hand_uv(instance: MeshInstance3D, skeleton: Skeleton3D, side: String) -> Vector2:
 	var mesh := instance.mesh
 	for s in mesh.get_surface_count():
 		var arrays := mesh.surface_get_arrays(s)

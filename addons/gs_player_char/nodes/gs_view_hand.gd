@@ -95,10 +95,25 @@ func build() -> void:
 	_mesh = MeshInstance3D.new()
 	_mesh.name = "Mesh"
 	_skeleton.add_child(_mesh)
-	_mesh.mesh = _build_mesh()
+	_mesh.mesh = _shared_mesh()
 	_mesh.skin = _build_skin()
 	_mesh.skeleton = _mesh.get_path_to(_skeleton)
 	_mesh.material_override = material
+
+
+## The hand meshes built so far per side and atlas spot: the build is a few ms of GDScript geometry and depends only on those two
+## (the constants above and the rest skeleton), so a second rig shares the mesh and only makes its own skeleton.
+static var _mesh_cache: Dictionary = {}
+
+
+func _shared_mesh() -> ArrayMesh:
+	var key := [right, skin_uv]
+	var hit: Variant = _mesh_cache.get(key)
+	if hit is ArrayMesh:
+		return hit
+	var built := _build_mesh()
+	_mesh_cache[key] = built
+	return built
 
 
 ## A joint's rest in its parent's space: the base at the knuckle turned to the finger's direction, the rest along +Y.
