@@ -68,7 +68,7 @@ static func for_class(kind: StringName) -> GSHumanoidCarry:
 		"sniper", "marksman", "dmr":
 			c.id = &"sniper"
 			c.ready_turn = Vector3(-15.0, 6.0, 0.0)
-			c.aim_grip = Vector3(0.15, 0.88, -0.34)
+			c.aim_grip = Vector3(0.14, 0.80, -0.16)
 			c.support = Vector3(0.0, -0.03, -0.36)
 			c.kick = 0.05
 			c.kick_climb = 7.0
