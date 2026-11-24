@@ -8,13 +8,22 @@ extends RefCounted
 ## Stored per vertex by [GSPlayerViewArms] in CUSTOM0 (rest position, w = 1): where the detail pattern is read.
 const REST_FORMAT := Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT
 
+## CUSTOM0.w of a [GSViewHand] vertex: the glove branch of the fragment (the kit arms write 1).
+const HAND_REGION := 2.0
+
 const DETAIL := """
 // Detail over the swapped colour. Skin swaps come first in the swap list (skin_swaps of them).
 uniform int skin_swaps = 0;
 uniform float weave_scale = 900.0;
 uniform float weave_depth = 0.0004;
 uniform float detail = 1.0;
+// 1 draws the arms' skin swatches as bare skin; 0 (the default) as a glove's gauntlet, matching the hand.
+uniform float bare_arms = 0.0;
+uniform vec4 glove_colour : source_color = vec4(0.16, 0.17, 0.14, 1.0);
+uniform vec4 cuff_colour : source_color = vec4(0.2, 0.25, 0.4, 1.0);
 varying vec3 rest;
+varying float region;
+varying vec4 mark;
 // GSPlayerViewArms.draw_depth: the clip position of the view point grown by it about the eye (same pixel, further depth).
 // Only from draw_eye's own view: a shadow pass renders from the light, where the growth would move the shadow.
 instance uniform float draw_depth = 1.0;
@@ -38,6 +47,8 @@ float gs_noise(vec3 x) {
 
 void vertex() {
 	rest = CUSTOM0.xyz;
+	region = CUSTOM0.w;
+	mark = COLOR;
 	// POSITION is written on every path: a shader that writes it on some leaves it undefined on the rest (no arms).
 	vec4 v = MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
 	if (distance(INV_VIEW_MATRIX[3].xyz, draw_eye) < 0.01) {
@@ -67,7 +78,29 @@ void fragment() {
 		}
 	}
 	float h;
-	if (hit >= 0 && hit < skin_swaps) {
+	if (region > 1.5) {
+		// A tactical glove: knit back with a hard knuckle pad, grippy leather palm with a dot pattern, an elastic cuff in the
+		// sleeve's colour, creases dark where the segments meet. Fabric and pads are a different surface to the arms' skin.
+		float knit = sin(rest.x * 1100.0 + rest.z * 300.0) * sin(rest.y * 1100.0 - rest.x * 400.0) * 0.5 + 0.5;
+		vec2 cell = fract(rest.xy * vec2(420.0, 420.0)) - 0.5;
+		float dots = 1.0 - smoothstep(0.18, 0.34, length(cell));
+		float stitch = smoothstep(0.42, 0.5, abs(fract(rest.y * 90.0) - 0.5)) * (1.0 - mark.g);
+		vec3 back = glove_colour.rgb * (0.82 + 0.3 * knit) * (1.0 + 0.55 * mark.a);
+		vec3 palm = glove_colour.rgb * (0.85 + 0.45 * dots);
+		c = mix(back, palm, mark.g);
+		c = mix(c, cuff_colour.rgb * (0.85 + 0.2 * knit), mark.b);
+		c *= mix(0.4, 1.0, mark.r) * (1.0 - 0.25 * stitch);
+		h = mix(knit * 0.0004, dots * 0.0006, mark.g) + mark.a * 0.0007;
+		ROUGHNESS = mix(0.85, 0.65, mark.g);
+		SPECULAR = 0.2 + 0.2 * mark.a;
+	} else if (hit >= 0 && hit < skin_swaps && bare_arms < 0.5) {
+		// The wrist and forearm below the sleeve: the glove's gauntlet, so the sleeve, the glove and the arm are one outfit.
+		float knit = sin(rest.x * 1100.0 + rest.z * 300.0) * sin(rest.y * 1100.0 - rest.x * 400.0) * 0.5 + 0.5;
+		c = glove_colour.rgb * (0.82 + 0.3 * knit);
+		h = knit * 0.0004;
+		ROUGHNESS = 0.85;
+		SPECULAR = 0.15;
+	} else if (hit >= 0 && hit < skin_swaps) {
 		// Skin: blotches a few centimetres across, pores below that, warmer where it is thin.
 		float blotch = gs_noise(rest * 28.0);
 		float pores = gs_noise(rest * 160.0);
@@ -121,6 +154,8 @@ static func for_look(look: GSHumanoidLook) -> ShaderMaterial:
 		material.set_shader_parameter(uniform, base.get_shader_parameter(uniform))
 	_dye_trim(material, look)
 	material.set_shader_parameter(&"skin_swaps", skin_swaps(look))
+	material.set_shader_parameter(&"glove_colour", glove_colour(look))
+	material.set_shader_parameter(&"cuff_colour", look.top)
 	_materials[key] = material
 	return material
 
@@ -160,6 +195,12 @@ static func shader_code() -> String:
 	var crowd := GSHumanoidAssets.SHADER
 	var head := crowd.substr(0, crowd.find("void fragment()")).replace("specular_disabled", "specular_schlick_ggx")
 	return head + DETAIL + FRAGMENT
+
+
+## The glove: a dark neutral that goes with any outfit, a little toward the look's trousers so it reads as issue gear.
+static func glove_colour(look: GSHumanoidLook) -> Color:
+	var base := Color(0.14, 0.145, 0.13)
+	return base.lerp(look.bottom, 0.08)
 
 
 ## How many of [param look]'s swaps are skin colours: [method GSHumanoidAssets.material_for] lists them first.

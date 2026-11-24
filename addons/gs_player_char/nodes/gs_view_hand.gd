@@ -59,6 +59,7 @@ var _n := PackedVector3Array()
 var _b := PackedInt32Array()
 var _w := PackedFloat32Array()
 var _i := PackedInt32Array()
+var _c := PackedColorArray()
 
 
 func _ready() -> void:
@@ -134,6 +135,7 @@ func _build_mesh() -> ArrayMesh:
 	_b = PackedInt32Array()
 	_w = PackedFloat32Array()
 	_i = PackedInt32Array()
+	_c = PackedColorArray()
 	_palm()
 	for f in FINGERS.size():
 		var lengths: Vector3 = SEGMENTS[f]
@@ -145,7 +147,7 @@ func _build_mesh() -> ArrayMesh:
 			var r0 := lerpf(radii.x, radii.y, along / total)
 			along += lengths[j]
 			var r1 := lerpf(radii.x, radii.y, along / total)
-			_capsule(_skeleton.get_bone_global_rest(bone), lengths[j], r0, r1, bone)
+			_capsule(_skeleton.get_bone_global_rest(bone), lengths[j], r0, r1, bone, j)
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = _v
@@ -157,18 +159,22 @@ func _build_mesh() -> ArrayMesh:
 	uv.resize(_v.size())
 	uv.fill(skin_uv)
 	arrays[Mesh.ARRAY_TEX_UV] = uv
+	arrays[Mesh.ARRAY_COLOR] = _c
 	var rest := PackedFloat32Array()
 	for p: Vector3 in _v:
-		rest.append_array([p.x, p.y, p.z, 1.0])
+		# w = GSViewArmsMaterial.HAND_REGION: the shader's glove, not the arms' kit cloth or skin.
+		rest.append_array([p.x, p.y, p.z, GSViewArmsMaterial.HAND_REGION])
 	arrays[Mesh.ARRAY_CUSTOM0] = rest
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, GSViewArmsMaterial.REST_FORMAT)
 	return mesh
 
 
-## One vertex, rigidly on [param bone].
-func _vertex(p: Vector3, n: Vector3, bone: int) -> int:
+## One vertex, rigidly on [param bone]. [param mark] is the glove shader's per-vertex input: r = open (1) to creased (0),
+## g = palm side, b = wrist cuff, a = knuckle.
+func _vertex(p: Vector3, n: Vector3, bone: int, mark: Color = Color.WHITE) -> int:
 	var at := _v.size()
+	_c.append(mark)
 	_v.append(p)
 	_n.append(n.normalized())
 	_b.append_array([bone, 0, 0, 0])
@@ -193,7 +199,7 @@ func _tri(a: int, b: int, c: int) -> void:
 
 
 ## A capsule from the bone's origin along its +Y for [param length], radius [param r0] to [param r1], round both ends.
-func _capsule(frame: Transform3D, length: float, r0: float, r1: float, bone: int) -> void:
+func _capsule(frame: Transform3D, length: float, r0: float, r1: float, bone: int, joint: int = 1) -> void:
 	var first := _v.size()
 	var rings: Array[Vector3] = []  # (y, radius, normal tilt toward +Y)
 	for k in CAP_RINGS:
@@ -211,7 +217,13 @@ func _capsule(frame: Transform3D, length: float, r0: float, r1: float, bone: int
 			# Fingers are a little flatter front to back than side to side.
 			var local := Vector3(dir.x * ring.y, ring.x, dir.z * ring.y * 0.88)
 			var normal := dir * sqrt(maxf(1.0 - ring.z * ring.z, 0.0)) + Vector3.UP * ring.z
-			_vertex(frame * local, frame.basis * normal, bone)
+			# Creases where the segments meet (not at the fingertip); the knuckle is the back of the first segment.
+			var t := clampf(ring.x / length, 0.0, 1.0)
+			var crease := minf(t, 1.0 - t) if joint < 2 or t < 0.5 else 0.5
+			var open := 1.0 - 0.55 * smoothstep(0.3, 0.0, crease) * lerpf(0.6, 1.0, clampf(dir.z * 0.5 + 0.5, 0.0, 1.0))
+			var back := clampf(-dir.z * 2.0, 0.0, 1.0)
+			var knuckle := back * (1.0 - smoothstep(0.1, 0.6, t)) if joint == 0 else 0.0
+			_vertex(frame * local, frame.basis * normal, bone, Color(open, smoothstep(-0.2, 0.3, dir.z), 0.0, knuckle))
 	_rings(first, rings.size())
 	_close(first, frame * Vector3(0.0, -r0 * 0.9, 0.0), -(frame.basis * Vector3.UP), bone, false)
 	_close(first + (rings.size() - 1) * AROUND, frame * Vector3(0.0, length + r1 * 0.9, 0.0), frame.basis * Vector3.UP, bone, true)
@@ -240,7 +252,10 @@ func _palm() -> void:
 			# A superellipse: flat on the palm and the back, round at the edges.
 			var x := signf(c) * pow(absf(c), 0.6) * section.y
 			var z := signf(s) * pow(absf(s), 0.6) * section.z
-			_vertex(Vector3(x, section.x, z), Vector3(c / section.y, 0.0, s / section.z), 0)
+			var ring := (_v.size() - first) / AROUND
+			var cuff := 1.0 if ring == 0 else 0.0
+			var open := 1.0 - 0.3 * smoothstep(3.0, 5.0, float(ring)) * smoothstep(-0.2, 0.4, s)
+			_vertex(Vector3(x, section.x, z), Vector3(c / section.y, 0.0, s / section.z), 0, Color(open, smoothstep(-0.2, 0.3, s), cuff, 0.0))
 	_rings(first, PALM.size())
 	var low: Vector3 = PALM[0]
 	var high: Vector3 = PALM[PALM.size() - 1]
