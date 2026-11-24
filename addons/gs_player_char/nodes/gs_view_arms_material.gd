@@ -119,9 +119,40 @@ static func for_look(look: GSHumanoidLook) -> ShaderMaterial:
 	material.shader = _shader
 	for uniform in [&"atlas", &"from_colour", &"to_colour", &"from_linear", &"to_linear", &"swaps"]:
 		material.set_shader_parameter(uniform, base.get_shader_parameter(uniform))
+	_dye_trim(material, look)
 	material.set_shader_parameter(&"skin_swaps", skin_swaps(look))
 	_materials[key] = material
 	return material
+
+
+## The kit's dark trim swatches: the outline colour on cuffs and hems. A person's body keeps them (shoes, eyes), but
+## the arms fill the view, where an unswapped one reads as a black sleeve beside the look's own colour.
+const TRIM: Array[String] = ["2a2927", "2a2929"]
+
+
+# Adds a swap from each trim swatch to the look's top colour after the ones the crowd material has, while there is room.
+static func _dye_trim(material: ShaderMaterial, look: GSHumanoidLook) -> void:
+	var used: int = material.get_shader_parameter(&"swaps")
+	var from: PackedVector4Array = material.get_shader_parameter(&"from_colour")
+	var to: PackedVector4Array = material.get_shader_parameter(&"to_colour")
+	var from_lin: PackedVector4Array = material.get_shader_parameter(&"from_linear")
+	var to_lin: PackedVector4Array = material.get_shader_parameter(&"to_linear")
+	var tl := look.top.srgb_to_linear()
+	for hex in TRIM:
+		if used >= GSHumanoidAssets.SWAPS:
+			break
+		var a := Color(hex)
+		var al := a.srgb_to_linear()
+		from[used] = Vector4(a.r, a.g, a.b, 1.0)
+		to[used] = Vector4(look.top.r, look.top.g, look.top.b, 1.0)
+		from_lin[used] = Vector4(al.r, al.g, al.b, 1.0)
+		to_lin[used] = Vector4(tl.r, tl.g, tl.b, 1.0)
+		used += 1
+	material.set_shader_parameter(&"from_colour", from)
+	material.set_shader_parameter(&"to_colour", to)
+	material.set_shader_parameter(&"from_linear", from_lin)
+	material.set_shader_parameter(&"to_linear", to_lin)
+	material.set_shader_parameter(&"swaps", used)
 
 
 ## The crowd shader with its fragment replaced by the detailed one and specular turned on.
