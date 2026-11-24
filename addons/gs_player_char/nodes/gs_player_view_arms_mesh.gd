@@ -251,4 +251,5 @@ func _is_gear(bone: StringName, rest: Vector3) -> bool:
 	if hide_vertex_fn.is_valid():
 		return bool(hide_vertex_fn.call(bone, rest))
 
-	return bone == PACK_BONE and rest.z < PACK_BEHIND
+	# The trunk is never in a first-person view, but a kicked or lowered view showed its jacket as a flat block along the bottom edge.
+	return (bone == PACK_BONE and rest.z < PACK_BEHIND) or bone in TRUNK_BONES

@@ -6,6 +6,8 @@ extends Node3D
 const HIDDEN_BONES: Array[String] = ["Head", "Neck", "UpperLeg.L", "UpperLeg.R"]
 ## The pack is part of the one skinned mesh, bound to the hips: its vertices are the hip-bound ones this far behind the body.
 const PACK_BONE := "Hips"
+## Bones whose own triangles are the trunk, dropped from the first-person mesh (the arms hang from the shoulders).
+const TRUNK_BONES: Array[StringName] = [&"Torso", &"Abdomen", &"Hips"]
 const PACK_BEHIND := -0.3
 ## The finger roots, all at the wrist: scaling them shrinks the hand about the wrist, so the forearm and the reach are untouched.
 const FINGER_ROOTS: Array[String] = ["Pinky1", "Middle1", "Index1", "Thumb1"]
