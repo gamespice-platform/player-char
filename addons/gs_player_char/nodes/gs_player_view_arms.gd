@@ -78,6 +78,8 @@ func set_held(grip: GSViewGrip) -> void:
 		# A new weapon is a cut: the old gun's elbow side must not slew across 25 degrees a frame to the new one's (a 0.1 m a frame sweep).
 		_last_pole_right = Vector3.ZERO
 		_last_pole_left = Vector3.ZERO
+		_pole_speed_right = 0.0
+		_pole_speed_left = 0.0
 	_grip = grip
 	_apply_mode()
 
@@ -317,7 +319,8 @@ func _reach(skeleton: Skeleton3D) -> void:
 	if not _right.is_empty():
 		reach_extended_right = _extend(skeleton, _right, right_target)
 		var pole := _clear_pole(skeleton, _right, to_skeleton * right_target, _steady_pole(skeleton, _right, to_skeleton * right_target, out), true)
-		pole = _slew_pole(_last_pole_right, (to_skeleton * right_target) - GSHumanoidIk.global_pose(skeleton, _right[0]).origin, pole)
+		pole = _slew_pole(_last_pole_right, (to_skeleton * right_target) - GSHumanoidIk.global_pose(skeleton, _right[0]).origin, pole, _pole_speed_right)
+		_pole_speed_right = _slewed_speed
 		_last_pole_right = pole
 		GSHumanoidIk.two_bone(skeleton, _right, to_skeleton * right_target, pole, 1.0)
 		if debug_pose:
@@ -347,7 +350,8 @@ func _reach(skeleton: Skeleton3D) -> void:
 			_turn_left = lerpf(_turn_left, 0.0, GSViewArmsClear.EASE)
 			if line.is_normalized():
 				left_pole = left_pole.rotated(line, deg_to_rad(_turn_left))
-		left_pole = _slew_pole(_last_pole_left, (to_skeleton * target) - GSHumanoidIk.global_pose(skeleton, _left[0]).origin, left_pole)
+		left_pole = _slew_pole(_last_pole_left, (to_skeleton * target) - GSHumanoidIk.global_pose(skeleton, _left[0]).origin, left_pole, _pole_speed_left)
+		_pole_speed_left = _slewed_speed
 		_last_pole_left = left_pole
 		GSHumanoidIk.two_bone(skeleton, _left, to_skeleton * target, left_pole, 1.0)
 		if debug_pose:
@@ -396,14 +400,27 @@ var hold_clear_turn := true
 ## bounds the clearance scan; a hand crossing the shoulder line (an aim-out finishing, a reload) can spin the sideways pole 180 degrees
 ## in a frame whatever the scan does, and the forearm jumped 0.3 m for one frame, or lay straight out (a T-pose flash).
 const MAX_POLE_STEP := 25.0
+
+## How much the elbow's swing speed may change in one frame, degrees a frame. A speed cap alone still lets the elbow start at full speed from
+## rest (the smg reload's forearm went 0.015, 0.096, 0.080, 0.019 m a frame), so the swing speeds up and brakes in steps of this and the
+## elbow's path is continuous in speed as well as in place.
+const POLE_ACCEL := 3.0
+
 var _last_pole_right := Vector3.ZERO
 var _last_pole_left := Vector3.ZERO
+## The signed swing (radians a frame about the shoulder-to-hand line) each elbow made last frame.
+var _pole_speed_right := 0.0
+var _pole_speed_left := 0.0
+## The swing the last [method _slew_pole] made.
+var _slewed_speed := 0.0
 
 
-## [param pole] turned about [param line] no further than [constant MAX_POLE_STEP] from where [param last] pointed. Returns the unit sideways part
-## (across [param line]) so [param last] next frame holds what the elbow used: a raw pole lying nearly along the line has a tiny sideways part
-## that swings a long way for a small move of the line, and the elbow jumped 0.24 m the frame the aim-in finished.
-func _slew_pole(last: Vector3, line: Vector3, pole: Vector3) -> Vector3:
+## [param pole] turned about [param line] toward [param last] by a swing whose speed (last frame's [param speed]) changes by no more than
+## [constant POLE_ACCEL] a frame and never passes [constant MAX_POLE_STEP], braking so it settles on the pole instead of overshooting.
+## Returns the unit sideways part (across [param line]) so [param last] next frame holds what the elbow used: a raw pole lying nearly along
+## the line has a tiny sideways part that swings a long way for a small move of the line (the elbow jumped 0.24 m the frame the aim-in finished).
+func _slew_pole(last: Vector3, line: Vector3, pole: Vector3, speed: float) -> Vector3:
+	_slewed_speed = 0.0
 	if line.length() < 0.0001 or last == Vector3.ZERO:
 		return pole
 	var dir := line.normalized()
@@ -412,9 +429,17 @@ func _slew_pole(last: Vector3, line: Vector3, pole: Vector3) -> Vector3:
 	if was.length() < 0.0001 or now.length() < 0.0001:
 		return pole
 	var swing := was.signed_angle_to(now, dir)
-	if absf(swing) <= deg_to_rad(MAX_POLE_STEP):
-		return now.normalized()
-	return was.normalized().rotated(dir, signf(swing) * deg_to_rad(MAX_POLE_STEP))
+	# A swing near half a turn could go either way: keep going the way the elbow was already moving.
+	if absf(swing) > PI * 0.9 and absf(speed) > 0.0001 and signf(swing) != signf(speed):
+		swing -= signf(swing) * TAU
+	var accel := deg_to_rad(POLE_ACCEL)
+	# The fastest speed from which the remaining swing can still be braked to a stop at accel a frame.
+	var brake := accel * (sqrt(1.0 + 8.0 * absf(swing) / accel) - 1.0) * 0.5
+	var stepped := clampf(signf(swing) * minf(deg_to_rad(MAX_POLE_STEP), brake), speed - accel, speed + accel)
+	if absf(swing) <= absf(stepped) or absf(swing) < accel * 0.5:
+		stepped = swing
+	_slewed_speed = stepped
+	return was.normalized().rotated(dir, stepped)
 
 
 ## The elbow direction (skeleton space) for an arm reaching [param target]: [param pole], turned about the
