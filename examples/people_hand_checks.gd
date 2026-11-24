@@ -117,6 +117,9 @@ func _check_knife(arms: GSPlayerViewArms, weapon: Node3D, grip: Vector3, hands: 
 	arms.set_held(knife)
 	await _settle(arms, 3)
 	var fist_index: Vector3 = hands[0].curls()[&"index"]
+	var fist_size: float = hands[0].global_transform.basis.get_scale().y
+	var rifle_size: float = hands[1].global_transform.basis.get_scale().y
+	suite._check(fist_size < rifle_size * 0.9, "a knife's fist is drawn smaller than the arms' hand so its handle fills it (%.3f against %.3f)" % [fist_size, rifle_size])
 	arms.throw_grip = 1.0
 	await _settle(arms, 3)
 	var pinch_index: Vector3 = hands[0].curls()[&"index"]

@@ -11,7 +11,8 @@ extends RefCounted
 ## - `centre`: the point of the hand, in its own frame (metres at life size: +Y to the fingers, +Z out of the palm,
 ##   x toward the thumb on a right hand), that sits on the grip point; the wrist is placed from it;
 ## - `thumb`, `index`, `middle`, `ring`, `pinky`: each finger's three joint curls toward the palm (degrees);
-## - `spread`: how far the fingers fan out (degrees).
+## - `spread`: how far the fingers fan out (degrees);
+## - `size`: the hand's size against the arms' (optional, 1): a knife's fist is drawn smaller so its short handle fills it.
 ##
 ## A game edits [member GSPlayerViewArms.hand_poses] (a fresh [method table]) to adjust one, or adds kinds.
 
@@ -82,7 +83,7 @@ static func table() -> Dictionary:
 	# A fist round the handle, which runs along the thumb's line to the blade: fingers down, palm in, thumb forward.
 	out[KNIFE] = {&"firing": {&"fingers": Vector3(0.0, -1.0, 0.25), &"palm": Vector3(-1.0, 0.0, 0.0), &"centre": Vector3(0.0, 0.07, 0.024),
 		&"thumb": Vector3(26.0, 30.0, 16.0), &"index": Vector3(78.0, 96.0, 56.0), &"middle": Vector3(80.0, 98.0, 58.0),
-		&"ring": Vector3(82.0, 98.0, 58.0), &"pinky": Vector3(84.0, 96.0, 56.0), &"spread": 0.0}}
+		&"ring": Vector3(82.0, 98.0, 58.0), &"pinky": Vector3(84.0, 96.0, 56.0), &"spread": 0.0, &"size": 0.8}}
 	out[KNIFE_THROW] = {&"firing": {&"fingers": Vector3(0.0, -1.0, 0.25), &"palm": Vector3(-1.0, 0.0, 0.0), &"centre": Vector3(0.0, 0.105, 0.018),
 		&"thumb": Vector3(8.0, 18.0, 14.0), &"index": Vector3(30.0, 34.0, 18.0), &"middle": Vector3(36.0, 40.0, 22.0),
 		&"ring": Vector3(80.0, 96.0, 56.0), &"pinky": Vector3(84.0, 94.0, 54.0), &"spread": 2.0}}

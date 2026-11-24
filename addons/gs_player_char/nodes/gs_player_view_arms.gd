@@ -620,6 +620,11 @@ func _hand_world_size() -> float:
 	return held_scale * hand_size * hand_scale / 0.5 * global_transform.basis.get_scale().y
 
 
+## A hand pose's own size against the arms' (its `size`, 1 when it has none).
+static func _pose_size(pose: Dictionary) -> float:
+	return float(pose.get(&"size", 1.0))
+
+
 ## Where each wrist (the kit's finger roots) goes on [param grip], world: [firing, support] (support INF for one hand).
 ## Real hands put the wrist where the hand's grip point lands on the weapon; the mitts take [member palm_offset].
 func wrist_targets(grip: GSViewGrip) -> Array[Vector3]:
@@ -632,11 +637,11 @@ func wrist_targets(grip: GSViewGrip) -> Array[Vector3]:
 	var forward := grip.forward_world()
 	var up := grip.up_world()
 	var centre: Vector3 = (hands[0] as Dictionary).get(&"centre", Vector3.ZERO)
-	var right := grip.grip_world() - GSViewHandPoses.frame(hands[0], forward, up) * (centre * s)
+	var right := grip.grip_world() - GSViewHandPoses.frame(hands[0], forward, up) * (centre * s * _pose_size(hands[0]))
 	var left := Vector3.INF
 	if grip.is_two_hand():
 		var c: Vector3 = (hands[1] as Dictionary).get(&"centre", Vector3.ZERO)
-		left = grip.support_world() - GSViewHandPoses.frame(hands[1], forward, up) * (Vector3(-c.x, c.y, c.z) * s)
+		left = grip.support_world() - GSViewHandPoses.frame(hands[1], forward, up) * (Vector3(-c.x, c.y, c.z) * s * _pose_size(hands[1]))
 	return _kept_deep([right, left])
 
 
@@ -685,7 +690,7 @@ func _place_hands(skeleton: Skeleton3D) -> void:
 
 func _seat(hand: GSViewHand, skeleton: Skeleton3D, wrist: int, pose: Dictionary, forward: Vector3, up: Vector3, s: float, rate: float) -> void:
 	var at := skeleton.global_transform * GSHumanoidIk.global_pose(skeleton, wrist).origin
-	hand.global_transform = Transform3D(GSViewHandPoses.frame(pose, forward, up) * s, at)
+	hand.global_transform = Transform3D(GSViewHandPoses.frame(pose, forward, up) * (s * _pose_size(pose)), at)
 	hand.pose(pose, rate)
 
 
