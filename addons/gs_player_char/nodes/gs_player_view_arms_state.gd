@@ -121,6 +121,9 @@ var hand_size: float = 1.0
 ## How far a knife hand has gone from its fist toward the throw's pinch ([constant GSViewHandPoses.KNIFE_THROW]),
 ## 0 to 1; the host sets it each frame from the throw's wind-back.
 var throw_grip: float = 0.0
+## How far the support hand has gone from its fore-end grip toward the throw's pinch, 0 to 1: a bolt handle is
+## taken between finger and thumb. The host sets it each frame from the cycle.
+var cycle_grip: float = 0.0
 ## How fast the fingers close into a new grip, per second; 0 closes them at once.
 var finger_rate: float = 14.0
 ## Move the shoulder joint out toward a hand target the lean left out of the arm's reach (a long forend), so the hand

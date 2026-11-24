@@ -604,6 +604,9 @@ func _extend(skeleton: Skeleton3D, bones: Array[int], target: Vector3) -> float:
 	return short
 
 
+## The support hand's size against its own when it is on a bolt handle.
+const CYCLE_HAND_SIZE := 0.7
+
 ## The firing and support hand poses for [param grip] from [member hand_poses] (the support one empty for one hand):
 ## its kind's, a rifle's for an unknown kind, a knife's blended toward the throw's pinch by [member throw_grip].
 func _grip_hands(grip: GSViewGrip) -> Array:
@@ -627,6 +630,16 @@ func _grip_hands_now(grip: GSViewGrip) -> Array:
 	var support: Dictionary = entry.get(&"support", {})
 	if support.is_empty() and grip.is_two_hand():
 		support = rifle.get(&"support", {})
+	if cycle_grip > 0.0 and grip.is_two_hand() and not support.is_empty():
+		var pinch_hand: Dictionary = (hand_poses.get(GSViewHandPoses.KNIFE_THROW, {}) as Dictionary).get(&"firing", {})
+		# Only the digits close to the pinch; the hand keeps the support grip's own orientation and place.
+		var digits := {}
+		for key in [&"thumb", &"index", &"middle", &"ring", &"pinky", &"spread"]:
+			if pinch_hand.has(key):
+				digits[key] = pinch_hand[key]
+		var target := support.duplicate()
+		target.merge(digits, true)
+		support = GSViewHandPoses.blend(support, target, clampf(cycle_grip, 0.0, 1.0))
 	return [firing, support if grip.is_two_hand() else {}]
 
 
@@ -710,7 +723,8 @@ func _place_hands(skeleton: Skeleton3D) -> void:
 		support = _mirrored((hand_poses.get(GSViewHandPoses.FISTS, {}) as Dictionary).get(&"firing", {}))
 		forward = global_transform.basis * Vector3.FORWARD
 		up = global_transform.basis * Vector3.UP
-	_seat(_hands[1], skeleton, _left[2], support, forward, up, s, rate)
+	# Reaching across to a bolt handle brings the hand near the eye; it shrinks so it stays a hand, not a paddle.
+	_seat(_hands[1], skeleton, _left[2], support, forward, up, s * lerpf(1.0, CYCLE_HAND_SIZE, clampf(cycle_grip, 0.0, 1.0)), rate)
 
 
 func _seat(hand: GSViewHand, skeleton: Skeleton3D, wrist: int, pose: Dictionary, forward: Vector3, up: Vector3, s: float, rate: float) -> void:
