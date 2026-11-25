@@ -1,0 +1,40 @@
+[
+  {
+    "paths": [
+      ""
+    ],
+    "licence": "MIT",
+    "author": "gs-player-char contributors",
+    "title": "gs-player-char code (LICENSE)"
+  },
+  {
+    "paths": [
+      "library/avatars/gs-kenney-criminal.glb",
+      "library/avatars/gs-kenney-cyborg.glb",
+      "library/avatars/gs-kenney-human-man.glb",
+      "library/avatars/gs-kenney-human-woman.glb",
+      "library/avatars/gs-kenney-skater-boy.glb",
+      "library/avatars/gs-kenney-skater-girl.glb",
+      "library/avatars/gs-kenney-zombie-man.glb",
+      "library/avatars/gs-kenney-zombie-woman.glb"
+    ],
+    "licence": "CC0-1.0",
+    "author": "Kenney",
+    "url": "https://kenney.nl/assets/animated-characters-protagonists",
+    "title": "Animated Characters Protagonists and Retro skins",
+    "source": "addons/gs_player_char/people/CREDITS.md"
+  },
+  {
+    "paths": [
+      "library/avatars/gs-people-lis.glb",
+      "library/avatars/gs-people-matt.glb",
+      "library/avatars/gs-people-sam.glb",
+      "library/avatars/gs-people-shaun.glb"
+    ],
+    "licence": "CC0-1.0",
+    "author": "Quaternius",
+    "url": "https://quaternius.com/packs/zombieapocalypsekit.html",
+    "title": "Zombie Apocalypse Kit survivors (matt, lis, sam, shaun)",
+    "source": "addons/gs_player_char/people/CREDITS.md"
+  }
+]
