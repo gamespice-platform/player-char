@@ -4,6 +4,13 @@ extends RefCounted
 ## A figure's drawn pose as a flat float array, for replay: [bone count, the model's basis and
 ## origin (12), every bone's rotation (4 each), the root bones' positions (3 each)].
 
+const NATIVE_CLASS := &"GSSimPoseBlend"
+
+## Draw the blend in GameSpice Sim when it is loaded (bit-identical to the script); off keeps the script.
+static var native := true
+static var _native_known := -1
+static var _poser: RefCounted
+
 
 ## The pose as drawn now, for a replay: bone count, the model's transform, every bone's rotation
 ## and the root bones' positions. Includes overlays, aim, swim tilt; [method apply] puts it back.
@@ -38,8 +45,25 @@ static func record(skeleton: Skeleton3D, model: Node3D) -> PackedFloat32Array:
 
 
 ## Draws the pose between two [method pose_record]s, [param alpha] of the way to [param b]. False
-## (and nothing changed) when either is from another skeleton.
+## (and nothing changed) when either is from another skeleton. In GameSpice Sim's native
+## [code]GSSimPoseBlend[/code] when it is loaded and [member native] is on (the same pose, rotations within one float step).
 static func apply(skeleton: Skeleton3D, model: Node3D, a: PackedFloat32Array, b: PackedFloat32Array, alpha: float) -> bool:
+	if native and native_available() and skeleton != null and model != null:
+		return _poser.apply(skeleton, model, a, b, alpha, _root_bones(skeleton))
+	return apply_script(skeleton, model, a, b, alpha)
+
+
+## Whether the gs_sim extension provides [constant NATIVE_CLASS]; asked once.
+static func native_available() -> bool:
+	if _native_known < 0:
+		_native_known = 1 if ClassDB.class_exists(NATIVE_CLASS) else 0
+		if _native_known == 1:
+			_poser = ClassDB.instantiate(NATIVE_CLASS)
+	return _native_known == 1
+
+
+## [method apply] in script: the specification and the fallback.
+static func apply_script(skeleton: Skeleton3D, model: Node3D, a: PackedFloat32Array, b: PackedFloat32Array, alpha: float) -> bool:
 	if skeleton == null or model == null or a.is_empty() or a.size() != b.size():
 		return false
 	var n := skeleton.get_bone_count()
