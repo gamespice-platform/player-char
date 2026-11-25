@@ -43,10 +43,18 @@ func run() -> void:
 		var held := GSPlayerViewArms.new()
 		suite.add_child(held)
 		held.mirror_support_forearm = mirror
+		# Counted unsplit: the split's edge points along the elbow seam take the unmirrored upper arm's weights too.
+		held.sleeve_smooth_levels = 0
 		held.build(wrapped, 1.8)
 		sides.append(_forearm_triangles(held.arms() as GSHumanoidFigure))
 		held.queue_free()
 	suite._check(sides[0][0] == sides[0][1] and sides[1][0] != sides[1][1], "the support forearm is the firing one mirrored, so a one-sided bandage is not drawn (%s, unmirrored %s)" % [sides[0], sides[1]])
+	var split := GSPlayerViewArms.new()
+	suite.add_child(split)
+	split.build(wrapped, 1.8)
+	var rounded := _forearm_triangles(split.arms() as GSHumanoidFigure)
+	split.queue_free()
+	suite._check(rounded[0] + rounded[1] >= 3 * (sides[0][0] + sides[0][1]), "the sleeves are split and rounded, not drawn as the kit's octagons (%s triangles, unsplit %s)" % [rounded, sides[0]])
 	arms.set_downed(false)
 	suite._check(not arms.arms().visible, "hidden once up")
 	var custom := GSPlayerViewArms.new()

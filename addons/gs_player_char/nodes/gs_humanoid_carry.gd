@@ -11,9 +11,10 @@ const CLASSES: Array[StringName] = [&"rifle", &"smg", &"shotgun", &"sniper", &"h
 ## The class this describes, for [method describe].
 @export var id: StringName = &"rifle"
 
-## Moving or standing, not firing: the low ready, muzzle down ahead.
+## Moving or standing, not firing: the low ready, muzzle down and across the body. Turned across, not only down: a
+## gun pitched down while pointing ahead is drawn end-on from the front, a near-vertical stick down the chest (FC judge D5).
 @export var ready_grip := Vector3(0.16, 0.74, -0.32)
-@export var ready_turn := Vector3(-22.0, 8.0, 0.0)
+@export var ready_turn := Vector3(-16.0, 30.0, 0.0)
 
 ## Firing or raised: shouldered, level with the view.
 @export var aim_grip := Vector3(0.15, 0.86, -0.36)
@@ -63,7 +64,7 @@ static func for_class(kind: StringName) -> GSHumanoidCarry:
 			c.id = &"rifle"
 		"smg":
 			c.id = &"smg"
-			c.ready_turn = Vector3(-26.0, 8.0, 0.0)
+			c.ready_turn = Vector3(-20.0, 30.0, 0.0)
 			c.aim_grip = Vector3(0.14, 0.85, -0.38)
 			c.support = Vector3(0.0, -0.03, -0.22)
 			c.kick = 0.02

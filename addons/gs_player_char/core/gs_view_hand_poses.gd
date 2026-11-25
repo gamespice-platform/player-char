@@ -55,10 +55,11 @@ static func table() -> Dictionary:
 	var out := {}
 	out[RIFLE] = {
 		&"firing": trigger.duplicate(),
-		# Under the handguard, palm up, the fingers closed round its right side, the thumb along the left.
-		&"support": {&"fingers": Vector3(0.85, 0.1, 0.5), &"palm": Vector3(-0.15, 1.0, 0.0), &"centre": Vector3(0.0, 0.07, 0.022),
-			&"thumb": Vector3(16.0, 22.0, 12.0), &"index": Vector3(66.0, 80.0, 46.0), &"middle": Vector3(70.0, 84.0, 48.0),
-			&"ring": Vector3(72.0, 84.0, 48.0), &"pinky": Vector3(74.0, 82.0, 46.0), &"spread": 1.0},
+		# The handguard cupped from its left side and under, palm in and up, the fingers forward and closing over its top.
+		# Palm up under it, the fingers closed round its far side out of sight and the eye saw a fingerless nub (FC judge D2).
+		&"support": {&"fingers": Vector3(-0.1, 0.45, 0.85), &"palm": Vector3(0.8, 0.6, 0.0), &"centre": Vector3(0.0, 0.066, 0.022),
+			&"thumb": Vector3(14.0, 20.0, 12.0), &"index": Vector3(58.0, 72.0, 42.0), &"middle": Vector3(62.0, 76.0, 44.0),
+			&"ring": Vector3(64.0, 76.0, 44.0), &"pinky": Vector3(66.0, 74.0, 42.0), &"spread": 3.0},
 	}
 	out[SNIPER] = {
 		&"firing": trigger.duplicate(),

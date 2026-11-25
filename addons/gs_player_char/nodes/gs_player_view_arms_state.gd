@@ -91,6 +91,9 @@ var held_scale: float = 0.75
 var held_spread: float = 1.25
 ## Draw the support forearm and hand as the firing ones mirrored, so one-sided forearm gear never crosses the view.
 var mirror_support_forearm: bool = true
+## How many times the arms' triangles are split and rounded (each level is four times the triangles, built once per
+## body mesh): the kit's octagonal sleeves read as a staircase that close to the eye (FC judge D4). 0 draws them as built.
+var sleeve_smooth_levels: int = 1
 ## Show the idle left arm in a one-hand grip. Off: it has no hand in view, only its sleeve at the screen edge.
 var show_idle_left_arm: bool = false
 ## A sprint with one hand on the weapon (0 to 1, the host sets it each frame): the free arm pumps into view as a

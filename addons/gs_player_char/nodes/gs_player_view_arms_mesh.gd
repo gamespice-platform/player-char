@@ -1,5 +1,7 @@
 extends "gs_player_view_arms_state.gd"
 
+const _SMOOTH := preload("gs_view_arms_smooth.gd")
+
 ## The build-time half of [GSPlayerViewArms]: stripping the figure's mesh down to arms and hands.
 
 
@@ -20,7 +22,7 @@ func _strip_gear(figure: GSHumanoidFigure) -> void:
 		return
 
 	var old := instance.mesh
-	var cache_key := [old.get_instance_id(), mirror_support_forearm]
+	var cache_key := [old.get_instance_id(), mirror_support_forearm, sleeve_smooth_levels]
 	var hit: Array = _strip_cache.get(cache_key, [])
 	if not hit.is_empty() and hit[0] == old:
 		instance.mesh = hit[1]
@@ -69,6 +71,7 @@ func _strip_gear(figure: GSHumanoidFigure) -> void:
 		# Shrunk to a point, a hidden bone still pulls every vertex that carries any of its weight: the collar and hip
 		# triangles blended onto the head or a leg stretched into a skin wedge across the lower view (PLAYLOT).
 		arrays[Mesh.ARRAY_INDEX] = _keep_off(arrays, skeleton, instance.skin, HIDDEN_BONES)
+		arrays = _SMOOTH.subdivide(arrays, sleeve_smooth_levels)
 		out.add_surface_from_arrays(old.surface_get_primitive_type(s), arrays, [], {}, GSViewArmsMaterial.REST_FORMAT)
 		out.surface_set_material(s, old.surface_get_material(s))
 		var one := arrays.duplicate()
