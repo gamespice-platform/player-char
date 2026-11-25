@@ -53,8 +53,9 @@ func run() -> void:
 	var worst := 0.0
 	var named := ""
 	for kind: StringName in [GSViewHandPoses.PISTOL, GSViewHandPoses.SHOTGUN, GSViewHandPoses.LAUNCHER, GSViewHandPoses.SNIPER,
-			GSViewHandPoses.GRENADE, GSViewHandPoses.KNIFE, &"no_such_kind"]:
-		var one := kind in [GSViewHandPoses.GRENADE, GSViewHandPoses.KNIFE]
+			GSViewHandPoses.GRENADE, GSViewHandPoses.KNIFE, GSViewHandPoses.SWORD, GSViewHandPoses.HAFT, GSViewHandPoses.SHIELD,
+			GSViewHandPoses.BOW, GSViewHandPoses.CROSSBOW, &"no_such_kind"]:
+		var one := kind in [GSViewHandPoses.GRENADE, GSViewHandPoses.KNIFE, GSViewHandPoses.SWORD]
 		var g := GSViewGrip.one_hand(weapon, grip) if one else GSViewGrip.two_hand(weapon, grip, fore)
 		g.kind = kind
 		arms.set_held(g)
@@ -66,6 +67,7 @@ func run() -> void:
 			named = "%s %.3f m, hands %s/%s" % [kind, error, hands[0].visible, hands[1].visible]
 	suite._check(worst < 0.03, "every kind (and an unknown one, as a rifle) is held in its hands, one-hand ones in one (worst %s)" % named)
 
+	_check_melee_table()
 	await _check_grenade(arms, weapon, grip, hands)
 	await _check_knife(arms, weapon, grip, hands)
 	await _check_extended_reach(arms, grip)
@@ -97,6 +99,26 @@ func _check_hand_mesh() -> void:
 	suite._check(hand.tip(&"thumb").x > 0.0 and left.tip(&"thumb").x < 0.0, "a left hand is the right one mirrored (thumb x %.3f / %.3f)" % [hand.tip(&"thumb").x, left.tip(&"thumb").x])
 	hand.queue_free()
 	left.queue_free()
+
+
+## The melee and missile grips: a one-hand sword, the rest held in both hands, each hand a proper frame, the left
+## ones written for the left (palm toward the right).
+func _check_melee_table() -> void:
+	var table := GSViewHandPoses.table()
+	var bad := []
+	for kind: StringName in [GSViewHandPoses.SWORD, GSViewHandPoses.HAFT, GSViewHandPoses.SHIELD, GSViewHandPoses.BOW, GSViewHandPoses.CROSSBOW]:
+		var entry: Dictionary = table.get(kind, {})
+		var two := kind != GSViewHandPoses.SWORD
+		if not entry.has(&"firing") or entry.has(&"support") != two:
+			bad.append(kind)
+			continue
+		for side: StringName in entry:
+			var hand: Dictionary = entry[side]
+			var b := GSViewHandPoses.frame(hand, Vector3.UP, Vector3.BACK)
+			var palm: Vector3 = hand[&"palm"]
+			if not b.is_conformal() or (kind != GSViewHandPoses.CROSSBOW and side == &"support" and palm.x <= 0.0):
+				bad.append("%s/%s" % [kind, side])
+	suite._check(bad.is_empty(), "a sword is held in one fist; a haft, shield, bow and crossbow in both, the left hand written for the left %s" % [bad])
 
 
 func _check_grenade(arms: GSPlayerViewArms, weapon: Node3D, grip: Vector3, hands: Array) -> void:

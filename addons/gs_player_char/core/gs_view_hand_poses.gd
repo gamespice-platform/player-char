@@ -27,6 +27,21 @@ const FISTS: StringName = &"fists"
 ## What a knife hand blends to as a throw winds up ([member GSPlayerViewArms.throw_grip]): the blade pinched between
 ## the thumb and the first two fingers, the others tucked.
 const KNIFE_THROW: StringName = &"knife_throw"
+## Melee and missile kinds, each on a weapon whose forward runs along its handle toward the head or blade (or, for
+## a bow, up its handle, and for a crossbow, down its stock to the muzzle) and whose up is the side away from the
+## blade's edge (toward the holder):
+## a one-hand sword, dagger or mace: a fist round the handle, thumb toward the blade.
+const SWORD: StringName = &"sword"
+## A two-hand haft (axe, spear, longsword, a mace held in both): the right fist on it and the left fist below it.
+const HAFT: StringName = &"haft"
+## A shield on the left arm: the left fist on its handle; the right hand a relaxed fist at the grip point (a game
+## moves it each frame to wherever the free hand rests).
+const SHIELD: StringName = &"shield"
+## A bow held in the left fist; the right hand's first three fingers hook the string (the grip point, moved each
+## frame as the string is drawn).
+const BOW: StringName = &"bow"
+## A crossbow: the right hand on its grip, the index on the trigger, the left under the stock ahead of it.
+const CROSSBOW: StringName = &"crossbow"
 ## The fingers a hand pose curls, in [GSViewHand]'s order.
 const FINGERS: Array[StringName] = [&"thumb", &"index", &"middle", &"ring", &"pinky"]
 
@@ -90,7 +105,40 @@ static func table() -> Dictionary:
 	out[FISTS] = {&"firing": {&"fingers": Vector3(0.0, 0.0, 1.0), &"palm": Vector3(-1.0, 0.0, 0.0), &"centre": Vector3(0.0, 0.07, 0.02),
 		&"thumb": Vector3(32.0, 40.0, 26.0), &"index": Vector3(86.0, 100.0, 62.0), &"middle": Vector3(88.0, 102.0, 62.0),
 		&"ring": Vector3(88.0, 102.0, 62.0), &"pinky": Vector3(88.0, 100.0, 60.0), &"spread": 0.0}}
+	_add_melee(out)
 	return out
+
+
+## The sword, haft, shield, bow and crossbow grips. A left (support) hand is written for the left: its palm +x
+## faces right, its thumb follows mirrored.
+static func _add_melee(out: Dictionary) -> void:
+	# A fist round a handle that runs along the weapon's forward: fingers down and a little forward, palm in.
+	var fist := {&"fingers": Vector3(0.0, -1.0, 0.2), &"palm": Vector3(-1.0, 0.0, 0.0), &"centre": Vector3(0.0, 0.072, 0.026),
+		&"thumb": Vector3(28.0, 32.0, 18.0), &"index": Vector3(78.0, 96.0, 56.0), &"middle": Vector3(80.0, 98.0, 58.0),
+		&"ring": Vector3(82.0, 98.0, 58.0), &"pinky": Vector3(84.0, 96.0, 56.0), &"spread": 0.0, &"size": 0.95}
+	var left_fist: Dictionary = fist.duplicate()
+	left_fist[&"palm"] = Vector3(1.0, 0.0, 0.0)
+	out[SWORD] = {&"firing": fist.duplicate()}
+	out[HAFT] = {&"firing": fist.duplicate(), &"support": left_fist.duplicate()}
+	# The free right hand by the hip, loosely closed: the grip point is the middle of its curled fingers.
+	var loose := {&"fingers": Vector3(0.0, -1.0, 0.1), &"palm": Vector3(-1.0, 0.0, 0.0), &"centre": Vector3(0.0, 0.07, 0.03),
+		&"thumb": Vector3(14.0, 18.0, 10.0), &"index": Vector3(36.0, 44.0, 26.0), &"middle": Vector3(40.0, 48.0, 28.0),
+		&"ring": Vector3(44.0, 50.0, 30.0), &"pinky": Vector3(48.0, 50.0, 30.0), &"spread": 4.0}
+	out[SHIELD] = {&"firing": loose, &"support": left_fist.duplicate()}
+	# The string on the first joints of three fingers, the thumb tucked under, the pinky folded.
+	var draw := {&"fingers": Vector3(0.0, 0.2, 1.0), &"palm": Vector3(-1.0, 0.0, 0.0), &"centre": Vector3(0.0, 0.088, 0.03),
+		&"thumb": Vector3(40.0, 44.0, 26.0), &"index": Vector3(18.0, 64.0, 34.0), &"middle": Vector3(16.0, 70.0, 38.0),
+		&"ring": Vector3(18.0, 66.0, 36.0), &"pinky": Vector3(80.0, 94.0, 54.0), &"spread": 0.0}
+	out[BOW] = {&"firing": draw, &"support": left_fist.duplicate()}
+	# The right hand on the grip behind the trigger; the left under the fore-stock, palm up, fingers round its right.
+	out[CROSSBOW] = {
+		&"firing": {&"fingers": Vector3(0.0, -0.5, 0.86), &"palm": Vector3(-1.0, 0.0, 0.0), &"centre": Vector3(0.0, 0.066, 0.026),
+			&"thumb": Vector3(18.0, 22.0, 12.0), &"index": Vector3(22.0, 48.0, 18.0), &"middle": Vector3(72.0, 92.0, 52.0),
+			&"ring": Vector3(76.0, 94.0, 54.0), &"pinky": Vector3(80.0, 92.0, 52.0), &"spread": 0.0},
+		&"support": {&"fingers": Vector3(0.8, 0.1, 0.55), &"palm": Vector3(-0.1, 1.0, 0.0), &"centre": Vector3(0.0, 0.07, 0.024),
+			&"thumb": Vector3(16.0, 22.0, 12.0), &"index": Vector3(64.0, 78.0, 44.0), &"middle": Vector3(68.0, 82.0, 46.0),
+			&"ring": Vector3(70.0, 82.0, 46.0), &"pinky": Vector3(72.0, 80.0, 44.0), &"spread": 1.0},
+	}
 
 
 ## [param a] blended toward [param b] by [param t] (0 to 1): curls, centre and directions.
