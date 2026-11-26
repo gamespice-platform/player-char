@@ -151,21 +151,34 @@ func step(delta: float, active: bool) -> void:
 ## view's, radians; [param size] the figure's height over 1.8; [param sprint] the sprint blend; [param speed] m/s; [param under] how much an overlay (a swing, a flinch, a gesture) holds the arms instead.
 func apply(skeleton: Skeleton3D, model: Node3D, anim: AnimationPlayer, to_figure: Transform3D, animation: Animation,
 		phase: float, pitch: float, size: float, sprint: float, speed: float, under: float, native: RefCounted = null) -> void:
-	support_grip = Vector3.INF
-	var w := weight * (1.0 - clampf(under, 0.0, 1.0))
-	if w <= 0.001 or style == null or _turns.is_empty() or animation == null:
+	if native != null:
+		var args := native_args(native, skeleton, model, anim, to_figure, animation, phase, pitch, size, sprint, speed, under)
+		if not args.is_empty():
+			support_grip = native.call(&"carry", skeleton, args[0], args[1], to_figure, args[2])
 		return
+	var bones := _arm_bones(skeleton, model, anim, to_figure, animation, under)
+	if not bones.is_empty():
+		_apply_script(skeleton, model, bones, animation, to_figure, _weight_under(under), phase, pitch, size, sprint, speed)
+
+
+func _weight_under(under: float) -> float:
+	return weight * (1.0 - clampf(under, 0.0, 1.0))
+
+
+## The arm's bones this frame after [method apply]'s checks (measuring a new skeleton, which reads only rests and
+## clips, never the pose); empty, with [member support_grip] cleared, when no arm is drawn.
+func _arm_bones(skeleton: Skeleton3D, model: Node3D, anim: AnimationPlayer, to_figure: Transform3D, animation: Animation,
+		under: float) -> Array[int]:
+	support_grip = Vector3.INF
+	var none: Array[int] = []
+	if _weight_under(under) <= 0.001 or style == null or _turns.is_empty() or animation == null:
+		return none
 	if skeleton.get_instance_id() != _skeleton_id:
 		_measure(skeleton, model, anim, to_figure)
 	if not _bones.has(animation):
 		_bones[animation] = GSHumanoidIk.keyed_bones(skeleton, model, animation, ARM_BONES)
 	var bones: Array[int] = _bones[animation]
-	if bones.is_empty() or _chest < 0:
-		return
-	if native != null:
-		_apply_native(native, skeleton, model, bones, animation, to_figure, w, phase, pitch, size, sprint, speed)
-	else:
-		_apply_script(skeleton, model, bones, animation, to_figure, w, phase, pitch, size, sprint, speed)
+	return none if bones.is_empty() or _chest < 0 else bones
 
 
 ## [method apply]'s arm in script: the stance blended, ridden on the chest, swayed, pitched and kicked, then the
@@ -240,10 +253,15 @@ func _apply_script(skeleton: Skeleton3D, model: Node3D, bones: Array[int], anima
 		support_grip = _support(lower_global * skeleton.get_bone_pose(bones[2]), to_figure, chest.origin, size)
 
 
-## [method apply]'s arm in GameSpice Sim (`GSSimFigurePose.carry`, the same rotations and support point): the body
-## and style are handed over when they change, the frame's state packed in its order.
-func _apply_native(native: RefCounted, skeleton: Skeleton3D, model: Node3D, bones: Array[int], animation: Animation,
-		to_figure: Transform3D, w: float, phase: float, pitch: float, size: float, sprint: float, speed: float) -> void:
+## [method apply]'s arm in GameSpice Sim: `GSSimFigurePose.carry`'s bones, finger keys and frame (`upper` takes the
+## same three), or empty when no arm is drawn ([member support_grip] cleared). The body and style are handed over
+## when they change, the frame's state packed in its order. Reads no pose, so it may run before the bones are posed.
+func native_args(native: RefCounted, skeleton: Skeleton3D, model: Node3D, anim: AnimationPlayer, to_figure: Transform3D,
+		animation: Animation, phase: float, pitch: float, size: float, sprint: float, speed: float, under: float) -> Array:
+	var bones := _arm_bones(skeleton, model, anim, to_figure, animation, under)
+	if bones.is_empty():
+		return []
+	var w := _weight_under(under)
 	if native != _native or _native_stale:
 		_native = native
 		_native_stale = false
@@ -266,8 +284,8 @@ func _apply_native(native: RefCounted, skeleton: Skeleton3D, model: Node3D, bone
 				s.walk_sway, s.run_sway, s.support)
 	var keyed: PackedByteArray = _finger_keys(skeleton, model, animation) if not _fingers.is_empty() else PackedByteArray()
 	var two := 1.0 if style.two_handed and explicit and swap < 0.5 else 0.0
-	support_grip = native.call(&"carry", skeleton, PackedInt32Array(bones), keyed, to_figure, PackedFloat64Array([
-			w, aim, reload, swap, sprint, phase, pitch, size, speed, _kick, _bolt, _clock, _reload_time, two]))
+	return [PackedInt32Array(bones), keyed, PackedFloat64Array([
+			w, aim, reload, swap, sprint, phase, pitch, size, speed, _kick, _bolt, _clock, _reload_time, two])]
 
 
 ## Turns the hand's other finger roots by the turn the stance gave the hand bone, from [param was] to [param now]

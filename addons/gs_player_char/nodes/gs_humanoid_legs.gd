@@ -93,6 +93,14 @@ func holds(up: Vector3) -> bool:
 	return twist == _applied_twist and up == _applied_up
 
 
+## [method apply] made by a fused `GSSimFigurePose.upper` call: records the turn as applied and returns the
+## `GSSimLegs` that makes it, or null when there is no turn to make.
+func fused_twist(up: Vector3) -> RefCounted:
+	_applied_twist = twist
+	_applied_up = up
+	return null if is_zero_approx(twist) else _n
+
+
 ## Turns the root by [member twist] about [param up] (skeleton space) and the hips back by as much.
 func apply(skeleton: Skeleton3D, up: Vector3) -> void:
 	_applied_twist = twist
