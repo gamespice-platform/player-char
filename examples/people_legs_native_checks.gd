@@ -6,7 +6,8 @@ extends RefCounted
 ## pose is compared each frame (within [constant TOLERANCE]), then each path's cost per
 ## [method GSHumanoidFigure.animate]. With no library it says the native half was skipped and passes;
 ## [code]GS_SIM_REQUIRE_NATIVE=1[/code] (CI) fails instead. A third figure makes one native call per
-## step ([member GSHumanoidNativeLegs.fused] off) and must pose to the bit like the fused one. Always four checks.
+## step ([member GSHumanoidNativeLegs.fused] off) and must pose to the bit like the fused one, and two more are stepped together
+## through [GSHumanoidFigureBatch] (one native call a step for both) and must pose to the bit like it too. Always five checks.
 
 const Motion := preload("people_native_motion.gd")
 ## The native kernels do the script's f32 vector maths in its order; a float step of slack keeps a
@@ -34,6 +35,7 @@ func run() -> void:
 	GSHumanoidNativeLegs.native = true
 	var by_native := Motion.figure(world)
 	var by_steps := Motion.figure(world)
+	var batched: Array[GSHumanoidFigure] = [Motion.figure(world), Motion.figure(world)]
 	GSHumanoidNativeLegs.native = was
 	var on_native: bool = by_native.legs._n != null and by_native._turn_limit._n != null
 	var worst := 0.0
@@ -45,20 +47,23 @@ func run() -> void:
 	var carried := 0
 	var supported := 0
 	var split := 0.0
+	var apart := 0.0
 	# A sniper, chosen by the game: the carry gives the other hand the foregrip, and its shots work the bolt.
-	for f: GSHumanoidFigure in [by_script, by_native, by_steps]:
+	for f: GSHumanoidFigure in [by_script, by_native, by_steps] + batched:
 		f.carry.set_class(&"sniper")
 	for i in Motion.FRAMES:
 		var motion := Motion.motion(i)
-		for f: GSHumanoidFigure in [by_script, by_native, by_steps]:
+		for f: GSHumanoidFigure in [by_script, by_native, by_steps] + batched:
 			GSHumanoidNativeLegs.fused = f != by_steps
 			_carry_script(f.carry, i)
 			f.position += (motion["velocity"] as Vector3) / 60.0
 			Motion.on_wall(motion, i, f.position)
 			f.aim(sin(i * 0.07) * 0.5)
 			f.set_motion(motion)
-			f.animate(Motion.speed(i), 1.0 / 60.0)
+			if not batched.has(f):
+				f.animate(Motion.speed(i), 1.0 / 60.0)
 		GSHumanoidNativeLegs.fused = true
+		apart = maxf(apart, _batch_gap(by_native, batched, Motion.speed(i)))
 		split = maxf(split, Motion.gap(by_native.skeleton(), by_steps.skeleton()))
 		var d := Motion.gap(by_script.skeleton(), by_native.skeleton())
 		var grip_a := by_script.carry.support_grip
@@ -93,11 +98,32 @@ func run() -> void:
 	var native_us := Motion.cost(by_native) if on_native else 0.0
 	suite._line("  per figure: animate with script legs %.2f us, native legs %.2f us" % [script_us, native_us])
 	suite._check(not native or on_native, "native on gives a figure GameSpice Sim's legs and turn limits")
+	_check_split(native, split, apart)
+	world.queue_free()
+	await suite.get_tree().process_frame
+
+
+func _check_split(native: bool, split: float, apart: float) -> void:
 	suite._check(split == 0.0 or not native, "one native call per step poses like the fused calls (restore %s, wall and stride %s, upper body %s, legs below %s): gap %s"
 		% [GSHumanoidNativeLegs.restores(), GSHumanoidNativeLegs.fuses(), GSHumanoidNativeLegs.chains(), GSHumanoidNativeLegs.lowers(),
 			String.num_scientific(split)])
-	world.queue_free()
-	await suite.get_tree().process_frame
+	suite._check(apart == 0.0,
+		"two figures stepped together through GSHumanoidFigureBatch (one native call a step for both: %s) pose like one stepped alone: gap %s"
+		% [GSHumanoidNativeLegs.batches(), String.num_scientific(apart)])
+
+
+## Steps [param batched] together at [param speed], then the worst bone gap between [param alone] and each, or INF when a
+## support grip differs.
+static func _batch_gap(alone: GSHumanoidFigure, batched: Array[GSHumanoidFigure], speed: float) -> float:
+	GSHumanoidFigureBatch.animate_all(batched, PackedFloat64Array([speed, speed]), PackedFloat64Array([1.0 / 60.0, 1.0 / 60.0]))
+	var worst := 0.0
+	for f in batched:
+		worst = maxf(worst, Motion.gap(alone.skeleton(), f.skeleton()))
+		var a := alone.carry.support_grip
+		var b := f.carry.support_grip
+		if a != b and (a.is_finite() or b.is_finite()):
+			worst = INF
+	return worst
 
 
 ## The game's side of the carry on frame [param i]: raised a while, shots (the kick and the bolt), a whole reload

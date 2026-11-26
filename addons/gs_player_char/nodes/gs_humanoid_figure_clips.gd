@@ -272,7 +272,8 @@ func _support_chain(bones: Array[int]) -> PackedInt32Array:
 ## [method _apply_aim], the legs' turn, [method _apply_carry] and [method _apply_support] as one `GSSimFigurePose.upper`
 ## call (the same pose), with what each works out handed over; false leaves them to the four steps: without
 ## [method GSHumanoidNativeLegs.chains], a native leg or carry, or while a stride ease runs between the aim and the legs.
-func _apply_upper(seen: bool, far: float, up: Vector3) -> bool:
+## Given a [param batch] list, the call is appended there and [method _upper_done] is left to its caller.
+func _apply_upper(seen: bool, far: float, up: Vector3, batch: Variant = null) -> bool:
 	if _skeleton == null or _pose_n == null or _carry_n == null or legs._n == null or _ease.left > 0.0 \
 			or not GSHumanoidNativeLegs.chains():
 		return false
@@ -292,15 +293,25 @@ func _apply_upper(seen: bool, far: float, up: Vector3) -> bool:
 			bones = _support_bones_for(clip)
 	var none := PackedInt32Array()
 	var pole := to.basis.inverse() * SUPPORT_POLE
-	var grip: Vector3 = _pose_n.call(&"upper", _skeleton, turn, to, plan if plan != null else PackedFloat64Array(),
-		PackedFloat64Array([aim_pitch, -SPRINT_DROP * sprint_blend, legs.twist, up.x, up.y, up.z, target.x, target.y, target.z,
-			pole.x, pole.y, pole.z, _support_weight, from_carry]),
-		held[0] if not held.is_empty() else none, held[1] if not held.is_empty() else PackedByteArray(),
-		held[2] if not held.is_empty() else PackedFloat64Array(), PackedInt32Array(bones),
-		_support_chain(bones) if not bones.is_empty() else none)
-	if not held.is_empty():
-		carry.support_grip = grip
+	var aim_plan: Variant = plan if plan != null else PackedFloat64Array()
+	var values := PackedFloat64Array([aim_pitch, -SPRINT_DROP * sprint_blend, legs.twist, up.x, up.y, up.z, target.x, target.y,
+		target.z, pole.x, pole.y, pole.z, _support_weight, from_carry])
+	_st_held = not held.is_empty()
+	var arm: Variant = held[0] if _st_held else none
+	var keyed: Variant = held[1] if _st_held else PackedByteArray()
+	var frame: Variant = held[2] if _st_held else PackedFloat64Array()
+	var chain: Variant = _support_chain(bones) if not bones.is_empty() else none
+	if batch is Array:
+		batch.append_array([_pose_n, _skeleton, turn, to, aim_plan, values, arm, keyed, frame, PackedInt32Array(bones), chain])
+	else:
+		_upper_done(_pose_n.call(&"upper", _skeleton, turn, to, aim_plan, values, arm, keyed, frame, PackedInt32Array(bones), chain))
 	return true
+
+
+## [method _apply_upper]'s call answered with the support hand's grip, kept when the figure carries.
+func _upper_done(grip: Vector3) -> void:
+	if _st_held:
+		carry.support_grip = grip
 
 
 ## [method _apply_carry]'s arm as `GSSimFigurePose` arguments ([method GSHumanoidCarryPose.native_args]), or empty.
@@ -460,3 +471,41 @@ func _clip_position() -> float:
 
 func _clip_length() -> float:
 	return float(_clips.call(&"current_animation_length")) if _clips != null else _anim.current_animation_length
+
+
+## Undoes last frame's limits and legs in the reverse of the order they were written: the turn limit last, so first.
+func _step_restore(batch: Variant) -> void:
+	if legs._n != null and _turn_limit._n != null and _stride_limit._n != null and GSHumanoidNativeLegs.restores():
+		if batch is Array:
+			batch.append_array([legs._n, _skeleton, _turn_limit._n, _stride_limit._n])
+		else:
+			legs._n.call(&"restore_with", _skeleton, _turn_limit._n, _stride_limit._n)
+		return
+	_turn_limit.restore(_skeleton)
+	legs.restore(_skeleton)
+	_stride_limit.restore(_skeleton)
+
+
+func _step_close() -> void:
+	_own.cap_colour = look.top
+	_own.apply(_skeleton, _mesh)
+
+
+func _step_shut() -> void:
+	_frame_tf_on = false
+	_frame_tf_ok = false
+
+
+## [method _lower_native]'s call answered: whether the feet's hold still holds.
+func _lower_done(holding: bool) -> void:
+	if _st_plan & 3 == 2:
+		_landing = _landing and holding
+
+
+func _skeleton_up() -> Vector3:
+	return (_to_figure().basis.inverse() * Vector3.UP).normalized()
+
+
+func _apply_crawl_feet(speed: float, dt: float) -> void:
+	var id := StringName(downed_clips.get(&"crawl", GSHumanoidClips.CRAWL))
+	_crawl.step(self, _skeleton, downed and not propped and clip == id and _current_clip() == id, speed, dt)

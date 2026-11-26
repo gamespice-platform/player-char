@@ -2,19 +2,27 @@ extends Node3D
 
 ## 32 armed people moving like a match's remote players (gun held, aim pitch, support grip, mixed distances), stepped with a fixed delta. Prints `ANIM_BENCH us_per_call=` (median of rounds), the
 ## phases with `--parts 1`, and `ANIM_DIGEST` (a hash of every pose_record every frame) to prove a change leaves the pose bit-identical. Args after `--`: --frames N --rounds N --parts 0|1 --native 0|1 --fused 0|1
-## (`--native 0` poses with the scripts alone, `--fused 0` makes one native call per step: each digest must match the native run's).
+## --batch 0|1 (`--native 0` poses with the scripts alone, `--fused 0` makes one native call per step, `--batch 1` steps all 32 through
+## [GSHumanoidFigureBatch]: each digest must match the native run's).
 
 const COUNT := 32
 const DT := 1.0 / 60.0
 
 var _people: Array[GSHumanoidFigure] = []
 var _camera: Camera3D
+var _batch := false
+var _speeds := PackedFloat64Array()
+var _deltas := PackedFloat64Array()
 
 
 func _ready() -> void:
 	GSLog.set_level(GSLog.Level.ERROR)
 	GSHumanoidNativeLegs.native = _arg("native", 1) == 1
 	GSHumanoidNativeLegs.fused = _arg("fused", 1) == 1
+	_batch = _arg("batch", 0) == 1
+	_speeds.resize(COUNT)
+	_deltas.resize(COUNT)
+	_deltas.fill(DT)
 	_camera = Camera3D.new()
 	add_child(_camera)
 	_camera.position = Vector3(0, 1.7, 0)
@@ -53,7 +61,12 @@ func _step(frame: int) -> void:
 			"velocity": v, "wall": Plane(), "aim": 0.4 * sin(t + float(i))})
 		f.set_hold(GSHumanoidFigure.Hold.GUN)
 		f.set_support_grip(f.global_transform * Vector3(0.05, 1.25, -0.45))
-		f.animate(Vector2(v.x, v.z).length(), DT)
+		if _batch:
+			_speeds[i] = Vector2(v.x, v.z).length()
+		else:
+			f.animate(Vector2(v.x, v.z).length(), DT)
+	if _batch:
+		GSHumanoidFigureBatch.animate_all(_people, _speeds, _deltas)
 
 
 func _run() -> void:
@@ -67,7 +80,8 @@ func _run() -> void:
 		_step(frame)
 		for f in _people:
 			ctx.update(f.pose_record().to_byte_array())
-	print("ANIM_DIGEST frames=%d native=%s fused=%s sha256=%s" % [frames, GSHumanoidNativeLegs.native, GSHumanoidNativeLegs.fused, ctx.finish().hex_encode()])
+	print("ANIM_DIGEST frames=%d native=%s fused=%s batch=%s sha256=%s" % [frames, GSHumanoidNativeLegs.native, GSHumanoidNativeLegs.fused,
+		_batch and GSHumanoidNativeLegs.batches(), ctx.finish().hex_encode()])
 	var per_round: Array[float] = []
 	for r in rounds:
 		var total := 0
