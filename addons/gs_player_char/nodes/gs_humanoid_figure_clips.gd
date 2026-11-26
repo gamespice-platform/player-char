@@ -188,13 +188,24 @@ func _start_overlay(which: StringName, rate: float) -> void:
 ## do points up or down with the view; not while down, dead, swimming or climbing, and only on a
 ## bone the playing clip keys (see [GSHumanoidAim]).
 func _apply_aim() -> void:
+	var plan: Variant = _aim_plan()
+	if plan == null:
+		return
+	if _pose_n != null:
+		_pose_n.call(&"aim", _skeleton, plan, _to_figure(), aim_pitch, -SPRINT_DROP * sprint_blend)
+		return
+	GSHumanoidAim.apply_plan(_skeleton, plan, _to_figure(), aim_pitch, sprint_blend)
+
+
+## The plan [method _apply_aim] bends by this frame (flat for GameSpice Sim), or null when it bends nothing.
+func _aim_plan() -> Variant:
 	if _skeleton == null or (is_zero_approx(aim_pitch) and sprint_blend <= 0.0) or downed:
-		return
+		return null
 	if state == GSPlayerAnimState.DEAD or state == GSPlayerAnimState.SWIM or state == GSPlayerAnimState.CLIMB:
-		return
+		return null
 	var animation := _anim.get_animation(clip)
 	if animation == null:
-		return
+		return null
 	var arm := 1 if hold != Hold.NONE else 0
 	var plans: Variant = _aim_plans.get(animation)
 	if plans == null:
@@ -204,10 +215,7 @@ func _apply_aim() -> void:
 		if _pose_n != null:
 			plans[arm] = _flat_plan(plans[arm])
 		_aim_plans[animation] = plans
-	if _pose_n != null:
-		_pose_n.call(&"aim", _skeleton, plans[arm], _to_figure(), aim_pitch, -SPRINT_DROP * sprint_blend)
-		return
-	GSHumanoidAim.apply_plan(_skeleton, plans[arm], _to_figure(), aim_pitch, sprint_blend)
+	return plans[arm]
 
 
 ## [param plan] (index, parent, share, arm flag per bone) as numbers for `GSSimFigurePose.aim`.
@@ -232,24 +240,76 @@ func set_support_grip(point: Vector3) -> void:
 func _apply_support() -> void:
 	if _skeleton == null or _support_weight <= 0.0 or downed:
 		return
-	var target := carry.support_grip
-	if support_point.is_finite():
-		target = _skeleton.global_transform.affine_inverse() * support_point
+	var target := _support_target()
 	if not target.is_finite():
 		return
 	var bones := _support_bones_for(clip)
 	if bones.is_empty():
 		return
-	var chain: Variant = _support_chains.get(bones[0])
-	if chain == null:
-		chain = GSHumanoidIk.chain_to(_skeleton, _skeleton.get_bone_parent(bones[0]))
-		_support_chains[bones[0]] = chain
+	var chain := _support_chain(bones)
 	if _pose_n != null:
 		_pose_n.call(&"support", _skeleton, PackedInt32Array(bones), chain, target,
 			_to_figure().basis.inverse() * SUPPORT_POLE, _support_weight)
 		return
 	GSHumanoidIk.two_bone_under(_skeleton, bones, GSHumanoidIk.chain_pose(_skeleton, chain), target,
 		_to_figure().basis.inverse() * SUPPORT_POLE, _support_weight)
+
+
+## Where the support hand goes in skeleton space: the held weapon's foregrip, else the carry's.
+func _support_target() -> Vector3:
+	return _skeleton.global_transform.affine_inverse() * support_point if support_point.is_finite() else carry.support_grip
+
+
+## The bones from the root down to the support arm's parent, cached per arm.
+func _support_chain(bones: Array[int]) -> PackedInt32Array:
+	var chain: Variant = _support_chains.get(bones[0])
+	if chain == null:
+		chain = GSHumanoidIk.chain_to(_skeleton, _skeleton.get_bone_parent(bones[0]))
+		_support_chains[bones[0]] = chain
+	return chain
+
+
+## [method _apply_aim], the legs' turn, [method _apply_carry] and [method _apply_support] as one `GSSimFigurePose.upper`
+## call (the same pose), with what each works out handed over; false leaves them to the four steps: without
+## [method GSHumanoidNativeLegs.chains], a native leg or carry, or while a stride ease runs between the aim and the legs.
+func _apply_upper(seen: bool, far: float, up: Vector3) -> bool:
+	if _skeleton == null or _pose_n == null or _carry_n == null or legs._n == null or _ease.left > 0.0 \
+			or not GSHumanoidNativeLegs.chains():
+		return false
+	var plan: Variant = _aim_plan() if seen else null
+	var turn := legs.fused_twist(up)
+	var to := _to_figure()
+	var held: Array = []
+	if seen and far <= ANIM_FAR:
+		held = _carry_args()
+	var bones: Array[int] = []
+	var from_carry := 0.0
+	var target := Vector3.INF
+	if seen and far <= SUPPORT_RANGE and _support_weight > 0.0 and not downed:
+		target = _support_target()
+		from_carry = 1.0 if not held.is_empty() and not support_point.is_finite() else 0.0
+		if from_carry > 0.0 or target.is_finite():
+			bones = _support_bones_for(clip)
+	var none := PackedInt32Array()
+	var pole := to.basis.inverse() * SUPPORT_POLE
+	var grip: Vector3 = _pose_n.call(&"upper", _skeleton, turn, to, plan if plan != null else PackedFloat64Array(),
+		PackedFloat64Array([aim_pitch, -SPRINT_DROP * sprint_blend, legs.twist, up.x, up.y, up.z, target.x, target.y, target.z,
+			pole.x, pole.y, pole.z, _support_weight, from_carry]),
+		held[0] if not held.is_empty() else none, held[1] if not held.is_empty() else PackedByteArray(),
+		held[2] if not held.is_empty() else PackedFloat64Array(), PackedInt32Array(bones),
+		_support_chain(bones) if not bones.is_empty() else none)
+	if not held.is_empty():
+		carry.support_grip = grip
+	return true
+
+
+## [method _apply_carry]'s arm as `GSSimFigurePose` arguments ([method GSHumanoidCarryPose.native_args]), or empty.
+func _carry_args() -> Array:
+	if clip == GSHumanoidClips.DEATH or clip == GSHumanoidClips.SWIM:
+		carry.support_grip = Vector3.INF
+		return []
+	return carry.native_args(_carry_n, _skeleton, _model, _anim, _to_figure(), _anim.get_animation(clip), _stride_fraction(),
+		aim_pitch, height / 1.8, _sprint, _speed, _overlay_weight)
 
 
 func _apply_carry() -> void:

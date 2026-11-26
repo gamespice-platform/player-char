@@ -93,8 +93,8 @@ func run() -> void:
 	var native_us := Motion.cost(by_native) if on_native else 0.0
 	suite._line("  per figure: animate with script legs %.2f us, native legs %.2f us" % [script_us, native_us])
 	suite._check(not native or on_native, "native on gives a figure GameSpice Sim's legs and turn limits")
-	suite._check(split == 0.0 or not native, "one native call per step poses like the fused calls (restore %s, wall and stride %s): gap %s"
-		% [GSHumanoidNativeLegs.restores(), GSHumanoidNativeLegs.fuses(), String.num_scientific(split)])
+	suite._check(split == 0.0 or not native, "one native call per step poses like the fused calls (restore %s, wall and stride %s, upper body %s): gap %s"
+		% [GSHumanoidNativeLegs.restores(), GSHumanoidNativeLegs.fuses(), GSHumanoidNativeLegs.chains(), String.num_scientific(split)])
 	world.queue_free()
 	await suite.get_tree().process_frame
 

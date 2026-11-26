@@ -281,14 +281,15 @@ func _animate_step(speed: float, p_delta: float) -> void:
 	_set_clip_detail(far > ANIM_FAR)
 	_advance_clip(delta)
 	_apply_overlays()
-	if seen:
-		_apply_aim()
-	_ease.step(_skeleton, delta)
-	legs.apply(_skeleton, up)
-	if seen and far <= ANIM_FAR:
-		_apply_carry()
-	if seen and far <= SUPPORT_RANGE:
-		_apply_support()
+	if not _apply_upper(seen, far, up):
+		if seen:
+			_apply_aim()
+		_ease.step(_skeleton, delta)
+		legs.apply(_skeleton, up)
+		if seen and far <= ANIM_FAR:
+			_apply_carry()
+		if seen and far <= SUPPORT_RANGE:
+			_apply_support()
 	if seen and far <= ANIM_FAR and hold != Hold.GUN:
 		arms.apply(_skeleton, _model, _anim.get_animation(clip), _to_figure())
 	_apply_swim(delta)
