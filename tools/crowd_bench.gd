@@ -2,15 +2,18 @@ extends Node3D
 
 ## 30 people running in a ring, then with four fallen as ragdolls: frame time, draw calls and
 ## primitives over 300 frames as `BENCH` lines, then `BENCH DONE`. Main scene of a scratch web
-## export (docs/people.md, "What a crowd costs").
+## export (docs/people.md, "What a crowd costs"). Args after `--`: `--batch 0|1` (default 0) steps the crowd through
+## [GSHumanoidFigureBatch] instead of figure by figure; the `BENCH` lines say which. A headless run quits after `BENCH DONE`.
 
 var _people: Array[GSHumanoidFigure] = []
+var _batch := false
 var _camera: Camera3D
 var _root: Node3D
 
 
 func _ready() -> void:
 	GSLog.set_level(GSLog.Level.ERROR)
+	_batch = _arg("batch", 0) == 1
 	_root = self
 	var env := WorldEnvironment.new()
 	env.environment = Environment.new()
@@ -55,6 +58,32 @@ func _ready() -> void:
 	_run()
 
 
+func _arg(name: String, fallback: int) -> int:
+	var args := OS.get_cmdline_user_args()
+	var at := args.find("--" + name)
+	return int(args[at + 1]) if at >= 0 and at + 1 < args.size() else fallback
+
+
+## One frame's figures: one at a time, or all through [GSHumanoidFigureBatch] with `--batch 1`.
+func _animate(speed: float, delta: float) -> void:
+	if not _batch:
+		for f in _people:
+			if is_instance_valid(f) and f.visible:
+				f.animate(speed, delta)
+		return
+	var live: Array[GSHumanoidFigure] = []
+	for f in _people:
+		if is_instance_valid(f) and f.visible:
+			live.append(f)
+	var speeds := PackedFloat64Array()
+	speeds.resize(live.size())
+	speeds.fill(speed)
+	var deltas := PackedFloat64Array()
+	deltas.resize(live.size())
+	deltas.fill(delta)
+	GSHumanoidFigureBatch.animate_all(live, speeds, deltas)
+
+
 func _measure(label: String, frames: int) -> String:
 	var script_us := 0
 	var draw := 0.0
@@ -64,9 +93,7 @@ func _measure(label: String, frames: int) -> String:
 	var last := start
 	for i in frames:
 		var t0 := Time.get_ticks_usec()
-		for f in _people:
-			if is_instance_valid(f) and f.visible:
-				f.animate(5.0, 1.0 / 60.0)
+		_animate(5.0, 1.0 / 60.0)
 		script_us += Time.get_ticks_usec() - t0
 		await get_tree().process_frame
 		var now := Time.get_ticks_usec()
@@ -75,8 +102,8 @@ func _measure(label: String, frames: int) -> String:
 		draw += Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
 		prims += Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)
 	var total_ms := float(Time.get_ticks_usec() - start) / 1000.0 / frames
-	var line := "BENCH %s: %.1f ms a frame (worst %.1f), %.1f us script per person, %.0f draw calls, %.0f primitives, %s" % [
-		label, total_ms, worst / 1000.0, float(script_us) / frames / _people.size(), draw / frames, prims / frames,
+	var line := "BENCH %s (batch=%s): %.1f ms a frame (worst %.1f), %.1f us script per person, %.0f draw calls, %.0f primitives, %s" % [
+		label, _batch and GSHumanoidNativeLegs.batches(), total_ms, worst / 1000.0, float(script_us) / frames / _people.size(), draw / frames, prims / frames,
 		RenderingServer.get_video_adapter_name()]
 	print(line)
 	return line
@@ -100,3 +127,5 @@ func _run() -> void:
 	var b := await _measure("30 people, 4 ragdolls falling", 300)
 	DisplayServer.window_set_title("DONE")
 	print("BENCH DONE")
+	if DisplayServer.get_name() == "headless":
+		get_tree().quit()
