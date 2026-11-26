@@ -12,6 +12,7 @@ extends RefCounted
 const LEGS_CLASS := &"GSSimLegs"
 const TURN_CLASS := &"GSSimTurnLimit"
 const POSE_CLASS := &"GSSimFigurePose"
+const BATCH_CLASS := &"GSSimFigureBatch"
 
 ## Pose the legs and cap the turn in GameSpice Sim when it is loaded (the same pose as the scripts);
 ## off keeps the scripts. Read when a [GSHumanoidLegs] or [GSHumanoidTurnLimit] is made.
@@ -19,12 +20,16 @@ static var native := true
 ## With [member native], hand a figure's back-to-back bone steps to GameSpice Sim as one call each
 ## (`restore_with`, `on_wall_with`, `upper`, `lower`: the same pose); off makes one call per step, the fallback.
 static var fused := true
+## With [member fused], [GSHumanoidFigureBatch] makes each of those calls once a frame for all its figures
+## (`GSSimFigureBatch`: the same pose); off steps the figures one by one, the fallback.
+static var batched := true
 static var _known := -1
 static var _carries := -1
 static var _restores := -1
 static var _fuses := -1
 static var _chains := -1
 static var _lowers := -1
+static var _batches := -1
 
 
 ## Whether the gs_sim extension provides all three classes (an older library without the pose class
@@ -97,3 +102,18 @@ static func lowers() -> bool:
 	if _lowers < 0:
 		_lowers = 1 if available() and ClassDB.class_has_method(LEGS_CLASS, &"lower") else 0
 	return native and fused and _lowers == 1
+
+
+## Whether, with [member fused] and [member batched], [GSHumanoidFigureBatch] makes a frame's restore, upper and lower calls
+## once for all its figures (`GSSimFigureBatch`); an older library steps them one by one.
+static func batches() -> bool:
+	if _batches < 0:
+		_batches = 1 if available() and ClassDB.class_exists(BATCH_CLASS) else 0
+	return native and fused and batched and _batches == 1
+
+
+## A `GSSimFigureBatch` for one frame's figures, or null for the figure-by-figure path.
+static func batch() -> RefCounted:
+	if not batches():
+		return null
+	return ClassDB.instantiate(BATCH_CLASS)

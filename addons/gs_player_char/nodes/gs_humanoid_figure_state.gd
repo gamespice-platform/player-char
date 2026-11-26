@@ -353,4 +353,14 @@ var _skel_to_model: Transform3D = Transform3D.IDENTITY
 var _frame_tf := Transform3D.IDENTITY
 var _frame_tf_on := false
 var _frame_tf_ok := false
+# One step's values handed between [method GSHumanoidFigure.animate]'s stages.
+var _st_speed := 0.0
+var _st_delta := 0.0
+var _st_seen := true
+var _st_far := 0.0
+var _st_up := Vector3.UP
+var _st_facing := Basis.IDENTITY
+var _st_wanted: Array = []
+var _st_held := false
+var _st_plan := 0
 var _floor_ankles: PackedFloat32Array = PackedFloat32Array()

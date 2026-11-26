@@ -239,82 +239,94 @@ func frame_delta() -> float:
 func animate(speed: float, delta: float) -> void:
 	# [method _to_figure] is read several times a step and cannot change within one unless the model is moved.
 	_frame_tf_on = true
-	_animate_step(speed, delta)
-	_frame_tf_on = false
-	_frame_tf_ok = false
+	if _step_open(speed, delta):
+		_step_restore(null)
+		_step_upper(null)
+		_step_lower(null)
+		_step_close()
+	_step_shut()
 
 
-func _animate_step(speed: float, p_delta: float) -> void:
+# [method animate] in stages, so [GSHumanoidFigureBatch] can run each stage for many figures and make each stage's native call
+# once for them all. A stage given a [param batch] list appends its native call's arguments there instead of calling; given
+# null it calls. What a stage leaves for the next is in the `_st_` fields.
+
+## The step up to its first bone work: the state machine, the clip wanted and the legs' motion; false when nothing is posed.
+func _step_open(speed: float, p_delta: float) -> bool:
 	_speed = speed
+	_st_speed = speed
 	if _anim != null and _skip_frame(p_delta):
-		return
+		return false
 	var delta := p_delta + _owed
 	_owed = 0.0
+	_st_delta = delta
 	# The layers drawn this frame ([constant SUPPORT_RANGE]), from the step just worked out.
-	var seen := GSHumanoidFrames.last_seen if _anim != null else true
-	var far := GSHumanoidFrames.last_distance if _anim != null else 0.0
+	_st_seen = GSHumanoidFrames.last_seen if _anim != null else true
+	_st_far = GSHumanoidFrames.last_distance if _anim != null else 0.0
 	_step_state(delta, speed)
-
 	if _anim == null:
-		return
-	var facing := global_basis if is_inside_tree() else basis
-	legs.update(facing, _motion.get("velocity", Vector3.ZERO), delta)
-	var wanted := _clip_for(state, speed)
-
+		return false
+	_st_facing = global_basis if is_inside_tree() else basis
+	legs.update(_st_facing, _motion.get("velocity", Vector3.ZERO), delta)
+	_st_wanted = _clip_for(state, speed)
 	if overlay != &"":
 		_overlay_time += delta * _overlay_rate
 		if _overlay_stopping:
 			_stop_time += delta
+	_st_up = _skeleton_up()
+	return true
 
-	var up := _skeleton_up()
-	# Undone in the reverse of the order they were written: the turn limit last, so first.
-	if legs._n != null and _turn_limit._n != null and _stride_limit._n != null and GSHumanoidNativeLegs.restores():
-		legs._n.call(&"restore_with", _skeleton, _turn_limit._n, _stride_limit._n)
-	else:
-		_turn_limit.restore(_skeleton)
-		legs.restore(_skeleton)
-		_stride_limit.restore(_skeleton)
-	_play(wanted[0], wanted[1])
-	var matched := _matched_rate(legs.along_speed if _motion.has("velocity") else speed, delta)
+
+## The clip, its rate and the overlays, then the upper body: [method _apply_upper], else the aim, legs, carry and support one by one.
+func _step_upper(batch: Variant) -> void:
+	var delta := _st_delta
+	_play(_st_wanted[0], _st_wanted[1])
+	var matched := _matched_rate(legs.along_speed if _motion.has("velocity") else _st_speed, delta)
 	if not is_nan(matched):
 		_set_clip_rate(matched)
-	_set_clip_detail(far > ANIM_FAR)
+	_set_clip_detail(_st_far > ANIM_FAR)
 	_advance_clip(delta)
 	_apply_overlays()
-	if not _apply_upper(seen, far, up):
-		if seen:
-			_apply_aim()
-		_ease.step(_skeleton, delta)
-		legs.apply(_skeleton, up)
-		if seen and far <= ANIM_FAR:
-			_apply_carry()
-		if seen and far <= SUPPORT_RANGE:
-			_apply_support()
-	if seen and far <= ANIM_FAR and hold != Hold.GUN:
+	if _apply_upper(_st_seen, _st_far, _st_up, batch):
+		return
+	if _st_seen:
+		_apply_aim()
+	_ease.step(_skeleton, delta)
+	legs.apply(_skeleton, _st_up)
+	if _st_seen and _st_far <= ANIM_FAR:
+		_apply_carry()
+	if _st_seen and _st_far <= SUPPORT_RANGE:
+		_apply_support()
+
+
+## The arms, swim and crawl, then the legs after the upper body: [method _lower_native], else wall, floor, turn limit and resettle.
+func _step_lower(batch: Variant) -> void:
+	var seen := _st_seen
+	var delta := _st_delta
+	if seen and _st_far <= ANIM_FAR and hold != Hold.GUN:
 		arms.apply(_skeleton, _model, _anim.get_animation(clip), _to_figure())
 	_apply_swim(delta)
 	# After the body's tilt: a plant is a world point, so the model must already be where it is drawn.
-	_apply_crawl_feet(speed, delta)
+	_apply_crawl_feet(_st_speed, delta)
 	# Then the legs' own pose turns no faster than they are drawn before the foot hold reads it: the hold then pins a foot where
 	# it is drawn, not where a clip raced at the matched rate would put it, and lets go only once the drawn foot lifts.
 	# Held back after the hold instead, a planted leg is dragged by the limit below and its foot skates.
-	var wall_up := facing.y.normalized()
+	var wall_up := _st_facing.y.normalized()
 	var on_wall := 1.0 if bool(_motion.get("wall_running", false)) and is_inside_tree() else 0.0
 	var rate := deg_to_rad(limb_turn_rate) if seen else 0.0
 	# On the pose as drawn: a floor IK let go on landing turns no faster than a clip.
 	var striking := overlay in STRIKE_CLIPS or arms.release_at < 1.0
 	var arm_rate := deg_to_rad(strike_turn_rate) if striking else -1.0
-	if not _lower_native(seen, delta, on_wall, wall_up, rate, arm_rate):
-		legs.on_wall_then_step(_skeleton, _motion.get("wall", Plane()), wall_up, on_wall, _stride_limit, rate, delta)
-		var planted := _apply_floor(seen, delta)
-		_turn_limit.step(_skeleton, rate, delta, arm_rate)
-		# A leg held back can carry its ankle under the floor again; the lift only lifts, so a foot already up is left. A held foot
-		# stays where the leg was drawn down to, not where the hold first caught it.
-		if planted and _turn_limit.turned():
-			legs.resettle(_skeleton, global_transform * _model.transform * _skel_to_model)
-			legs.on_floor(_skeleton, _model.transform * _skel_to_model, _floor_ankles, floor_lift)
-	_own.cap_colour = look.top
-	_own.apply(_skeleton, _mesh)
+	if _lower_native(seen, delta, on_wall, wall_up, rate, arm_rate, batch):
+		return
+	legs.on_wall_then_step(_skeleton, _motion.get("wall", Plane()), wall_up, on_wall, _stride_limit, rate, delta)
+	var planted := _apply_floor(seen, delta)
+	_turn_limit.step(_skeleton, rate, delta, arm_rate)
+	# A leg held back can carry its ankle under the floor again; the lift only lifts, so a foot already up is left. A held foot
+	# stays where the leg was drawn down to, not where the hold first caught it.
+	if planted and _turn_limit.turned():
+		legs.resettle(_skeleton, global_transform * _model.transform * _skel_to_model)
+		legs.on_floor(_skeleton, _model.transform * _skel_to_model, _floor_ankles, floor_lift)
 
 
 ## Counts this frame against [member anim_step] and, when it is not a drawn one, carries its time and returns true.
@@ -439,8 +451,9 @@ func _floor_plan(feet: bool, delta: float) -> int:
 
 
 ## The step's legs after the upper body ([method GSHumanoidLegs.on_wall_then_step], [method _apply_floor], the turn limit and the
-## resettle) as one GameSpice Sim call when [method GSHumanoidNativeLegs.lowers]; false, posing nothing, when it cannot.
-func _lower_native(seen: bool, delta: float, weight: float, up: Vector3, rate: float, arm_rate: float) -> bool:
+## resettle) as one GameSpice Sim call when [method GSHumanoidNativeLegs.lowers] (queued on [param batch] when given); false, posing
+## nothing, when it cannot.
+func _lower_native(seen: bool, delta: float, weight: float, up: Vector3, rate: float, arm_rate: float, batch: Variant = null) -> bool:
 	if _skeleton == null or _model == null or legs._n == null or _turn_limit._n == null or _stride_limit._n == null \
 			or not GSHumanoidNativeLegs.lowers():
 		return false
@@ -463,20 +476,15 @@ func _lower_native(seen: bool, delta: float, weight: float, up: Vector3, rate: f
 	a[8] = FOOT_HOLD_RELEASE
 	a[9] = floor_lift
 	a[10] = arm_rate
-	var holding: bool = legs._n.call(&"lower", _skeleton, to_skel * wall, (to_skel.basis * up).normalized(), _turn_limit._n, _stride_limit._n,
-		global_transform * to_figure, to_figure, _floor_ankles, a)
-	if plan & 3 == 2:
-		_landing = _landing and holding
+	_st_plan = plan
+	var wall_at := to_skel * wall
+	var up_at := (to_skel.basis * up).normalized()
+	var to_world := global_transform * to_figure
+	if batch is Array:
+		batch.append_array([legs._n, _skeleton, wall_at, up_at, _turn_limit._n, _stride_limit._n, to_world, to_figure, _floor_ankles, a])
+	else:
+		_lower_done(legs._n.call(&"lower", _skeleton, wall_at, up_at, _turn_limit._n, _stride_limit._n, to_world, to_figure, _floor_ankles, a))
 	return true
-
-
-func _skeleton_up() -> Vector3:
-	return (_to_figure().basis.inverse() * Vector3.UP).normalized()
-
-
-func _apply_crawl_feet(speed: float, dt: float) -> void:
-	var id := StringName(downed_clips.get(&"crawl", GSHumanoidClips.CRAWL))
-	_crawl.step(self, _skeleton, downed and not propped and clip == id and _current_clip() == id, speed, dt)
 
 
 ## Puts back whatever a death took off: every bone at its own size again. For a respawn.
