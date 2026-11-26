@@ -268,9 +268,12 @@ func _animate_step(speed: float, p_delta: float) -> void:
 
 	var up := _skeleton_up()
 	# Undone in the reverse of the order they were written: the turn limit last, so first.
-	_turn_limit.restore(_skeleton)
-	legs.restore(_skeleton)
-	_stride_limit.restore(_skeleton)
+	if legs._n != null and _turn_limit._n != null and _stride_limit._n != null and GSHumanoidNativeLegs.restores():
+		legs._n.call(&"restore_with", _skeleton, _turn_limit._n, _stride_limit._n)
+	else:
+		_turn_limit.restore(_skeleton)
+		legs.restore(_skeleton)
+		_stride_limit.restore(_skeleton)
 	_play(wanted[0], wanted[1])
 	var matched := _matched_rate(legs.along_speed if _motion.has("velocity") else speed, delta)
 	if not is_nan(matched):
@@ -291,11 +294,11 @@ func _animate_step(speed: float, p_delta: float) -> void:
 	_apply_swim(delta)
 	# After the body's tilt: a plant is a world point, so the model must already be where it is drawn.
 	_apply_crawl_feet(speed, delta)
-	legs.on_wall(_skeleton, _motion.get("wall", Plane()), facing.y.normalized(), 1.0 if bool(_motion.get("wall_running", false)) and is_inside_tree() else 0.0)
-	# The legs' own pose turns no faster than they are drawn before the foot hold reads it: the hold then pins a foot where
+	# Then the legs' own pose turns no faster than they are drawn before the foot hold reads it: the hold then pins a foot where
 	# it is drawn, not where a clip raced at the matched rate would put it, and lets go only once the drawn foot lifts.
 	# Held back after the hold instead, a planted leg is dragged by the limit below and its foot skates.
-	_stride_limit.step(_skeleton, deg_to_rad(limb_turn_rate) if seen else 0.0, delta)
+	legs.on_wall_then_step(_skeleton, _motion.get("wall", Plane()), facing.y.normalized(), 1.0 if bool(_motion.get("wall_running", false)) and is_inside_tree() else 0.0,
+		_stride_limit, deg_to_rad(limb_turn_rate) if seen else 0.0, delta)
 	var planted := _apply_floor(seen, delta)
 	# On the pose as drawn: a floor IK let go on landing turns no faster than a clip.
 	var striking := overlay in STRIKE_CLIPS or arms.release_at < 1.0

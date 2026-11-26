@@ -16,8 +16,13 @@ const POSE_CLASS := &"GSSimFigurePose"
 ## Pose the legs and cap the turn in GameSpice Sim when it is loaded (the same pose as the scripts);
 ## off keeps the scripts. Read when a [GSHumanoidLegs] or [GSHumanoidTurnLimit] is made.
 static var native := true
+## With [member native], hand a figure's back-to-back bone steps to GameSpice Sim as one call each
+## (`restore_with`, `on_wall_with`: the same pose); off makes one call per step, the fallback.
+static var fused := true
 static var _known := -1
 static var _carries := -1
+static var _restores := -1
+static var _fuses := -1
 
 
 ## Whether the gs_sim extension provides all three classes (an older library without the pose class
@@ -58,3 +63,19 @@ static func pose() -> RefCounted:
 	if not native or not available():
 		return null
 	return ClassDB.instantiate(POSE_CLASS)
+
+
+## Whether the loaded `GSSimLegs` undoes a figure's turn limit, legs and stride limit in one call
+## (`restore_with`); an older library takes the three calls. Off with [member native] or [member fused].
+static func restores() -> bool:
+	if _restores < 0:
+		_restores = 1 if available() and ClassDB.class_has_method(LEGS_CLASS, &"restore_with") else 0
+	return native and fused and _restores == 1
+
+
+## Whether the loaded `GSSimLegs` sets the feet on a wall and steps the stride limit in one call
+## (`on_wall_with`); an older library takes the two calls. Off with [member native] or [member fused].
+static func fuses() -> bool:
+	if _fuses < 0:
+		_fuses = 1 if available() and ClassDB.class_has_method(LEGS_CLASS, &"on_wall_with") else 0
+	return native and fused and _fuses == 1

@@ -156,6 +156,19 @@ func on_wall(skeleton: Skeleton3D, wall: Plane, up: Vector3, weight: float) -> v
 		skeleton.set_bone_pose_position(leg[2], reached if parent < 0 else GSHumanoidIk.global_pose(skeleton, parent).affine_inverse() * reached)
 
 
+## [method on_wall], then [param stride]'s [method GSHumanoidTurnLimit.step] at [param rate] over [param dt]:
+## one GameSpice Sim call when both are native and [method GSHumanoidNativeLegs.fuses].
+func on_wall_then_step(skeleton: Skeleton3D, wall: Plane, up: Vector3, weight: float, stride: GSHumanoidTurnLimit, rate: float, dt: float) -> void:
+	if _n == null or stride._n == null or not GSHumanoidNativeLegs.fuses():
+		on_wall(skeleton, wall, up, weight)
+		stride.step(skeleton, rate, dt)
+		return
+	wall_weight = clampf(weight, 0.0, 1.0)
+	var on := skeleton != null and wall_weight > 0.0 and wall.normal != Vector3.ZERO
+	var to_skel := skeleton.global_transform.affine_inverse() if on else Transform3D.IDENTITY
+	_n.call(&"on_wall_with", skeleton, to_skel * wall, (to_skel.basis * up).normalized(), wall_weight if on else 0.0, stride._n, rate, dt)
+
+
 ## Lifts each drawn ankle (the end of its leg: the foot bones are IK controls the mesh does not follow) that the pose puts under [param floor_y] (per leg, its rest height in the figure's frame) back up to it, by two-bone IK on
 ## the leg; the knee bends further, the foot control is left alone. [param to_figure] is skeleton space to the figure's frame (y up, the floor at its origin, or [param raised] above it). Drawing only: nothing a game
 ## simulates reads these bones. [method restore] puts the leg back before the next clip frame, so lifts never add up.

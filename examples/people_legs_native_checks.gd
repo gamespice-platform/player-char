@@ -5,7 +5,8 @@ extends RefCounted
 ## [code]GSSimLegs[/code] and [code]GSSimTurnLimit[/code] ([GSHumanoidNativeLegs]), and every bone's
 ## pose is compared each frame (within [constant TOLERANCE]), then each path's cost per
 ## [method GSHumanoidFigure.animate]. With no library it says the native half was skipped and passes;
-## [code]GS_SIM_REQUIRE_NATIVE=1[/code] (CI) fails instead. Always three checks.
+## [code]GS_SIM_REQUIRE_NATIVE=1[/code] (CI) fails instead. A third figure makes one native call per
+## step ([member GSHumanoidNativeLegs.fused] off) and must pose to the bit like the fused one. Always four checks.
 
 const Motion := preload("people_native_motion.gd")
 ## The native kernels do the script's f32 vector maths in its order; a float step of slack keeps a
@@ -32,6 +33,7 @@ func run() -> void:
 	var by_script := Motion.figure(world)
 	GSHumanoidNativeLegs.native = true
 	var by_native := Motion.figure(world)
+	var by_steps := Motion.figure(world)
 	GSHumanoidNativeLegs.native = was
 	var on_native: bool = by_native.legs._n != null and by_native._turn_limit._n != null
 	var worst := 0.0
@@ -42,18 +44,22 @@ func run() -> void:
 	var walled := 0
 	var carried := 0
 	var supported := 0
+	var split := 0.0
 	# A sniper, chosen by the game: the carry gives the other hand the foregrip, and its shots work the bolt.
-	for f: GSHumanoidFigure in [by_script, by_native]:
+	for f: GSHumanoidFigure in [by_script, by_native, by_steps]:
 		f.carry.set_class(&"sniper")
 	for i in Motion.FRAMES:
 		var motion := Motion.motion(i)
-		for f: GSHumanoidFigure in [by_script, by_native]:
+		for f: GSHumanoidFigure in [by_script, by_native, by_steps]:
+			GSHumanoidNativeLegs.fused = f != by_steps
 			_carry_script(f.carry, i)
 			f.position += (motion["velocity"] as Vector3) / 60.0
 			Motion.on_wall(motion, i, f.position)
 			f.aim(sin(i * 0.07) * 0.5)
 			f.set_motion(motion)
 			f.animate(Motion.speed(i), 1.0 / 60.0)
+		GSHumanoidNativeLegs.fused = true
+		split = maxf(split, Motion.gap(by_native.skeleton(), by_steps.skeleton()))
 		var d := Motion.gap(by_script.skeleton(), by_native.skeleton())
 		var grip_a := by_script.carry.support_grip
 		var grip_b := by_native.carry.support_grip
@@ -87,6 +93,8 @@ func run() -> void:
 	var native_us := Motion.cost(by_native) if on_native else 0.0
 	suite._line("  per figure: animate with script legs %.2f us, native legs %.2f us" % [script_us, native_us])
 	suite._check(not native or on_native, "native on gives a figure GameSpice Sim's legs and turn limits")
+	suite._check(split == 0.0 or not native, "one native call per step poses like the fused calls (restore %s, wall and stride %s): gap %s"
+		% [GSHumanoidNativeLegs.restores(), GSHumanoidNativeLegs.fuses(), String.num_scientific(split)])
 	world.queue_free()
 	await suite.get_tree().process_frame
 
