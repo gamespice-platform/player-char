@@ -8,6 +8,8 @@ extends Node3D
 ## to [constant ANIM_FAR], and every fourth beyond.
 const ANIM_NEAR := 22.0
 const ANIM_FAR := 45.0
+## Bones (by name prefix) the native clips stop posing past [constant ANIM_FAR].
+const FAR_SKIPPED_BONES: Array[String] = ["Thumb", "Index", "Middle", "Ring", "Pinky"]
 
 ## Out of the camera's view or hidden, the frame step is this many times its distance's: only a shadow and a kill-cam
 ## recording see the pose. Hit zones are not bones, so they never lag.

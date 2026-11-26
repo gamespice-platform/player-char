@@ -93,13 +93,13 @@ func _sprint_clip_for(speed: float) -> bool:
 func _matched_rate(speed: float, dt: float) -> float:
 	if dt <= 0.0 or not state in STRIDE_STATES:
 		return NAN
-	if not clip in STRIDE_CLIPS or _anim.current_animation != String(clip):
+	if not clip in STRIDE_CLIPS or _current_clip() != clip:
 		return NAN
 	var table := _stride_for(clip)
 	if table.size() < 2 or table[-1] <= 0.0:
 		return NAN
-	var length := _anim.current_animation_length
-	var phase := fposmod(_anim.current_animation_position, length) / length
+	var length := _clip_length()
+	var phase := fposmod(_clip_position(), length) / length
 	var back := -1.0 if legs.backward else 1.0
 	var want := GSHumanoidStride.distance_at(table, phase) + back * speed * dt
 	var laps := floorf(want / table[-1])
@@ -120,11 +120,14 @@ func _stride_for(clip_id: StringName) -> PackedFloat32Array:
 func _play(wanted: StringName, rate: float) -> void:
 	if _anim == null:
 		return
+	# An action uploaded after the clips were baked: this figure goes back to its mixer.
+	if _clips != null and _anim.has_animation(wanted) and not bool(_clips.call(&"has_animation", wanted)):
+		_drop_native_clips()
 	if not _anim.has_animation(wanted):
 		wanted = GSHumanoidClips.IDLE
 		if not _anim.has_animation(wanted):
 			return
-	_anim.speed_scale = rate
+	_set_clip_rate(rate)
 	if clip == wanted:
 		return
 	var from := _stride_fraction()
@@ -139,20 +142,20 @@ func _play(wanted: StringName, rate: float) -> void:
 	if cross:
 		_ease.begin(_skeleton, _upper, HAND_BONE, blend if stance else GSHumanoidBlend.SECONDS)
 	var feet := GSHumanoidStride.feet_now(_skeleton, _to_figure()) if cross else PackedVector3Array()
-	_anim.play(wanted, 0.0 if cross else blend)
+	_play_clip(wanted, 0.0 if cross else blend)
 	if cross and not feet.is_empty():
-		_anim.seek(GSHumanoidStride.matching_time(_anim.get_animation(wanted), _skeleton, _model, _to_figure(), feet), true)
+		_seek_clip(GSHumanoidStride.matching_time(_anim.get_animation(wanted), _skeleton, _model, _to_figure(), feet))
 
 
 ## How far through its stride the playing clip's planted foot is, 0 to 1, or -1 when it is not a stride clip. A clip entered at this fraction keeps the foot it stands on travelling with the ground.
 func _stride_fraction() -> float:
-	if not clip in STRIDE_CLIPS or _anim.current_animation != String(clip):
+	if not clip in STRIDE_CLIPS or _current_clip() != clip:
 		return -1.0
 	var table := _stride_for(clip)
 	if table.size() < 2 or table[-1] <= 0.0:
 		return -1.0
-	var length := _anim.current_animation_length
-	return GSHumanoidStride.distance_at(table, fposmod(_anim.current_animation_position, length) / length) / table[-1]
+	var length := _clip_length()
+	return GSHumanoidStride.distance_at(table, fposmod(_clip_position(), length) / length) / table[-1]
 
 
 ## Ends a looping or full-body action when the player leaves the spot: a pose is for standing.
@@ -294,3 +297,87 @@ func _to_figure() -> Transform3D:
 		_frame_tf = out
 		_frame_tf_ok = true
 	return out
+
+
+## Plays the clips in GameSpice Sim when it can ([GSHumanoidNativeClips]), leaving the mixer inactive.
+func _start_native_clips() -> void:
+	_clips = GSHumanoidNativeClips.player_for(_anim, _skeleton)
+	_clips_far = false
+	_anim.active = _clips == null
+
+
+## Past [constant ANIM_FAR] the native clips stop posing the fingers (under a pixel there): fewer
+## bones sampled and written. The [AnimationPlayer] fallback always poses every bone.
+func _set_clip_detail(far: bool) -> void:
+	if _clips == null or far == _clips_far:
+		return
+	_clips_far = far
+	var skip := PackedByteArray()
+	if far:
+		skip.resize(_skeleton.get_bone_count())
+		for i in skip.size():
+			var bone_name := _skeleton.get_bone_name(i)
+			for root: String in FAR_SKIPPED_BONES:
+				if bone_name.begins_with(root):
+					skip[i] = 1
+					break
+	_clips.call(&"set_skip", skip)
+
+
+## Back to the [AnimationPlayer], on the clip playing now.
+func _drop_native_clips() -> void:
+	var was := _current_clip()
+	var at := _clip_position()
+	var rate := _clip_rate()
+	_clips = null
+	_anim.active = true
+	_anim.speed_scale = rate
+	if was != &"":
+		_anim.play(was, 0.0)
+		_anim.seek(at, true)
+
+
+# The playback calls of [member _anim], or of [member _clips] when the clips play natively.
+func _play_clip(wanted: StringName, blend: float) -> void:
+	if _clips != null:
+		_clips.call(&"play", wanted, blend)
+	else:
+		_anim.play(wanted, blend)
+
+
+func _seek_clip(time: float) -> void:
+	if _clips != null:
+		_clips.call(&"seek", time, true)
+	else:
+		_anim.seek(time, true)
+
+
+func _advance_clip(delta: float) -> void:
+	if _clips != null:
+		_clips.call(&"advance", delta)
+	else:
+		_anim.advance(delta)
+
+
+## The mixer's speed scale is kept too: what reads the figure's clip rate reads it there.
+func _set_clip_rate(rate: float) -> void:
+	_anim.speed_scale = rate
+	if _clips != null:
+		_clips.call(&"set_speed_scale", rate)
+
+
+func _clip_rate() -> float:
+	return float(_clips.call(&"get_speed_scale")) if _clips != null else _anim.speed_scale
+
+
+## The playing clip, empty when none plays (a one-shot clip that ended).
+func _current_clip() -> StringName:
+	return StringName(_clips.call(&"current_animation")) if _clips != null else StringName(_anim.current_animation)
+
+
+func _clip_position() -> float:
+	return float(_clips.call(&"current_animation_position")) if _clips != null else _anim.current_animation_position
+
+
+func _clip_length() -> float:
+	return float(_clips.call(&"current_animation_length")) if _clips != null else _anim.current_animation_length

@@ -251,6 +251,10 @@ var _mesh: MeshInstance3D = null
 var _details: Array[Mesh] = []
 var _detail := 0
 var _anim: AnimationPlayer = null
+# The clips played in GameSpice Sim ([GSHumanoidNativeClips]); null plays them on [member _anim].
+var _clips: RefCounted = null
+## Whether [member _clips] leaves the fingers alone ([method _set_clip_detail]).
+var _clips_far := false
 var _hand: Node3D = null
 
 ## How far a held weapon should add its own sprint carry, 0 to 1: set by `sprinting` in [method set_motion], eased

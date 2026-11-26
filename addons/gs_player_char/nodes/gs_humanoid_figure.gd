@@ -35,9 +35,10 @@ func build(p_look: GSHumanoidLook, p_height: float = 1.8) -> void:
 	_prepare_animation()
 	_fit_to_height()
 	_index_bones()
+	_start_native_clips()
 
 	_play(GSHumanoidClips.IDLE, 1.0)
-	_anim.advance(0.0)
+	_advance_clip(0.0)
 
 
 ## Finds the skeleton and meshes of the new body and folds the detail meshes into one instance.
@@ -135,6 +136,7 @@ func _forget_body() -> void:
 		_skeleton = null
 		_mesh = null
 		_anim = null
+		_clips = null
 	_lift_at = Vector3.INF
 
 
@@ -272,8 +274,9 @@ func _animate_step(speed: float, p_delta: float) -> void:
 	_play(wanted[0], wanted[1])
 	var matched := _matched_rate(legs.along_speed if _motion.has("velocity") else speed, delta)
 	if not is_nan(matched):
-		_anim.speed_scale = matched
-	_anim.advance(delta)
+		_set_clip_rate(matched)
+	_set_clip_detail(far > ANIM_FAR)
+	_advance_clip(delta)
 	_apply_overlays()
 	if seen:
 		_apply_aim()
@@ -419,7 +422,7 @@ func _skeleton_up() -> Vector3:
 
 func _apply_crawl_feet(speed: float, dt: float) -> void:
 	var id := StringName(downed_clips.get(&"crawl", GSHumanoidClips.CRAWL))
-	_crawl.step(self, _skeleton, downed and not propped and clip == id and _anim.current_animation == String(id), speed, dt)
+	_crawl.step(self, _skeleton, downed and not propped and clip == id and _current_clip() == id, speed, dt)
 
 
 ## Puts back whatever a death took off: every bone at its own size again. For a respawn.
