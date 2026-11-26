@@ -305,6 +305,8 @@ var _aim_plans: Dictionary = {}
 ## `GSSimFigurePose` for the aim and support hand (null on the script path); with it, [member _aim_plans]
 ## holds the plans flat in a PackedFloat64Array.
 var _pose_n: RefCounted = GSHumanoidNativeLegs.pose()
+## The same object when it also draws the carry, else null for [GSHumanoidCarryPose]'s script.
+var _carry_n: RefCounted = _pose_n if _pose_n != null and GSHumanoidNativeLegs.carries() else null
 var _crown: Node3D = null
 var _machine := GSPlayerAnimState.new()
 var _motion: Dictionary = {}

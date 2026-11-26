@@ -257,7 +257,7 @@ func _apply_carry() -> void:
 		carry.support_grip = Vector3.INF
 		return
 	carry.apply(_skeleton, _model, _anim, _to_figure(), _anim.get_animation(clip), _stride_fraction(), aim_pitch,
-		height / 1.8, _sprint, _speed, _overlay_weight)
+		height / 1.8, _sprint, _speed, _overlay_weight, _carry_n)
 
 
 ## The support arm's bone indices if [param clip_id] keys them (a bone no track writes keeps last frame's pose), else empty; cached per clip.

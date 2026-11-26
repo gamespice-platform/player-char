@@ -17,6 +17,7 @@ const POSE_CLASS := &"GSSimFigurePose"
 ## off keeps the scripts. Read when a [GSHumanoidLegs] or [GSHumanoidTurnLimit] is made.
 static var native := true
 static var _known := -1
+static var _carries := -1
 
 
 ## Whether the gs_sim extension provides all three classes (an older library without the pose class
@@ -42,6 +43,14 @@ static func turn_limit(names: Array[String], arm_names: Array[String]) -> RefCou
 	var made: RefCounted = ClassDB.instantiate(TURN_CLASS)
 	made.call(&"setup", PackedStringArray(names), PackedStringArray(arm_names))
 	return made
+
+
+## Whether the loaded `GSSimFigurePose` also draws the carry ([GSHumanoidCarryPose]); an older library
+## leaves the gun arm to the script. Off with [member native].
+static func carries() -> bool:
+	if _carries < 0:
+		_carries = 1 if available() and ClassDB.class_has_method(POSE_CLASS, &"carry") else 0
+	return native and _carries == 1
 
 
 ## A `GSSimFigurePose` for one [GSHumanoidFigure]'s aim and support hand, or null for the script path.

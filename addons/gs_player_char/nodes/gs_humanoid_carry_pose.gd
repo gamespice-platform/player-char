@@ -92,6 +92,9 @@ var _finger_keyed: Dictionary = {}
 ## Every finger segment past the roots, both hands, and its closed pose from [constant GRIP_CLIP].
 var _grip_bones := PackedInt32Array()
 var _grip_pose: Array[Quaternion] = []
+## The `GSSimFigurePose` that last drew the arm natively, and whether it still needs the body and style.
+var _native: RefCounted = null
+var _native_stale := true
 
 
 ## How the gun is carried: a class ([constant GSHumanoidCarry.CLASSES]: &"rifle", &"pistol", &"sniper", ...), a
@@ -107,6 +110,7 @@ func set_class(kind: Variant) -> void:
 func _set_style(p_style: GSHumanoidCarry) -> void:
 	style = p_style
 	_turns.clear()
+	_native_stale = true
 	if style == null:
 		return
 	var turns: Array[Vector3] = [style.ready_turn, style.sprint_turn, style.aim_turn, style.reload_turn, style.swap_turn]
@@ -146,7 +150,7 @@ func step(delta: float, active: bool) -> void:
 ## Writes the gun arm over the pose. [param to_figure] is the skeleton's frame in the figure's; [param animation] the clip playing; [param phase] how far through its stride (0 to 1, or negative for none); [param pitch] the
 ## view's, radians; [param size] the figure's height over 1.8; [param sprint] the sprint blend; [param speed] m/s; [param under] how much an overlay (a swing, a flinch, a gesture) holds the arms instead.
 func apply(skeleton: Skeleton3D, model: Node3D, anim: AnimationPlayer, to_figure: Transform3D, animation: Animation,
-		phase: float, pitch: float, size: float, sprint: float, speed: float, under: float) -> void:
+		phase: float, pitch: float, size: float, sprint: float, speed: float, under: float, native: RefCounted = null) -> void:
 	support_grip = Vector3.INF
 	var w := weight * (1.0 - clampf(under, 0.0, 1.0))
 	if w <= 0.001 or style == null or _turns.is_empty() or animation == null:
@@ -158,6 +162,16 @@ func apply(skeleton: Skeleton3D, model: Node3D, anim: AnimationPlayer, to_figure
 	var bones: Array[int] = _bones[animation]
 	if bones.is_empty() or _chest < 0:
 		return
+	if native != null:
+		_apply_native(native, skeleton, model, bones, animation, to_figure, w, phase, pitch, size, sprint, speed)
+	else:
+		_apply_script(skeleton, model, bones, animation, to_figure, w, phase, pitch, size, sprint, speed)
+
+
+## [method apply]'s arm in script: the stance blended, ridden on the chest, swayed, pitched and kicked, then the
+## arm bent to put the hand there. The specification `GSSimFigurePose.carry` matches.
+func _apply_script(skeleton: Skeleton3D, model: Node3D, bones: Array[int], animation: Animation, to_figure: Transform3D,
+		w: float, phase: float, pitch: float, size: float, sprint: float, speed: float) -> void:
 	var s := style
 	# The stance, blended: sprint over ready, the aim over both, reload and swap over all.
 	var grip := s.ready_grip.lerp(s.sprint_grip, sprint)
@@ -226,6 +240,36 @@ func apply(skeleton: Skeleton3D, model: Node3D, anim: AnimationPlayer, to_figure
 		support_grip = _support(lower_global * skeleton.get_bone_pose(bones[2]), to_figure, chest.origin, size)
 
 
+## [method apply]'s arm in GameSpice Sim (`GSSimFigurePose.carry`, the same rotations and support point): the body
+## and style are handed over when they change, the frame's state packed in its order.
+func _apply_native(native: RefCounted, skeleton: Skeleton3D, model: Node3D, bones: Array[int], animation: Animation,
+		to_figure: Transform3D, w: float, phase: float, pitch: float, size: float, sprint: float, speed: float) -> void:
+	if native != _native or _native_stale:
+		_native = native
+		_native_stale = false
+		var finger_rest := PackedFloat32Array()
+		for q in _finger_rest:
+			finger_rest.append_array([q.x, q.y, q.z, q.w])
+		var grip_pose := PackedFloat32Array()
+		for q in _grip_pose:
+			grip_pose.append_array([q.x, q.y, q.z, q.w])
+		var hand_rest := skeleton.get_bone_rest(_hand_bone).basis.get_rotation_quaternion() if _hand_bone >= 0 \
+				else Quaternion.IDENTITY
+		native.call(&"carry_body", _chest_chain, _shoulder, _hand_frame, _hand_frame_inv, _chest_ref, hand_rest,
+				_fingers, finger_rest, _grip_bones, grip_pose)
+		var turns := PackedFloat32Array()
+		for q in _turns:
+			turns.append_array([q.x, q.y, q.z, q.w])
+		var s := style
+		native.call(&"carry_style", PackedVector3Array([s.ready_grip, s.sprint_grip, s.aim_grip, s.reload_grip, s.swap_grip]),
+				turns, PackedFloat64Array([s.follow, s.kick, s.kick_climb, s.bolt, s.bolt_back, s.bolt_roll]),
+				s.walk_sway, s.run_sway, s.support)
+	var keyed: PackedByteArray = _finger_keys(skeleton, model, animation) if not _fingers.is_empty() else PackedByteArray()
+	var two := 1.0 if style.two_handed and explicit and swap < 0.5 else 0.0
+	support_grip = native.call(&"carry", skeleton, PackedInt32Array(bones), keyed, to_figure, PackedFloat64Array([
+			w, aim, reload, swap, sprint, phase, pitch, size, speed, _kick, _bolt, _clock, _reload_time, two]))
+
+
 ## Turns the hand's other finger roots by the turn the stance gave the hand bone, from [param was] to [param now]
 ## (all hang off the forearm at the wrist, so the hand stays one piece). A root the clip does not key keeps last
 ## frame's pose, so it is set from its rest against the hand instead of turned again.
@@ -284,6 +328,7 @@ func _support(hand_global: Transform3D, to_figure: Transform3D, chest: Vector3, 
 func _measure(skeleton: Skeleton3D, model: Node3D, anim: AnimationPlayer, to_figure: Transform3D) -> void:
 	_skeleton_id = skeleton.get_instance_id()
 	_bones.clear()
+	_native_stale = true
 	_chest = skeleton.find_bone(CHEST_BONE)
 	var upper := skeleton.find_bone(ARM_BONES[0])
 	_shoulder = skeleton.get_bone_parent(upper) if upper >= 0 else -1
