@@ -55,6 +55,8 @@ var _off_from: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 ## Per leg, whether the step has been taken since the stride ended; [member _armed] while a stride is being followed through.
 var _stepped: Array[bool] = [false, false]
 var _armed := false
+## The bone work in GameSpice Sim ([GSHumanoidNativeLegs]), or null for this script's.
+var _n: RefCounted = GSHumanoidNativeLegs.legs()
 
 
 ## Reads the ground [param velocity] (world) against [param facing] (the figure's world basis) and eases the twist.
@@ -77,6 +79,9 @@ func update(facing: Basis, velocity: Vector3, dt: float) -> void:
 
 ## Puts back what [method apply] wrote, before the clip is advanced: a bone no track keys would keep it and add up.
 func restore(skeleton: Skeleton3D) -> void:
+	if _n != null:
+		_n.call(&"restore", skeleton)
+		return
 	for bone: int in _saved:
 		skeleton.set_bone_pose_rotation(bone, _saved[bone])
 	_saved.clear()
@@ -93,6 +98,9 @@ func apply(skeleton: Skeleton3D, up: Vector3) -> void:
 	_applied_twist = twist
 	_applied_up = up
 	if skeleton == null or is_zero_approx(twist):
+		return
+	if _n != null:
+		_n.call(&"apply", skeleton, up, twist)
 		return
 	if _turn_of != skeleton.get_instance_id() or _turn_count != skeleton.get_bone_count():
 		_turn_of = skeleton.get_instance_id()
@@ -151,6 +159,9 @@ func on_wall(skeleton: Skeleton3D, wall: Plane, up: Vector3, weight: float) -> v
 func on_floor(skeleton: Skeleton3D, to_figure: Transform3D, floor_y: PackedFloat32Array, raised: float = 0.0) -> void:
 	if skeleton == null or floor_y.size() < LEGS.size():
 		return
+	if _n != null:
+		_n.call(&"on_floor", skeleton, to_figure, floor_y, raised)
+		return
 	_legs_for(skeleton)
 	var to_skel := to_figure.affine_inverse()
 	for k in _floor_legs.size():
@@ -182,6 +193,9 @@ func on_floor(skeleton: Skeleton3D, to_figure: Transform3D, floor_y: PackedFloat
 func hold_feet(skeleton: Skeleton3D, to_world: Transform3D, to_figure: Transform3D, floor_y: PackedFloat32Array, height: float, settle: float,
 		reach: float, release: float, dt: float) -> void:
 	if skeleton == null or floor_y.size() < LEGS.size() or dt <= 0.0:
+		return
+	if _n != null:
+		_n.call(&"hold_feet", skeleton, to_world, to_figure, floor_y, height, settle, reach, release, dt)
 		return
 	_legs_for(skeleton)
 	_off = [-1.0, -1.0]
@@ -243,12 +257,17 @@ func _pin(skeleton: Skeleton3D, leg: Array, knee: Transform3D, ankle_s: Vector3,
 
 ## Whether any foot is held by [method hold_feet] or still stepping off its hold ([method step_off]).
 func holding() -> bool:
+	if _n != null:
+		return _n.call(&"holding")
 	return _armed
 
 
 ## Makes [method step_off] follow through without a stride before it: each foot stays where it is drawn once it is down, then steps onto the
 ## clip's pose. For a landing: the air clip's feet come down ahead of the stance the next clip draws.
 func arm() -> void:
+	if _n != null:
+		_n.call(&"arm")
+		return
 	_off = [-1.0, -1.0]
 	_stepped = [false, false]
 	_armed = true
@@ -262,6 +281,9 @@ func arm() -> void:
 func step_off(skeleton: Skeleton3D, to_world: Transform3D, to_figure: Transform3D, floor_y: PackedFloat32Array, height: float,
 		seconds: float, lift: float, dt: float) -> void:
 	if skeleton == null or dt <= 0.0 or floor_y.size() < LEGS.size():
+		return
+	if _n != null:
+		_n.call(&"step_off", skeleton, to_world, to_figure, floor_y, height, seconds, lift, dt)
 		return
 	_legs_for(skeleton)
 	var to_skel := to_world.affine_inverse()
@@ -316,6 +338,9 @@ static func _within_leg(hip: Vector3, target: Vector3, span: float) -> Vector3:
 func resettle(skeleton: Skeleton3D, to_world: Transform3D) -> void:
 	if skeleton == null:
 		return
+	if _n != null:
+		_n.call(&"resettle", skeleton, to_world)
+		return
 	for k in mini(_floor_legs.size(), _holds.size()):
 		if _holds[k] == null:
 			continue
@@ -327,6 +352,9 @@ func resettle(skeleton: Skeleton3D, to_world: Transform3D) -> void:
 
 ## Lets go of every [method hold_feet] hold at once (the feet left the floor, the clip is not a stride, the body was moved).
 func let_go() -> void:
+	if _n != null:
+		_n.call(&"let_go")
+		return
 	_holds = [null, null]
 	_held = [Vector3.ZERO, Vector3.ZERO]
 	_was = [Vector3.INF, Vector3.INF]

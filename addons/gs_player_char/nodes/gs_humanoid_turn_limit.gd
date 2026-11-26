@@ -25,11 +25,14 @@ var _arm: PackedByteArray = PackedByteArray()
 var _drawn: Array[Quaternion] = []
 ## Bone to the rotation the pose had before [method step] turned it back, for [method restore].
 var _saved: Dictionary = {}
+## The same work in GameSpice Sim ([GSHumanoidNativeLegs]), or null for this script's.
+var _n: RefCounted = null
 
 
 ## [param bones] are the bones to turn (names in [constant BONES]).
 func _init(bones: Array[String] = BONES) -> void:
 	names = bones
+	_n = GSHumanoidNativeLegs.turn_limit(bones, ARM_BONES)
 
 
 ## Turns each limb bone of [param skeleton] no further than [param rate] (radians a second) times [param dt] from its
@@ -37,6 +40,9 @@ func _init(bones: Array[String] = BONES) -> void:
 ## own rate in radians a second (a melee strike turns a forearm about 1700 degrees a second, faster than any stride needs):
 ## below 0 the arms take [param rate], 0 draws them as posed.
 func step(skeleton: Skeleton3D, rate: float, dt: float, arm_rate: float = -1.0) -> void:
+	if _n != null:
+		_n.call(&"step", skeleton, rate, dt, arm_rate)
+		return
 	if skeleton == null or rate <= 0.0:
 		_drawn.clear()
 		return
@@ -72,6 +78,9 @@ func step(skeleton: Skeleton3D, rate: float, dt: float, arm_rate: float = -1.0) 
 
 ## Puts back what [method step] turned, before the clip is advanced: a bone no track keys would keep it.
 func restore(skeleton: Skeleton3D) -> void:
+	if _n != null:
+		_n.call(&"restore", skeleton)
+		return
 	if skeleton != null:
 		for bone: int in _saved:
 			skeleton.set_bone_pose_rotation(bone, _saved[bone])
@@ -80,10 +89,15 @@ func restore(skeleton: Skeleton3D) -> void:
 
 ## Whether the last [method step] held a bone back (until [method restore]).
 func turned() -> bool:
+	if _n != null:
+		return _n.call(&"turned")
 	return not _saved.is_empty()
 
 
 ## Forgets the last drawn pose: the next [method step] draws the pose as it is (a figure rebuilt, respawned or put back in view).
 func clear() -> void:
+	if _n != null:
+		_n.call(&"clear")
+		return
 	_drawn.clear()
 	_saved.clear()
