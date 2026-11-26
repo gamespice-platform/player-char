@@ -302,6 +302,9 @@ var _support_chains: Dictionary = {}
 var _overlay_tracks: Dictionary = {}
 ## Per Animation: [GSHumanoidAim.plan] without and with the arm.
 var _aim_plans: Dictionary = {}
+## `GSSimFigurePose` for the aim and support hand (null on the script path); with it, [member _aim_plans]
+## holds the plans flat in a PackedFloat64Array.
+var _pose_n: RefCounted = GSHumanoidNativeLegs.pose()
 var _crown: Node3D = null
 var _machine := GSPlayerAnimState.new()
 var _motion: Dictionary = {}

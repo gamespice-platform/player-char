@@ -2,14 +2,16 @@ class_name GSHumanoidNativeLegs
 extends RefCounted
 
 ## [GSHumanoidLegs]' and [GSHumanoidTurnLimit]'s bone work in GameSpice Sim: `GSSimLegs` turns the
-## root and hips, lifts the ankles off the floor, holds and steps the feet, and `GSSimTurnLimit` caps
-## the limbs' turn, writing the same rotations into the skeleton as the scripts. The scripts keep their
+## root and hips, lifts the ankles off the floor, holds and steps the feet, sets them on a climbed wall,
+## `GSSimTurnLimit` caps the limbs' turn, and `GSSimFigurePose` bends the aim and puts the support hand
+## on the foregrip, writing the same rotations into the skeleton as the scripts. The scripts keep their
 ## fields and decisions and hand the native side what it needs as arguments. Without the extension or
 ## with [member native] off, the scripts pose the bones themselves: the fallback the web build always
 ## runs. Reached through [ClassDB] by name, so nothing needs the extension.
 
 const LEGS_CLASS := &"GSSimLegs"
 const TURN_CLASS := &"GSSimTurnLimit"
+const POSE_CLASS := &"GSSimFigurePose"
 
 ## Pose the legs and cap the turn in GameSpice Sim when it is loaded (the same pose as the scripts);
 ## off keeps the scripts. Read when a [GSHumanoidLegs] or [GSHumanoidTurnLimit] is made.
@@ -17,10 +19,12 @@ static var native := true
 static var _known := -1
 
 
-## Whether the gs_sim extension provides both classes; asked once.
+## Whether the gs_sim extension provides all three classes (an older library without the pose class
+## runs the scripts throughout); asked once.
 static func available() -> bool:
 	if _known < 0:
-		_known = 1 if ClassDB.class_exists(LEGS_CLASS) and ClassDB.class_exists(TURN_CLASS) else 0
+		var all := ClassDB.class_exists(LEGS_CLASS) and ClassDB.class_exists(TURN_CLASS) and ClassDB.class_exists(POSE_CLASS)
+		_known = 1 if all else 0
 	return _known == 1
 
 
@@ -38,3 +42,10 @@ static func turn_limit(names: Array[String], arm_names: Array[String]) -> RefCou
 	var made: RefCounted = ClassDB.instantiate(TURN_CLASS)
 	made.call(&"setup", PackedStringArray(names), PackedStringArray(arm_names))
 	return made
+
+
+## A `GSSimFigurePose` for one [GSHumanoidFigure]'s aim and support hand, or null for the script path.
+static func pose() -> RefCounted:
+	if not native or not available():
+		return null
+	return ClassDB.instantiate(POSE_CLASS)

@@ -1,7 +1,7 @@
 extends RefCounted
 
 ## The people suite's native sections' shared motion script: one look's figure, the stand, walk,
-## sprint, crouch and jump each native section runs on a script-posed and a native-posed figure,
+## sprint, crouch, jump and wall run each native section runs on a script-posed and a native-posed figure,
 ## the worst bone gap between two skeletons and a figure's cost per [method GSHumanoidFigure.animate].
 
 const FRAMES := 240
@@ -21,6 +21,13 @@ static func motion(i: int) -> Dictionary:
 	return {"on_floor": not airborne, "vertical": 3.0 - (i - 150) * 0.25 if airborne else 0.0,
 		"velocity": Vector3(sin(i * 0.05), 0.0, -cos(i * 0.05)) * speed(i), "sprinting": i >= 70 and i < 100,
 		"crouched": i >= 100 and i < 140}
+
+
+## Frames 205 to 234 run along a wall 0.3 m to the figure's right (at [param at]).
+static func on_wall(motion: Dictionary, i: int, at: Vector3) -> void:
+	if i >= 205 and i < 235:
+		motion["wall"] = Plane(Vector3(-1.0, 0.0, 0.0), -(at.x + 0.3))
+		motion["wall_running"] = true
 
 
 static func speed(i: int) -> float:

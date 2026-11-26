@@ -39,10 +39,13 @@ func run() -> void:
 	var legs_posed := 0
 	var held := 0
 	var limited := 0
+	var walled := 0
 	for i in Motion.FRAMES:
 		var motion := Motion.motion(i)
 		for f: GSHumanoidFigure in [by_script, by_native]:
 			f.position += (motion["velocity"] as Vector3) / 60.0
+			Motion.on_wall(motion, i, f.position)
+			f.aim(sin(i * 0.07) * 0.5)
 			f.set_motion(motion)
 			f.animate(Motion.speed(i), 1.0 / 60.0)
 		var d := Motion.gap(by_script.skeleton(), by_native.skeleton())
@@ -55,12 +58,15 @@ func run() -> void:
 			held += 1
 		if by_script._turn_limit.turned() or by_script._stride_limit.turned():
 			limited += 1
-	suite._check((native and on_native and differ == 0 and legs_posed > Motion.FRAMES / 4 and held > 0)
+		if by_script.legs.wall_weight > 0.0:
+			walled += 1
+	suite._check((native and on_native and differ == 0 and legs_posed > Motion.FRAMES / 4 and held > 0 and walled > 0)
 		or (not native and not required),
-		"%d frames of stand, walk, sprint, crouch and jump match the scripts: worst bone gap %s (%d frames over %s; legs posed %d, feet held %d, limbs held back %d)%s"
-		% [Motion.FRAMES, String.num_scientific(worst), differ, String.num_scientific(TOLERANCE), legs_posed, held, limited,
+		"%d frames of stand, walk, sprint, crouch, jump and wall run, aiming, match the scripts: worst bone gap %s (%d frames over %s; legs posed %d, feet held %d, limbs held back %d, on a wall %d)%s"
+		% [Motion.FRAMES, String.num_scientific(worst), differ, String.num_scientific(TOLERANCE), legs_posed, held, limited, walled,
 			"" if native else "; skipped, no library"])
-	suite._check(by_script.legs._n == null and by_script._turn_limit._n == null, "native off keeps the scripts posing the legs")
+	suite._check(by_script.legs._n == null and by_script._turn_limit._n == null and by_script._pose_n == null,
+		"native off keeps the scripts posing the legs, aim and support hand")
 	var script_us := Motion.cost(by_script)
 	var native_us := Motion.cost(by_native) if on_native else 0.0
 	suite._line("  per figure: animate with script legs %.2f us, native legs %.2f us" % [script_us, native_us])

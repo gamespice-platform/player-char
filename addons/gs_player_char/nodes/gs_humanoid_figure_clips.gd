@@ -201,8 +201,23 @@ func _apply_aim() -> void:
 		plans = [null, null]
 	if plans[arm] == null:
 		plans[arm] = GSHumanoidAim.plan(_skeleton, _model, animation, arm == 1)
+		if _pose_n != null:
+			plans[arm] = _flat_plan(plans[arm])
 		_aim_plans[animation] = plans
+	if _pose_n != null:
+		_pose_n.call(&"aim", _skeleton, plans[arm], _to_figure(), aim_pitch, -SPRINT_DROP * sprint_blend)
+		return
 	GSHumanoidAim.apply_plan(_skeleton, plans[arm], _to_figure(), aim_pitch, sprint_blend)
+
+
+## [param plan] (index, parent, share, arm flag per bone) as numbers for `GSSimFigurePose.aim`.
+static func _flat_plan(plan: Array) -> PackedFloat64Array:
+	var out := PackedFloat64Array()
+	out.resize(plan.size())
+	for k in plan.size():
+		var v: Variant = plan[k]
+		out[k] = (1.0 if v else 0.0) if v is bool else float(v)
+	return out
 
 
 ## Where the support hand goes: the weapon's foregrip, [constant Vector3.INF] when the gun is held with one
@@ -229,6 +244,10 @@ func _apply_support() -> void:
 	if chain == null:
 		chain = GSHumanoidIk.chain_to(_skeleton, _skeleton.get_bone_parent(bones[0]))
 		_support_chains[bones[0]] = chain
+	if _pose_n != null:
+		_pose_n.call(&"support", _skeleton, PackedInt32Array(bones), chain, target,
+			_to_figure().basis.inverse() * SUPPORT_POLE, _support_weight)
+		return
 	GSHumanoidIk.two_bone_under(_skeleton, bones, GSHumanoidIk.chain_pose(_skeleton, chain), target,
 		_to_figure().basis.inverse() * SUPPORT_POLE, _support_weight)
 

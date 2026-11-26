@@ -130,6 +130,9 @@ func on_wall(skeleton: Skeleton3D, wall: Plane, up: Vector3, weight: float) -> v
 	var to_skel := skeleton.global_transform.affine_inverse()
 	var plane := to_skel * wall
 	var up_s := (to_skel.basis * up).normalized()
+	if _n != null:
+		_n.call(&"on_wall", skeleton, plane, up_s, wall_weight)
+		return
 	var heights: Array[float] = []
 	var ankles: Array[Vector3] = []
 	var ids: Array = []
