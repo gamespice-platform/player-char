@@ -327,6 +327,8 @@ var _upper: Dictionary = {}
 # lookup in the frame path formats no strings.
 var _upper_paths: Dictionary = {}
 var _ease := GSHumanoidBlend.new()
+## [method _lower_native]'s arguments, kept so a step allocates nothing.
+var _lower_args := PackedFloat64Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 var _turn_limit := GSHumanoidTurnLimit.new()
 ## The legs' clip pose held to [member limb_turn_rate] before the foot hold reads it (see [method animate]).
 var _stride_limit := GSHumanoidTurnLimit.new(GSHumanoidTurnLimit.LEG_BONES)

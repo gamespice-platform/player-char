@@ -17,13 +17,14 @@ const POSE_CLASS := &"GSSimFigurePose"
 ## off keeps the scripts. Read when a [GSHumanoidLegs] or [GSHumanoidTurnLimit] is made.
 static var native := true
 ## With [member native], hand a figure's back-to-back bone steps to GameSpice Sim as one call each
-## (`restore_with`, `on_wall_with`, `upper`: the same pose); off makes one call per step, the fallback.
+## (`restore_with`, `on_wall_with`, `upper`, `lower`: the same pose); off makes one call per step, the fallback.
 static var fused := true
 static var _known := -1
 static var _carries := -1
 static var _restores := -1
 static var _fuses := -1
 static var _chains := -1
+static var _lowers := -1
 
 
 ## Whether the gs_sim extension provides all three classes (an older library without the pose class
@@ -88,3 +89,11 @@ static func chains() -> bool:
 	if _chains < 0:
 		_chains = 1 if available() and ClassDB.class_has_method(POSE_CLASS, &"upper") else 0
 	return native and fused and _chains == 1
+
+
+## Whether, with [member fused], a figure's legs after the upper body (wall, stride limit, floor, feet's hold, turn limit and
+## resettle) are one call (`GSSimLegs.lower`); an older library makes them one by one.
+static func lowers() -> bool:
+	if _lowers < 0:
+		_lowers = 1 if available() and ClassDB.class_has_method(LEGS_CLASS, &"lower") else 0
+	return native and fused and _lowers == 1

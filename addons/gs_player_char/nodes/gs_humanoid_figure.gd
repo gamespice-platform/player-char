@@ -298,17 +298,21 @@ func _animate_step(speed: float, p_delta: float) -> void:
 	# Then the legs' own pose turns no faster than they are drawn before the foot hold reads it: the hold then pins a foot where
 	# it is drawn, not where a clip raced at the matched rate would put it, and lets go only once the drawn foot lifts.
 	# Held back after the hold instead, a planted leg is dragged by the limit below and its foot skates.
-	legs.on_wall_then_step(_skeleton, _motion.get("wall", Plane()), facing.y.normalized(), 1.0 if bool(_motion.get("wall_running", false)) and is_inside_tree() else 0.0,
-		_stride_limit, deg_to_rad(limb_turn_rate) if seen else 0.0, delta)
-	var planted := _apply_floor(seen, delta)
+	var wall_up := facing.y.normalized()
+	var on_wall := 1.0 if bool(_motion.get("wall_running", false)) and is_inside_tree() else 0.0
+	var rate := deg_to_rad(limb_turn_rate) if seen else 0.0
 	# On the pose as drawn: a floor IK let go on landing turns no faster than a clip.
 	var striking := overlay in STRIKE_CLIPS or arms.release_at < 1.0
-	_turn_limit.step(_skeleton, deg_to_rad(limb_turn_rate) if seen else 0.0, delta, deg_to_rad(strike_turn_rate) if striking else -1.0)
-	# A leg held back can carry its ankle under the floor again; the lift only lifts, so a foot already up is left. A held foot
-	# stays where the leg was drawn down to, not where the hold first caught it.
-	if planted and _turn_limit.turned():
-		legs.resettle(_skeleton, global_transform * _model.transform * _skel_to_model)
-		legs.on_floor(_skeleton, _model.transform * _skel_to_model, _floor_ankles, floor_lift)
+	var arm_rate := deg_to_rad(strike_turn_rate) if striking else -1.0
+	if not _lower_native(seen, delta, on_wall, wall_up, rate, arm_rate):
+		legs.on_wall_then_step(_skeleton, _motion.get("wall", Plane()), wall_up, on_wall, _stride_limit, rate, delta)
+		var planted := _apply_floor(seen, delta)
+		_turn_limit.step(_skeleton, rate, delta, arm_rate)
+		# A leg held back can carry its ankle under the floor again; the lift only lifts, so a foot already up is left. A held foot
+		# stays where the leg was drawn down to, not where the hold first caught it.
+		if planted and _turn_limit.turned():
+			legs.resettle(_skeleton, global_transform * _model.transform * _skel_to_model)
+			legs.on_floor(_skeleton, _model.transform * _skel_to_model, _floor_ankles, floor_lift)
 	_own.cap_colour = look.top
 	_own.apply(_skeleton, _mesh)
 
@@ -390,6 +394,27 @@ func _lift_body() -> void:
 ## Stands the body on the floor and lifts drawn ankles out of it; returns whether the feet were kept out of the floor.
 ## With [param delta] (a clip step), a stride's planted feet are first held where they came down ([member foot_hold_reach]).
 func _apply_floor(feet: bool = true, delta: float = 0.0) -> bool:
+	var plan := _floor_plan(feet, delta)
+	match plan & 3:
+		1:
+			var to_figure := _model.transform * _skel_to_model
+			legs.hold_feet(_skeleton, global_transform * to_figure, to_figure, _floor_ankles, FOOT_HOLD_HEIGHT, FOOT_HOLD_SETTLE,
+				foot_hold_reach, FOOT_HOLD_RELEASE, delta)
+		2:
+			var to_figure := _model.transform * _skel_to_model
+			legs.step_off(_skeleton, global_transform * to_figure, to_figure, _floor_ankles, FOOT_HOLD_HEIGHT,
+				foot_land_plant if _landing else foot_step_off, FOOT_STEP_LIFT, delta)
+			_landing = _landing and legs.holding()
+		3:
+			legs.let_go()
+	if plan & 4:
+		legs.on_floor(_skeleton, _model.transform * _skel_to_model, _floor_ankles, floor_lift)
+	return plan & 4 != 0
+
+
+## [method _apply_floor]'s decisions and their state, posing nothing: the body is stood on the floor first, then bits 0 and 1
+## say what the feet's hold does (1 holds them, 2 steps them off, 3 lets go, 0 nothing) and bit 2 that the feet are on the floor.
+func _floor_plan(feet: bool, delta: float) -> int:
 	_lift_body()
 	var on_floor := _skeleton != null and not (downed or seated or driving) and bool(_motion.get("on_floor", true)) \
 		and not bool(_motion.get("wall_running", false)) and not state in OFF_FLOOR_STATES
@@ -399,25 +424,50 @@ func _apply_floor(feet: bool = true, delta: float = 0.0) -> bool:
 			and not (state in STRIDE_STATES and clip in STRIDE_CLIPS) and is_inside_tree():
 		legs.arm()
 		_landing = true
+	var plan := 4 if grounded else 0
 	if delta > 0.0:
 		_on_floor_before = on_floor
-	if delta > 0.0:
 		if grounded and foot_hold_reach > 0.0 and state in STRIDE_STATES and clip in STRIDE_CLIPS and is_inside_tree():
 			_landing = false
-			var to_figure := _model.transform * _skel_to_model
-			legs.hold_feet(_skeleton, global_transform * to_figure, to_figure, _floor_ankles, FOOT_HOLD_HEIGHT, FOOT_HOLD_SETTLE,
-				foot_hold_reach, FOOT_HOLD_RELEASE, delta)
+			plan |= 1
 		elif grounded and foot_hold_reach > 0.0 and (foot_land_plant if _landing else foot_step_off) > 0.0 and legs.holding() and is_inside_tree():
-			var to_figure := _model.transform * _skel_to_model
-			legs.step_off(_skeleton, global_transform * to_figure, to_figure, _floor_ankles, FOOT_HOLD_HEIGHT,
-				foot_land_plant if _landing else foot_step_off, FOOT_STEP_LIFT, delta)
-			_landing = _landing and legs.holding()
+			plan |= 2
 		else:
-			legs.let_go()
 			_landing = false
-	if grounded:
-		legs.on_floor(_skeleton, _model.transform * _skel_to_model, _floor_ankles, floor_lift)
-	return grounded
+			plan |= 3
+	return plan
+
+
+## The step's legs after the upper body ([method GSHumanoidLegs.on_wall_then_step], [method _apply_floor], the turn limit and the
+## resettle) as one GameSpice Sim call when [method GSHumanoidNativeLegs.lowers]; false, posing nothing, when it cannot.
+func _lower_native(seen: bool, delta: float, weight: float, up: Vector3, rate: float, arm_rate: float) -> bool:
+	if _skeleton == null or _model == null or legs._n == null or _turn_limit._n == null or _stride_limit._n == null \
+			or not GSHumanoidNativeLegs.lowers():
+		return false
+	# The wall in skeleton space before the body is lifted, as the separate calls read it.
+	var wall: Plane = _motion.get("wall", Plane())
+	legs.wall_weight = clampf(weight, 0.0, 1.0)
+	var on := legs.wall_weight > 0.0 and wall.normal != Vector3.ZERO
+	var to_skel := _skeleton.global_transform.affine_inverse() if on else Transform3D.IDENTITY
+	var plan := _floor_plan(seen, delta)
+	var to_figure := _model.transform * _skel_to_model
+	var a := _lower_args
+	a[0] = legs.wall_weight if on else 0.0
+	a[1] = rate
+	a[2] = delta
+	a[3] = plan & 3
+	a[4] = 1.0 if plan & 4 else 0.0
+	a[5] = FOOT_HOLD_HEIGHT
+	a[6] = FOOT_HOLD_SETTLE if plan & 3 == 1 else (foot_land_plant if _landing else foot_step_off)
+	a[7] = foot_hold_reach if plan & 3 == 1 else FOOT_STEP_LIFT
+	a[8] = FOOT_HOLD_RELEASE
+	a[9] = floor_lift
+	a[10] = arm_rate
+	var holding: bool = legs._n.call(&"lower", _skeleton, to_skel * wall, (to_skel.basis * up).normalized(), _turn_limit._n, _stride_limit._n,
+		global_transform * to_figure, to_figure, _floor_ankles, a)
+	if plan & 3 == 2:
+		_landing = _landing and holding
+	return true
 
 
 func _skeleton_up() -> Vector3:
