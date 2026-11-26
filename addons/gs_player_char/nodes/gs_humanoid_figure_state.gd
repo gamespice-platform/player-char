@@ -203,7 +203,7 @@ const ZOMBIE_SPRINT_NATURAL := 6.0
 var sprint_speed: float = 0.0
 const SPRINT_EXIT := 0.8
 
-## Fastest a runner plays the run clip; faster plays the grounded sprint clip, since the run clip's flight hovers.
+## Fastest a 1.8 m runner plays the run clip (scaled by height / 1.8 for other bodies); faster plays the grounded sprint clip, since the run clip's flight hovers.
 const RUN_CLIP_MAX_SPEED := 5.5
 var _sprint_clip: bool = false
 

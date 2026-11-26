@@ -81,8 +81,10 @@ func _sprint_clip_for(speed: float) -> bool:
 		return false
 	var from := sprint_speed if sprint_speed > 0.0 else _machine.run_speed * 1.6
 	# The run clip hovers (both feet up) above its own pace, whoever says sprinting; the sprint clip stays grounded.
-	from = minf(from, RUN_CLIP_MAX_SPEED)
-	var fast := speed >= from - (SPRINT_EXIT if _sprint_clip else 0.0)
+	# That pace is a 1.8 m body's: a smaller one strides shorter, so the same ground speed is a faster run for it.
+	var body := height / 1.8
+	from = minf(from, RUN_CLIP_MAX_SPEED * body)
+	var fast := speed >= from - (SPRINT_EXIT * body if _sprint_clip else 0.0)
 	_sprint_clip = (sprinting or fast) if _motion.has("sprinting") else fast
 	return _sprint_clip
 
