@@ -12,6 +12,7 @@ func _init(host: Node) -> void:
 
 func run() -> void:
 	_check_hand_mesh()
+	await _check_hide_until_fitted()
 
 	var arms := GSPlayerViewArms.new()
 	arms.finger_rate = 0.0
@@ -168,6 +169,30 @@ func _check_extended_reach(arms: GSPlayerViewArms, grip: Vector3) -> void:
 	suite._check(errors[0] > 0.05, "a long forend is out of the arm's plain reach (%.3f m short; the check can fail)" % errors[0])
 	suite._check(errors[1] < 0.03 and arms.describe()["reach_extended"] > 0.0, "extend_reach moves the shoulder out so the support hand lands on it (%.3f m, moved %.3f)" % [errors[1], arms.describe()["reach_extended"]])
 	far.queue_free()
+
+
+## hide_until_fitted: undrawn after a change of mode until fitted and posed; off, drawn at once.
+func _check_hide_until_fitted() -> void:
+	var arms := GSPlayerViewArms.new()
+	arms.hide_until_fitted = true
+	suite.add_child(arms)
+	arms.build(GSHumanoidLook.stock(3), 1.8)
+	arms.set_downed(true)
+	var drawn: Array[bool] = []
+	for i in 6:
+		arms.tick(0.0, 1.0 / 30.0)
+		drawn.append(arms.arms().visible)
+	suite._check(drawn == [false, false, false, true, true, true], "hide_until_fitted: undrawn for the first 3 ticks after the mode change, drawn from the 4th" + " " + str(drawn))
+	arms.set_downed(false)
+	arms.set_downed(true)
+	suite._check(not arms.arms().visible, "a new mode hides the arms again until they are refitted")
+	var plain := GSPlayerViewArms.new()
+	suite.add_child(plain)
+	plain.build(GSHumanoidLook.stock(3), 1.8)
+	plain.set_downed(true)
+	suite._check(plain.arms().visible, "off by default: drawn the moment the mode is set")
+	arms.queue_free()
+	plain.queue_free()
 
 
 func _settle(arms: GSPlayerViewArms, frames: int) -> void:

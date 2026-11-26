@@ -119,7 +119,7 @@ func _apply_mode() -> void:
 	if _arms == null:
 		return
 
-	_arms.visible = shown
+	_arms.visible = shown and not hide_until_fitted
 	var held := _holding()
 	if not (shown and held):
 		for hand in _hands:
@@ -139,6 +139,7 @@ func _apply_mode() -> void:
 		_right.clear()
 		_left.clear()
 	_was_holding = held
+	_show_when_fitted()
 
 
 ## Advances the arms; [param speed] is the player's ground speed, which drives the crawl.
@@ -154,7 +155,7 @@ func tick(speed: float, delta: float) -> void:
 	_hands_for = null
 	_advance_sway(speed, delta)
 
-	if not _fitted and _ticks >= 3 and is_inside_tree():
+	if not _fitted and _ticks >= FIT_TICKS and is_inside_tree():
 		_fit()
 
 	var skeleton: Skeleton3D = (_arms as GSHumanoidFigure).skeleton() if _arms is GSHumanoidFigure else null
@@ -179,6 +180,13 @@ func tick(speed: float, delta: float) -> void:
 	_hands_tick = false
 	_hands_for = null
 	_apply_draw_depth()
+	_show_when_fitted()
+
+
+## With [member hide_until_fitted], the arms show once fitted and posed one tick past [constant FIT_TICKS].
+func _show_when_fitted() -> void:
+	if _arms != null and hide_until_fitted:
+		_arms.visible = shown and _fitted and _ticks > FIT_TICKS
 
 
 ## Hands [member draw_depth] and the eye to the arms' and real hands' material (instance uniforms of [GSViewArmsMaterial]).

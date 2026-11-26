@@ -172,6 +172,11 @@ var bob_amplitude: float = 0.012
 var _arms: Node3D = null
 var _bones: Array[int] = []
 var _fingers: Array[int] = []
+## Keeps the arms undrawn from a change of mode until they are fitted and have been posed for [constant FIT_TICKS] ticks
+## (a refit seats the head bone where the clip's first frames are still settling, so the arms swing into place). Off by default:
+## a host that drives `arms().visible` itself leaves it off.
+var hide_until_fitted: bool = false
+const FIT_TICKS := 3
 var _fitted := false
 var _ticks := 0
 var _head: int = -1
