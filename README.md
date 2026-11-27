@@ -14,7 +14,7 @@ It also includes ragdolls and death reactions, and a ready-made set of animated 
 ## Install
 
 1. Copy `addons/gs_player_char/`, `addons/gs_player/`, `addons/gs_animation/` and `addons/gs_core/` into your project.
-2. Enable all three in *Project > Project Settings > Plugins*.
+2. Enable all four in *Project > Project Settings > Plugins*.
 
 Needs Godot 4.7 or newer.
 
@@ -105,6 +105,27 @@ person.pose(drawn_position, yaw, ground_speed)
 
 Four animated people on one rig, coloured by a look (body, skin, hair, top, bottom). The figure picks idle, walk, run, crouch, jump, fall, swim, climb, sit and death clips from how the player moves, holds a gun with aim, and plays gestures on the upper body. See [docs/people.md](docs/people.md).
 
+## Used by
+
+All fourteen games vendor it:
+
+- [Fatal Contact](https://zeesgames.com/fatal-contact)
+- [Airdrift](https://zeesgames.com/airdrift)
+- [Playlot](https://zeesgames.com/playlot)
+- [Hungario](https://zeesgames.com/hungario)
+- [Buses From Hell](https://zeesgames.com/buses-from-hell)
+- [Smash Copter](https://zeesgames.com/smash-copter)
+- [Zombie Zone](https://zeesgames.com/zombie-zone)
+- [Hide n Seek](https://zeesgames.com/hide-n-seek)
+- [Prop Hunt](https://zeesgames.com/prop-hunt)
+- [Murder Mystery](https://zeesgames.com/murder-mystery)
+- [Deathrun](https://zeesgames.com/deathrun)
+- [Wipeout](https://zeesgames.com/wipeout)
+- [Dangerous Delivery](https://zeesgames.com/dangerous-delivery)
+- [Look At Me](https://zeesgames.com/look-at-me)
+
+The whole collection is at [zeesgames.com](https://zeesgames.com).
+
 ## Credits
 
 | Asset | Author / source | License |
@@ -120,6 +141,6 @@ More: [docs/design.md](docs/design.md), [docs/history.md](docs/history.md).
 
 ## Status and licence
 
-Part of the [**GameSpice**](https://gamespice.net) platform: a family of Godot addons. Written with Claude Code and maintained by `gamemann`. Every addon has headless tests, but little of this has been played by real users yet, so expect rough edges and please [open an issue](https://github.com/gamespice-platform/player-char/issues) when you hit one.
+Part of the [**GameSpice**](https://gamespice.net) platform: a family of Godot addons, MIT licensed and built with Claude Code. It has ten headless scenes in `examples/` (`char_selftest`, `model_selftest`, `anim_selftest`, `ragdoll_selftest` and so on). The games in [Zee's Games](https://zeesgames.com) are built on GameSpice addons and run on live servers, so the characters you see there are this addon in use. Bugs go to the [issue tracker](https://github.com/gamespice-platform/player-char/issues).
 
 MIT licence, see [LICENSE](LICENSE). The only closed part of the [**GameSpice**](https://gamespice.net) platform is the web back end; you can use your own instead of GameSpice's.
