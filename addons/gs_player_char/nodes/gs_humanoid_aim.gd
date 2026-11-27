@@ -31,6 +31,10 @@ static func plan(skeleton: Skeleton3D, model: Node3D, animation: Animation, arm:
 	return out
 
 
+## [method apply_plan]'s parent rotations, reused every call (main thread only).
+static var _parents: Array[Quaternion] = []
+
+
 ## [method apply] with a [method plan] made earlier.
 static func apply_plan(skeleton: Skeleton3D, bones: Array, to_figure: Transform3D, pitch: float, sprint_blend: float) -> void:
 	# Figure right in skeleton space. A collapsed basis (a figure popping in or out) has no inverse:
@@ -43,9 +47,10 @@ static func apply_plan(skeleton: Skeleton3D, bones: Array, to_figure: Transform3
 	# Parents are read before any bone turns; turns about one axis commute, so each share goes on
 	# through the parent's unturned frame: local' = P^-1 * turn * P * local. Use local poses up the
 	# chain, not get_bone_global_pose, which is last frame's (with last frame's bend in it).
-	var parents: Array[Quaternion] = []
-	for k in range(0, bones.size(), 4):
-		parents.append(GSHumanoidIk.chain_rotation(skeleton, bones[k + 1]))
+	var parents := _parents
+	parents.resize((bones.size() + 3) >> 2)  # one per four-entry row
+	for n in parents.size():
+		parents[n] = GSHumanoidIk.chain_rotation(skeleton, bones[n * 4 + 1])
 	for n in parents.size():
 		var k := n * 4
 		var i: int = bones[k]

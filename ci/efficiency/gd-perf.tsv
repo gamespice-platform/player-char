@@ -74,7 +74,6 @@ addons/gs_player_char/core/gs_view_hand_poses.gd::blend::alloc	1
 addons/gs_player_char/core/gs_view_hand_poses.gd::blend::untyped_array	1
 addons/gs_player_char/core/gs_view_hand_poses.gd::frame::untyped_array	1
 addons/gs_player_char/core/gs_view_hand_poses.gd::table::untyped_array	2
-addons/gs_player_char/nodes/gs_humanoid_aim.gd::apply_plan::alloc	1
 addons/gs_player_char/nodes/gs_humanoid_aim.gd::apply_plan::untyped_array	1
 addons/gs_player_char/nodes/gs_humanoid_aim.gd::plan::alloc	2
 addons/gs_player_char/nodes/gs_humanoid_aim.gd::plan::string_build	1
@@ -137,7 +136,6 @@ addons/gs_player_char/nodes/gs_humanoid_figure_clips.gd::_flat_plan::untyped_arr
 addons/gs_player_char/nodes/gs_humanoid_figure_clips.gd::_seek_clip::dynamic_call	1
 addons/gs_player_char/nodes/gs_humanoid_figure_clips.gd::_set_clip_detail::dynamic_call	1
 addons/gs_player_char/nodes/gs_humanoid_figure_clips.gd::_set_clip_rate::dynamic_call	1
-addons/gs_player_char/nodes/gs_humanoid_figure_clips.gd::_step_restore::alloc	1
 addons/gs_player_char/nodes/gs_humanoid_figure_clips.gd::_step_restore::dynamic_call	1
 addons/gs_player_char/nodes/gs_humanoid_figure_clips.gd::_zombie_clip_for::untyped_array	1
 addons/gs_player_char/nodes/gs_humanoid_figure_state.gd::<members>::untyped_array	10

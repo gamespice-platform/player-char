@@ -479,7 +479,10 @@ func _clip_length() -> float:
 func _step_restore(batch: Variant) -> void:
 	if legs._n != null and _turn_limit._n != null and _stride_limit._n != null and GSHumanoidNativeLegs.restores():
 		if batch is Array:
-			batch.append_array([legs._n, _skeleton, _turn_limit._n, _stride_limit._n])
+			batch.append(legs._n)
+			batch.append(_skeleton)
+			batch.append(_turn_limit._n)
+			batch.append(_stride_limit._n)
 		else:
 			legs._n.call(&"restore_with", _skeleton, _turn_limit._n, _stride_limit._n)
 		return
