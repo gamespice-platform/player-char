@@ -316,7 +316,7 @@ func _reach(skeleton: Skeleton3D) -> void:
 	reach_extended_right = 0.0
 	reach_extended_left = 0.0
 
-	var targets := wrist_targets(_grip)
+	var targets := _wrist_targets(_grip)
 	var right_target: Vector3 = targets[0]
 	var support_target: Vector3 = targets[1]
 	_lean(skeleton, figure, right_target, support_target)
@@ -504,24 +504,39 @@ func _grip_hands_now(grip: GSViewGrip) -> Array:
 	if cycle_grip > 0.0 and grip.is_two_hand() and not support.is_empty():
 		var pinch_hand: Dictionary = (hand_poses.get(GSViewHandPoses.KNIFE_THROW, {}) as Dictionary).get(&"firing", {})
 		# Only the digits close to the pinch; the hand keeps the support grip's own orientation and place.
-		var digits := {}
-		for key in [&"thumb", &"index", &"middle", &"ring", &"pinky", &"spread"]:
-			if pinch_hand.has(key):
-				digits[key] = pinch_hand[key]
 		var target := support.duplicate()
-		target.merge(digits, true)
+		for key: StringName in _DIGIT_KEYS:
+			if pinch_hand.has(key):
+				target[key] = pinch_hand[key]
 		support = GSViewHandPoses.blend(support, target, clampf(cycle_grip, 0.0, 1.0))
-	return [firing, support if grip.is_two_hand() else {}]
+	# One pair reused: _grip_hands' memo is the only holder, and it is re-pointed on every fresh read.
+	_hands_pair[0] = firing
+	_hands_pair[1] = support if grip.is_two_hand() else _NO_HAND
+	return _hands_pair
+
+
+const _DIGIT_KEYS: Array[StringName] = [&"thumb", &"index", &"middle", &"ring", &"pinky", &"spread"]
+const _MIRROR_KEYS: Array[StringName] = [&"fingers", &"palm"]
+const _NO_HAND: Dictionary = {}
 
 
 ## A right-hand pose for the left hand: its directions mirrored across the weapon's vertical plane.
 static func _mirrored(hand: Dictionary) -> Dictionary:
 	var out := hand.duplicate()
-	for key in [&"fingers", &"palm"]:
+	for key: StringName in _MIRROR_KEYS:
 		if out.has(key):
 			var v: Vector3 = out[key]
 			out[key] = Vector3(-v.x, v.y, v.z)
 	return out
+
+
+## [method _mirrored] of [param hand], built again only when the pose it came from is another dictionary (the tick's
+## free-hand fist was a fresh copy every frame).
+func _mirrored_cached(hand: Dictionary) -> Dictionary:  # perf-lint: allow untyped_array a hand pose row
+	if not is_same(hand, _mirror_from):
+		_mirror_from = hand
+		_mirror_out = _mirrored(hand)
+	return _mirror_out
 
 
 ## The real hands' world size: life size on the held arms, by [member hand_size] and [member hand_scale] over the mitts' 0.5.
@@ -537,21 +552,30 @@ static func _pose_size(pose: Dictionary) -> float:
 ## Where each wrist (the kit's finger roots) goes on [param grip], world: [firing, support] (support INF for one hand).
 ## Real hands put the wrist where the hand's grip point lands on the weapon; the mitts take [member palm_offset].
 func wrist_targets(grip: GSViewGrip) -> Array[Vector3]:
+	return _wrist_targets(grip).duplicate()
+
+
+## [method wrist_targets] into [member _wrists], reused: the tick reads it at once and keeps nothing.
+func _wrist_targets(grip: GSViewGrip) -> Array[Vector3]:
 	var basis := global_transform.basis
 	if not (real_hands and _hands.size() == 2):
 		var mirrored := basis * Vector3(-palm_offset.x, palm_offset.y, palm_offset.z)
-		return _kept_deep([grip.grip_world() + basis * palm_offset, grip.support_world() + mirrored if grip.is_two_hand() else Vector3.INF])
+		_wrists[0] = grip.grip_world() + basis * palm_offset
+		_wrists[1] = grip.support_world() + mirrored if grip.is_two_hand() else Vector3.INF
+		return _kept_deep(_wrists)
 	var hands := _grip_hands(grip)
 	var s := _hand_world_size()
 	var forward := grip.forward_world()
 	var up := grip.up_world()
-	var centre: Vector3 = (hands[0] as Dictionary).get(&"centre", Vector3.ZERO)
+	var centre: Vector3 = (hands[0] as Dictionary).get(&"centre", Vector3.ZERO)  # perf-lint: allow dynamic_call a Dictionary read, not a property
 	var right := grip.grip_world() - GSViewHandPoses.frame(hands[0], forward, up) * (centre * s * _pose_size(hands[0]))
 	var left := Vector3.INF
 	if grip.is_two_hand():
-		var c: Vector3 = (hands[1] as Dictionary).get(&"centre", Vector3.ZERO)
+		var c: Vector3 = (hands[1] as Dictionary).get(&"centre", Vector3.ZERO)  # perf-lint: allow dynamic_call a Dictionary read, not a property
 		left = grip.support_world() - GSViewHandPoses.frame(hands[1], forward, up) * (Vector3(-c.x, c.y, c.z) * s * _pose_size(hands[1]))
-	return _kept_deep([right, left])
+	_wrists[0] = right
+	_wrists[1] = left
+	return _kept_deep(_wrists)
 
 
 ## [param targets] with each finite one closer to the eye than [member hand_min_depth] moved out along the view's forward to it.
@@ -591,7 +615,7 @@ func _place_hands(skeleton: Skeleton3D) -> void:
 	var support: Dictionary = hands[1]
 	if support.is_empty():
 		# The free hand pumping in a sprint (or shown idle): a fist, knuckles to the view's front.
-		support = _mirrored((hand_poses.get(GSViewHandPoses.FISTS, {}) as Dictionary).get(&"firing", {}))
+		support = _mirrored_cached((hand_poses.get(GSViewHandPoses.FISTS, {}) as Dictionary).get(&"firing", {}))
 		forward = global_transform.basis * Vector3.FORWARD
 		up = global_transform.basis * Vector3.UP
 	# Reaching across to a bolt handle brings the hand near the eye; it shrinks so it stays a hand, not a paddle.
@@ -642,7 +666,7 @@ func hand_error(grip: GSViewGrip) -> float:
 	var skeleton := (_arms as GSHumanoidFigure).skeleton()
 	if skeleton == null:
 		return -1.0
-	var targets := wrist_targets(grip)
+	var targets := _wrist_targets(grip)
 	var pairs := [["Middle1.R", targets[0]]]
 	if grip.is_two_hand():
 		pairs.append(["Middle1.L", targets[1]])

@@ -193,6 +193,12 @@ var _detail_on := false
 var _hands_tick := false
 var _hands_for: GSViewGrip = null
 var _hands_memo: Array = []
+## Reused per tick so the arms allocate nothing for their hands: the [firing, support] pair of
+## [method _grip_hands_now], the two wrist targets, and the mirrored fist with the pose it was built from.
+var _hands_pair: Array[Dictionary] = [{}, {}]
+var _wrists: Array[Vector3] = [Vector3.INF, Vector3.INF]
+var _mirror_from: Dictionary = {}  # perf-lint: allow untyped_array a hand pose row
+var _mirror_out: Dictionary = {}  # perf-lint: allow untyped_array a hand pose row
 ## Bone indices of the arm scale pass, looked up once per skeleton (find_bone by name is a string search per call).
 var _arm_skeleton: Skeleton3D = null
 var _arm_left: Array[int] = []
