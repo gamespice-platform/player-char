@@ -26,6 +26,14 @@ var look_down_back: float = 1.0
 ## Colour of the disc that closes the cut waist in LEGS mode (the look's top: the hem left at the waist); set before [method apply].
 var cap_colour := Color("2f3a4f")
 var _shrunk: Array[int] = []
+var _want_next: Array[int] = []
+## [method apply]'s cached bone lookup and what it was looked up for.
+var _hide_bones: Array[int] = []
+var _hide_skel: int = 0
+var _hide_count: int = -1
+var _hide_mode: int = -1
+var _hide_head: bool = false
+const _NO_NAMES: Array = []
 var _cap: MeshInstance3D = null
 var _shadow: Skeleton3D = null
 
@@ -34,22 +42,36 @@ var _shadow: Skeleton3D = null
 func apply(skeleton: Skeleton3D, mesh: MeshInstance3D) -> void:
 	if skeleton == null:
 		return
-	var want: Array[int] = []
 	var live := effective()
-	# Every other person on the screen is drawn whole: nothing to look up.
-	if hide_head or live != THIRD:
-		var names: Array = HIDDEN_BONES.get(live, []).duplicate()
-		names.append("Head")
-		for bone_name: String in names:
-			var bone := skeleton.find_bone(bone_name)
-			if bone >= 0:
-				want.append(bone)
+	# Bone ids looked up by name only when the skeleton, its bone count or the mode change, not every frame.
+	var skel_id := skeleton.get_instance_id()
+	var count := skeleton.get_bone_count()
+	if skel_id != _hide_skel or count != _hide_count or live != _hide_mode or hide_head != _hide_head:
+		_hide_skel = skel_id
+		_hide_count = count
+		_hide_mode = live
+		_hide_head = hide_head
+		_hide_bones.clear()
+		# Every other person on the screen is drawn whole: nothing to look up.
+		if hide_head or live != THIRD:
+			for bone_name: String in HIDDEN_BONES.get(live, _NO_NAMES):
+				var bone := skeleton.find_bone(bone_name)
+				if bone >= 0:
+					_hide_bones.append(bone)
+			var head := skeleton.find_bone("Head")
+			if head >= 0:
+				_hide_bones.append(head)
+	# Double-buffered with _shrunk: this frame's set is built in last frame's array.
+	var want := _want_next
+	want.clear()
+	want.append_array(_hide_bones)
 	# Put back only what this class shrank: a head a critical took off stays off until mend.
 	for bone in _shrunk:
 		if not bone in want:
 			skeleton.set_bone_pose_scale(bone, Vector3.ONE)
 	for bone in want:
 		skeleton.set_bone_pose_scale(bone, GONE)
+	_want_next = _shrunk
 	_shrunk = want
 	_sync_cap(skeleton)
 	_sync_shadow(skeleton, mesh)

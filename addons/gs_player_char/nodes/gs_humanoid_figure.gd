@@ -183,10 +183,14 @@ func _process(delta: float) -> void:
 	var step := _auto_pending
 	_auto_pending = 0.0
 	var moved := _auto_velocity
-	var motion := _motion.duplicate()
-	motion["vertical"] = moved.y
-	motion["on_floor"] = absf(moved.y) < 1.5
-	_motion = motion
+	# Written into the figure's own copy, never the caller's set_motion Dictionary; copied once per
+	# set_motion instead of per frame.
+	if not is_same(_motion, _auto_motion):
+		_auto_motion.clear()
+		_auto_motion.merge(_motion)
+		_motion = _auto_motion
+	_motion["vertical"] = moved.y
+	_motion["on_floor"] = absf(moved.y) < 1.5
 	var ground := Vector2(moved.x, moved.z).length()
 	if auto_smooth_time > 0.0:
 		ground = lerpf(_speed, ground, 1.0 - exp(-step / auto_smooth_time))

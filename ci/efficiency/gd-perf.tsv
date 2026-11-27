@@ -100,7 +100,6 @@ addons/gs_player_char/nodes/gs_humanoid_figure.gd::_bone_mount::string_build	1
 addons/gs_player_char/nodes/gs_humanoid_figure.gd::_floor_plan::dynamic_call	2
 addons/gs_player_char/nodes/gs_humanoid_figure.gd::_lower_native::alloc	1
 addons/gs_player_char/nodes/gs_humanoid_figure.gd::_lower_native::dynamic_call	2
-addons/gs_player_char/nodes/gs_humanoid_figure.gd::_process::alloc	1
 addons/gs_player_char/nodes/gs_humanoid_figure.gd::_step_lower::dynamic_call	2
 addons/gs_player_char/nodes/gs_humanoid_figure.gd::_step_open::dynamic_call	1
 addons/gs_player_char/nodes/gs_humanoid_figure.gd::_step_state::dynamic_call	1
@@ -166,8 +165,6 @@ addons/gs_player_char/nodes/gs_humanoid_legs.gd::resettle::untyped_array	1
 addons/gs_player_char/nodes/gs_humanoid_legs.gd::step_off::dynamic_call	1
 addons/gs_player_char/nodes/gs_humanoid_legs.gd::step_off::untyped_array	1
 addons/gs_player_char/nodes/gs_humanoid_native_legs.gd::turn_limit::dynamic_call	1
-addons/gs_player_char/nodes/gs_humanoid_own_view.gd::apply::alloc	2
-addons/gs_player_char/nodes/gs_humanoid_own_view.gd::apply::untyped_array	1
 addons/gs_player_char/nodes/gs_humanoid_own_view.gd::describe::untyped_array	1
 addons/gs_player_char/nodes/gs_humanoid_stride.gd::_foot_origins::alloc	3
 addons/gs_player_char/nodes/gs_humanoid_stride.gd::_foot_origins::string_build	1

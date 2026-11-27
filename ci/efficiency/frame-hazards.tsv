@@ -1,6 +1,5 @@
 # frame-hazards
 # Baselines only shrink: scripts/<gate> --update lowers or drops entries and refuses to add.
-addons/gs_player_char/nodes/gs_humanoid_figure.gd::_process::duplicate	1
 addons/gs_player_char/nodes/gs_player_anim_driver.gd::_motion_from_body::alloc_dict	1
 addons/gs_player_char/nodes/gs_player_anim_driver.gd::sinks::alloc_array	1
 addons/gs_player_char/nodes/gs_player_ragdoll.gd::_build_jointed_skeletal::alloc_array	1

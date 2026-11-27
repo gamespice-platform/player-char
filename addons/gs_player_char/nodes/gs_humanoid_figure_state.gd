@@ -310,6 +310,8 @@ var _carry_n: RefCounted = _pose_n if _pose_n != null and GSHumanoidNativeLegs.c
 var _crown: Node3D = null
 var _machine := GSPlayerAnimState.new()
 var _motion: Dictionary = {}
+## The auto-animate copy of [member _motion]: refilled when [method set_motion] hands in a new one.
+var _auto_motion: Dictionary = {}  # perf-lint: allow untyped_array same mixed-key shape as _motion, reused each frame
 var _speed: float = 0.0
 var _overlay_time: float = 0.0
 var _overlay_rate: float = 1.0
