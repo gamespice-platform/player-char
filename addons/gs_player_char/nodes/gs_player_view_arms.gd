@@ -142,12 +142,18 @@ func _apply_mode() -> void:
 	_show_when_fitted()
 
 
+## The debug draw list's stand-in when [member debug_pose] is off (never appended to).
+const _NO_DRAWN: Array = []
+
+
 ## Advances the arms; [param speed] is the player's ground speed, which drives the crawl.
 func tick(speed: float, delta: float) -> void:
 	if _arms == null or not shown:
 		return
 
-	if _arms.has_method("animate"):
+	if _arms is GSHumanoidFigure:
+		(_arms as GSHumanoidFigure).animate(0.0 if _holding() else speed, delta)
+	elif _arms.has_method("animate"):  # perf-lint: allow dynamic_call a factory's own arms node, duck-typed
 		_arms.call("animate", 0.0 if _holding() else speed, delta)
 
 	_ticks += 1
@@ -317,7 +323,8 @@ func _reach(skeleton: Skeleton3D) -> void:
 
 	var to_skeleton := skeleton.global_transform.affine_inverse()
 	var out := to_skeleton.basis * (figure.global_transform.basis * elbow_pole)
-	var drawn: Array = []
+	# Only the debug draw reads it: no array made per frame otherwise.
+	var drawn: Array = [] if debug_pose else _NO_DRAWN
 	hand_gap_right = 0.0
 	hand_gap_left = 0.0
 
@@ -379,19 +386,16 @@ func _lean(skeleton: Skeleton3D, figure: GSHumanoidFigure, target: Vector3, supp
 		_leaned = Vector3.ZERO
 		return
 
-	var goals: Array = [[_right, target]]
-
-	if not _left.is_empty() and _grip.is_two_hand() and not _left_hidden() and support_target.is_finite():
-		goals.append([_left, support_target])
-
-	var shoulders: Array[Vector3] = []
-	var reaches: Array[float] = []
+	# At most two goals (the firing hand, then a two-hand grip's support), held in locals: no arrays made per frame.
+	var both := not _left.is_empty() and _grip.is_two_hand() and not _left_hidden() and support_target.is_finite()
 	var to_local := skeleton.global_transform.basis.inverse()
-
-	for goal: Array in goals:
-		var bones: Array[int] = goal[0]
-		shoulders.append(skeleton.global_transform * GSHumanoidIk.global_pose(skeleton, bones[0]).origin)
-		reaches.append(_reach_local(skeleton, bones))
+	var shoulder_0 := skeleton.global_transform * GSHumanoidIk.global_pose(skeleton, _right[0]).origin
+	var reach_0 := _reach_local(skeleton, _right)
+	var shoulder_1 := Vector3.ZERO
+	var reach_1 := 0.0
+	if both:
+		shoulder_1 = skeleton.global_transform * GSHumanoidIk.global_pose(skeleton, _left[0]).origin
+		reach_1 = _reach_local(skeleton, _left)
 
 	var lean := Vector3.ZERO
 
@@ -399,10 +403,10 @@ func _lean(skeleton: Skeleton3D, figure: GSHumanoidFigure, target: Vector3, supp
 		var worst := 0.0
 		var toward := Vector3.ZERO
 
-		for i in goals.size():
-			var to: Vector3 = (goals[i][1] as Vector3) - (shoulders[i] + lean)
+		for i in (2 if both else 1):
+			var to: Vector3 = (support_target - (shoulder_1 + lean)) if i == 1 else (target - (shoulder_0 + lean))
 			var local := to_local * to
-			var far: float = (local.length() - reaches[i] * LEAN_SLACK) * to.length() / maxf(local.length(), 0.0001)
+			var far: float = (local.length() - (reach_1 if i == 1 else reach_0) * LEAN_SLACK) * to.length() / maxf(local.length(), 0.0001)
 
 			if far > worst:
 				worst = far
@@ -601,10 +605,11 @@ func _seat(hand: GSViewHand, skeleton: Skeleton3D, wrist: int, pose: Dictionary,
 
 
 func _reach_local(skeleton: Skeleton3D, bones: Array[int]) -> float:
-	var upper := GSHumanoidIk.global_pose(skeleton, bones[0]).origin
-	var lower := GSHumanoidIk.global_pose(skeleton, bones[1]).origin
-	var wrist := GSHumanoidIk.global_pose(skeleton, bones[2]).origin
-	return (lower - upper).length() + (wrist - lower).length() - 0.01
+	# One walk down the chain (the same products global_pose makes), not three from the root.
+	var upper_pose := GSHumanoidIk.global_pose(skeleton, bones[0])
+	var lower_pose := GSHumanoidIk.global_pose_below(skeleton, bones[0], upper_pose, bones[1])
+	var wrist := GSHumanoidIk.global_pose_below(skeleton, bones[1], lower_pose, bones[2]).origin
+	return (lower_pose.origin - upper_pose.origin).length() + (wrist - lower_pose.origin).length() - 0.01
 
 
 func _gap(skeleton: Skeleton3D, bones: Array[int], target: Vector3) -> float:

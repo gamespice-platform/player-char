@@ -139,7 +139,7 @@ func _clear_pole(skeleton: Skeleton3D, bones: Array[int], target: Vector3, pole:
 
 
 func _arm_lengths(skeleton: Skeleton3D, bones: Array[int]) -> Vector2:
-	var upper := GSHumanoidIk.global_pose(skeleton, bones[0]).origin
-	var lower := GSHumanoidIk.global_pose(skeleton, bones[1]).origin
-	var wrist := GSHumanoidIk.global_pose(skeleton, bones[2]).origin
-	return Vector2((lower - upper).length(), (wrist - lower).length())
+	var upper_pose := GSHumanoidIk.global_pose(skeleton, bones[0])
+	var lower_pose := GSHumanoidIk.global_pose_below(skeleton, bones[0], upper_pose, bones[1])
+	var wrist := GSHumanoidIk.global_pose_below(skeleton, bones[1], lower_pose, bones[2]).origin
+	return Vector2((lower_pose.origin - upper_pose.origin).length(), (wrist - lower_pose.origin).length())

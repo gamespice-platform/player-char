@@ -15,7 +15,7 @@ static func two_bone_under(skeleton: Skeleton3D, bones: Array[int], upper_global
 	# global_pose makes, in the same order.
 	var upper := upper_global_parent * skeleton.get_bone_pose(bones[0])
 	var lower := upper * skeleton.get_bone_pose(bones[1]) if skeleton.get_bone_parent(bones[1]) == bones[0] else global_pose(skeleton, bones[1])
-	var wrist := lower * skeleton.get_bone_pose(bones[2]) if skeleton.get_bone_parent(bones[2]) == bones[1] else global_pose(skeleton, bones[2])
+	var wrist := global_pose_below(skeleton, bones[1], lower, bones[2])
 	var a := lower.origin - upper.origin
 	var b := wrist.origin - lower.origin
 	var la := a.length()
@@ -85,6 +85,27 @@ static func global_pose(skeleton: Skeleton3D, bone: int) -> Transform3D:
 		n += 1
 		bone = skeleton.get_bone_parent(bone)
 	var out := Transform3D.IDENTITY
+	while n > 0:
+		n -= 1
+		out = out * skeleton.get_bone_pose(_scratch[n])
+	return out
+
+
+## [method global_pose] of [param bone] continued from [param from_pose], the skeleton-space pose of its ancestor
+## [param from]: the same products in the same order (so the same result) without walking above [param from] again;
+## the full walk when [param from] is not an ancestor.
+static func global_pose_below(skeleton: Skeleton3D, from: int, from_pose: Transform3D, bone: int) -> Transform3D:
+	var n := 0
+	var b := bone
+	while b >= 0 and b != from:
+		if n == _scratch.size():
+			_scratch.resize(n + 8)
+		_scratch[n] = b
+		n += 1
+		b = skeleton.get_bone_parent(b)
+	if b != from or from < 0:
+		return global_pose(skeleton, bone)
+	var out := from_pose
 	while n > 0:
 		n -= 1
 		out = out * skeleton.get_bone_pose(_scratch[n])
