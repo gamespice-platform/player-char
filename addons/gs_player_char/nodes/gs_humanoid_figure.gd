@@ -32,6 +32,7 @@ func build(p_look: GSHumanoidLook, p_height: float = 1.8) -> void:
 	add_child(_model)
 	from_art = true
 	_find_parts()
+	_quiet_skeleton()
 	_prepare_animation()
 	_fit_to_height()
 	_index_bones()
@@ -42,6 +43,26 @@ func build(p_look: GSHumanoidLook, p_height: float = 1.8) -> void:
 
 
 ## Finds the skeleton and meshes of the new body and folds the detail meshes into one instance.
+## The engine's skeleton looks for modifiers in its own process every frame by default. A figure writes its own pose, so a
+## skeleton with no [SkeletonModifier3D] under it is set to manual ([member skeleton_self_process] keeps the default); a
+## modifier added under it later turns the per-frame process back on, as the engine would have run it.
+func _quiet_skeleton() -> void:
+	if _skeleton == null or skeleton_self_process:
+		return
+	for child: Node in _skeleton.get_children():
+		if child is SkeletonModifier3D:
+			return
+	_skeleton.modifier_callback_mode_process = Skeleton3D.MODIFIER_CALLBACK_MODE_PROCESS_MANUAL
+	if not _skeleton.child_entered_tree.is_connected(_on_skeleton_child):
+		_skeleton.child_entered_tree.connect(_on_skeleton_child)
+
+
+func _on_skeleton_child(node: Node) -> void:
+	var skeleton := node.get_parent() as Skeleton3D
+	if node is SkeletonModifier3D and skeleton != null:
+		skeleton.modifier_callback_mode_process = Skeleton3D.MODIFIER_CALLBACK_MODE_PROCESS_IDLE
+
+
 func _find_parts() -> void:
 	_skeleton = _model.find_children("*", "Skeleton3D", true, false).front() as Skeleton3D
 	var meshes := _model.find_children("*", "MeshInstance3D", true, false)
@@ -78,6 +99,7 @@ func _prepare_animation() -> void:
 		for name in _anim.get_animation_library_list():
 			_anim.remove_animation_library(name)
 		var _err := _anim.add_animation_library(&"", library)
+		_idle_gun = null
 
 	if _mesh != null:
 		_mesh.material_override = material_for(look)
@@ -126,6 +148,8 @@ func _forget_body() -> void:
 	_support_cache.clear()
 	_support_chains.clear()
 	_overlay_tracks.clear()
+	_overlay_first.clear()
+	_idle_gun = null
 	_aim_plans.clear()
 	_strides.clear()
 	_machine.forget_state()
@@ -772,7 +796,9 @@ func _apply_overlays() -> void:
 	if source != null:
 		_overlay_weight = clampf(weight, 0.0, 1.0)
 	if source == null and hold == Hold.GUN and not downed and _action_full == &"" and not String(clip).ends_with("_gun") and clip != GSHumanoidClips.DEATH and clip != GSHumanoidClips.SWIM:
-		source = _anim.get_animation(GSHumanoidClips.IDLE_GUN)
+		if _idle_gun == null:
+			_idle_gun = _anim.get_animation(GSHumanoidClips.IDLE_GUN)
+		source = _idle_gun
 		t = 0.0
 		weight = 1.0
 	if source == null or weight <= 0.0:
@@ -785,6 +811,19 @@ func _apply_overlays() -> void:
 				pairs.append_array([_upper[bone], track])
 		_overlay_tracks[source] = pairs
 	var w := clampf(weight, 0.0, 1.0)
+	if t == 0.0:
+		# A clip's first frame never changes: sampled once per clip, not per bone on every drawn frame.
+		var first: Array[Quaternion] = []
+		if _overlay_first.has(source):
+			first = _overlay_first[source]
+		else:
+			for k in range(0, pairs.size(), 2):
+				first.append(source.rotation_track_interpolate(pairs[k + 1], 0.0))
+			_overlay_first[source] = first
+		for k in range(0, pairs.size(), 2):
+			var at := pairs[k]
+			_skeleton.set_bone_pose_rotation(at, GSHumanoidBlend.toward(_skeleton.get_bone_pose_rotation(at), first[k >> 1], w, _overlay_gain))
+		return
 	for k in range(0, pairs.size(), 2):
 		var index := pairs[k]
 		var q := source.rotation_track_interpolate(pairs[k + 1], t)

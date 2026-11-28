@@ -56,6 +56,11 @@ static var draw_range: float = DRAW_RANGE:
 	set(value):
 		if _range_ok("draw_range", value):
 			draw_range = value
+## Whether a figure's [Skeleton3D] keeps the engine's default per-frame process, which looks for modifiers on every frame.
+## Off (the default), a skeleton with no [SkeletonModifier3D] under it is set to manual: the figure writes its pose itself,
+## so the check bought nothing, once per figure per frame. A modifier added under it later turns the process back on.
+## Read when a figure is built.
+static var skeleton_self_process: bool = false
 ## Past [member lift_range] from the camera, or out of its view, a figure stands on the floor under it only on the
 ## frames its clip steps, not on every frame between (one floor ray each). 0: every frame at every distance.
 static var lift_range: float = 0.0:

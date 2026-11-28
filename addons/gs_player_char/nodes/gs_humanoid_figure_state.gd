@@ -300,6 +300,11 @@ var _support_cache: Dictionary = {}
 var _support_chains: Dictionary = {}
 ## Per Animation (a clip can be replaced under its name): the upper-body bones it rotates as [index, track] pairs, flat.
 var _overlay_tracks: Dictionary = {}
+## Per Animation: its upper-body rotations at time 0, in [member _overlay_tracks]' order. The held-gun arms read a gun clip's
+## first frame on every drawn frame; sampled once, they are read back instead.
+var _overlay_first: Dictionary = {}
+## The held-gun arms' clip, looked up once per build (cleared with the clips).
+var _idle_gun: Animation = null
 ## Per Animation: [GSHumanoidAim.plan] without and with the arm.
 var _aim_plans: Dictionary = {}
 ## `GSSimFigurePose` for the aim and support hand (null on the script path); with it, [member _aim_plans]
