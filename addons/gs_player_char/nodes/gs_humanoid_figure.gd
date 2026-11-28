@@ -1,5 +1,5 @@
 class_name GSHumanoidFigure
-extends "gs_humanoid_figure_clips.gd"
+extends "gs_humanoid_figure_ticking.gd"
 
 ## One of the family's people, drawn: a skinned body from `people/` wearing a [GSHumanoidLook]'s colours, playing
 ## [GSHumanoidClips] from how it moves, holding a weapon, and handing its skeleton to [GSPlayerRagdoll] on death.
@@ -140,13 +140,8 @@ func _forget_body() -> void:
 	_lift_at = Vector3.INF
 
 
-func _ready() -> void:
-	# Always: between calls to [method animate] (a far body's skipped frames) the drawn origin still moves, and
-	# [method _lift_body] follows it.
-	set_process(true)
-
-
-func _process(delta: float) -> void:
+## The frame, from the figure's own `_process` or the tree's ticker ([member central_tick]).
+func _tick(delta: float) -> void:
 	if not auto_animate or delta <= 0.0:
 		if global_position != _lift_at and _lifts_between_steps():
 			_lift_body()
